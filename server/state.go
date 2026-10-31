@@ -14,6 +14,7 @@ type fieldState struct {
 	Paused   *bool            `json:"paused"`
 	Speed    float64          `json:"speed"`
 	Shots    []map[string]any `json:"shots"`
+	Sounds   []map[string]any `json:"sounds,omitempty"`
 }
 
 func number(v any, low, high float64, integer bool) bool {
@@ -29,6 +30,21 @@ func validateState(raw []byte) (*fieldState, error) {
 		return nil, bad
 	}
 	g := s.Garden
+	if len(s.Sounds) > 128 {
+		return nil, bad
+	}
+	lastSoundID := float64(0)
+	for _, sound := range s.Sounds {
+		if !number(sound["id"], 1, 9e15, true) || !number(sound["tier"], 1, 6, true) || sound["id"].(float64) <= lastSoundID {
+			return nil, bad
+		}
+		switch sound["name"] {
+		case "bolt", "cannon", "frost", "coin", "build", "upgrade", "wave", "clear", "escape", "break", "win", "lose", "boss", "rebirth":
+		default:
+			return nil, bad
+		}
+		lastSoundID = sound["id"].(float64)
+	}
 	if g == nil {
 		return nil, bad
 	}

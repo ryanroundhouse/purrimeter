@@ -2,15 +2,17 @@
 
 An endless pixel-art cat tower defence game for native macOS and Windows, built from one Godot 4.7.2 project.
 
+Download the game at **[purrimeter.graham.pub](https://purrimeter.graham.pub/)**. The page highlights the download for your operating system and includes installation help for the unsigned builds. Website source is in `website/`; preview and publication instructions are in [docs/website.md](docs/website.md).
+
 The launch menu offers **Single player** and **Multiplayer**. Both use your same saved garden. Multiplayer supports public, optionally password-protected games for up to three players, with live remote fields, independent progression, and shared chat.
 
 ## Multiplayer
 
-Choose a player name in **Connection settings**, then open Multiplayer to create or join a game. The default server is `wss://purrimeter.graham.pub/ws`; it becomes available after the owner configures DNS and deploys the server. The address can be changed in settings.
+Choose a player name in **Connection settings**, then open Multiplayer to create or join a game. The default server is `wss://purrimeter.graham.pub/ws` and is live. The address can be changed in settings.
 
-Your garden stays on the left. One other field fills the right-hand field area; with three players, the other two share it vertically. **View** enlarges a field for read-only cat, enemy, and powerup inspection. Each player controls their own levels, rebirths, pause, and speed. Opening a menu or inspecting an enlarged remote field pauses only your combat.
+Your garden stays on the left. One other field fills the right-hand field area; with three players, the other two share it vertically. **View** enlarges a field for read-only cat, enemy, and powerup inspection and switches music and gameplay effects to that garden. Your own garden keeps its running or paused state while viewing. Closing View restores your audio; small previews stay silent. Each player controls their own levels, rebirths, pause, and speed. Opening a menu pauses only your combat.
 
-Press **T** to focus chat, **Enter** to send, and **Esc** to leave the text box. **Mute** hides one player's messages; chat notification sound is separately switchable. The owner can kick a player; ownership transfers when they leave. Dropped connections reserve a place for 60 seconds and reconnect automatically, leaving your garden paused. **Continue offline** keeps your personal game going without the other players.
+Press **T** to focus chat, **Enter** to send, and **Esc** to leave the text box. **Mute** hides one player's messages; chat notification sound is separately switchable. The owner can kick a player; ownership transfers when they leave. Dropped connections reserve a place for 60 seconds and reconnect automatically, leaving your garden paused. **Continue offline** in the Escape menu keeps your personal game going without the other players.
 
 Server hosting instructions are in [server/README.md](server/README.md). The self-hosting release is `dist/Purrimeter-Server.tar.gz`, including Linux amd64/arm64 binaries and Docker Compose/Caddy configuration. No VPS changes or DNS updates are performed by the build scripts.
 
@@ -20,13 +22,13 @@ Server hosting instructions are in [server/README.md](server/README.md). The sel
 - **Windows:** send `dist/Purrimeter-Windows.zip`. Extract the whole ZIP and run `Purrimeter.exe`, keeping `Purrimeter.pck` beside it. No Godot editor or installation is required.
 - `dist/Purrimeter-macOS.zip` contains the universal Intel/Apple Silicon Mac app.
 
-These are personal-use builds: Mac signing is ad hoc and Windows is unsigned. Public distribution signing/notarization is not configured.
+These downloadable builds use ad hoc signing on Mac and are unsigned on Windows. Public distribution signing/notarization is not configured; the website includes the relevant installation notes.
 
 ## Controls
 
-Click a cat card, then an empty tile to recruit. Click a placed cat to inspect, upgrade, repair or sell. **1 / 2 / 3** select cats, **Space** pauses, **Esc** cancels placement, and **N** starts the next attempt. Building, repairs and upgrades work while paused. Use the 1×/2× speed and Sound buttons as needed. Leaving the game window pauses combat and music.
+Click a cat card, then an empty tile to recruit. Click a placed cat to inspect, upgrade, repair or sell. **1 / 2 / 3** select cats, **Space** pauses, **Esc** cancels placement, and **N** starts the next attempt. Building, repairs and upgrades work while paused. Use the 1×/2× speed button as needed. Leaving the game window keeps combat and Auto countdowns running, while music and gameplay effects become silent until you return.
 
-With no placement or inspection active, **Esc** opens the pause menu; the visible **Menu** button opens it directly. The menu contains Export, Import, New Garden, help, and a confirmed return to the main menu. Closing it keeps combat paused; **Resume** continues it. Export, Import, and New Garden also work during multiplayer, preserving your membership and chat.
+With no placement or inspection active, **Esc** opens the pause menu; the visible **Menu** button opens it directly. The menu contains Route on/off, Sound on/off, Export, Import, New Garden, help, and a confirmed return to the main menu. Closing it keeps combat paused; **Resume** continues it. Export, Import, and New Garden also work during multiplayer, preserving your membership and chat.
 
 Click an enemy or boss to inspect its animated portrait, name, current/max health, speed, tower damage, and active effects. A highlight follows the selected enemy; inspection does not change targeting. Cats take priority on occupied tiles, and recruitment mode keeps placing cats. **Esc** or **Back to powerups** closes inspection; death or the end of the attempt clears it automatically. Both cat and enemy inspector portraits animate while paused.
 
@@ -46,7 +48,7 @@ Click an enemy or boss to inspect its animated portrait, name, current/max healt
 - Boss levels play five original, more intense chiptune themes: levels 10–50 cycle through all five, then repeat. Music crossfades at the start and end of the whole level; the garden theme resumes afterward. Retries and saved boss levels restart their assigned theme.
 - **30 permanent powerups** cover patrol stats, economy, durability, and unique Bolt/Cannon/Frost abilities. Click a discovered icon to inspect its current effect, next benefit, and prerequisite. **Available / Owned** switches between unfinished powerups and your collection. Hidden icons appear when their discovery milestones are earned; discoveries persist through rebirth and defeat. Each rank needs its own milestone and coin price. Completed powers remain in Owned. Select a placed cat for its controls; **Back to powerups** restores the browser.
 - **Patrol Training** increases all cats' damage and maximum health by 25% per purchase, compounded, while preserving their health percentage. Initial cost: 100 coins; each purchase costs 1.5× the previous one. It has unlimited ranks: rank one is available immediately, and rank n requires 4 × n × (n − 1) lifetime kills. Replayed levels count.
-- **Rebirth** unlocks after clearing level 5 and can be used between attempts. Return to level 1, retain coins, surviving cats, tiers, training and existing bonuses, and fully heal cats.
+- **Rebirth** unlocks after clearing level 5 and can be used during combat or between attempts. Return to level 1, retain coins, surviving cats, tiers, training and existing bonuses, and fully heal cats. Remaining enemies disappear; the unfinished level adds no rebirth bonus. Level one waits for a manual Start, even with Auto enabled.
 - Each rebirth adds **10 percentage points per highest level cleared that run** to permanent coin rewards. Two level-five rebirths give +100% total, or 2× normal rewards. Clear level 5 again to qualify after each rebirth.
 
 ## Saves

@@ -218,6 +218,16 @@ func run() -> void:
 	check(lost.bonus_points==120 and lost.rebirths==1 and not lost.can_rebirth(),"rebirth adds run-best bonus and requires requalification")
 	lost.run_best=5; lost.best=7; lost.level=6; lost.rebirth()
 	check(lost.bonus_points==170,"rebirth percentages stack additively")
+	var mid := rich(); mid.build(1,99); mid.level=9; mid.run_best=8; mid.best=8; mid.auto_start=true
+	mid.start(); put_enemy(mid,0,130); mid.towers[0].hp=0.3
+	var retained_coins := mid.coins.power
+	check(mid.can_rebirth() and mid.rebirth(),"rebirth is available during an unlocked active level")
+	check(not mid.active and mid.level==1 and mid.run_best==0 and mid.bonus_points==80 and mid.best==8,"mid-level rebirth rewards only completed levels")
+	check(mid.enemies.is_empty() and mid.wave_plan.is_empty() and mid.shots.is_empty() and mid.aftershocks.is_empty() and mid.towers[0].hp==1.0 and mid.coins.power==retained_coins,"mid-level rebirth clears combat and retains earned possessions")
+	mid.step(4.0,4.0)
+	check(not mid.active and mid.level==1 and mid.auto_start_remaining==0.0 and mid.run_best==0,"rebirth cannot falsely clear level one or trigger auto-start")
+	mid.level=5; mid.run_best=4; mid.start()
+	check(not mid.can_rebirth() and not mid.rebirth(),"unfinished level five does not unlock rebirth")
 	var rescue := Session.new(); rescue.coins=Amount.of(1); rescue.defeat()
 	check(rescue.level==1 and close(rescue.coins.numeric(),50),"empty level-one patrol receives emergency scout funds")
 	rescue.build(0,100); rescue.towers[0].hp=0.1; rescue.coins=Amount.of(0); rescue.defeat()

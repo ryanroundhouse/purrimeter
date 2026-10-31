@@ -13,11 +13,17 @@ A shared game for up to three players, each controlling their own playing field 
 **Garden**:
 A player's persistent playing field and progression, carried between single player and multiplayer games.
 
+**New Garden**:
+A fresh garden that replaces the player's current garden, resetting coins, cats, powerups, discoveries, best level, and rebirth bonuses.
+
 **Game owner**:
 The player responsible for moderating a multiplayer game, initially its creator. Ownership passes to the longest-connected remaining player when the owner leaves.
 
 **Game chat**:
 Messages shared among the players in a multiplayer game. Each player sees messages received during their current visit and can mute other players.
+
+**Viewed garden**:
+Another player's garden enlarged for read-only inspection, whose music and gameplay effects replace the viewer's local garden audio. Viewing preserves the local garden's running or paused state.
 
 **Entrance**:
 The point where enemies enter the playing field.
@@ -45,7 +51,7 @@ A player-controlled option for starting the next level automatically after succe
 A tower's upgrade rank, from its purchased base form through five progressively stronger forms.
 
 **Rebirth**:
-A voluntary return to level one that retains the player's coins and surviving towers and adds a permanent coin-reward bonus.
+A voluntary return to level one that retains coins and surviving towers, fully heals those towers, and adds a permanent coin-reward bonus based on the highest level cleared in the run. Available after clearing level five in that run, including during an unfinished level.
 
 **Run**:
 The progression between rebirths, including retries after defeat.

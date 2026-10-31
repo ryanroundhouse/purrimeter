@@ -345,3 +345,30 @@ func TestStateEnvelopeRejectsMissingFieldsAndAcceptsIntegralJSONFloats(t *testin
 		t.Fatal("equivalent JSON number notation rejected", err)
 	}
 }
+
+func TestFieldSoundEvents(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		sounds any
+		valid  bool
+	}{
+		{"empty", []any{}, true},
+		{"valid", []any{message{"id": 1, "name": "cannon", "tier": 4}, message{"id": 2, "name": "rebirth", "tier": 6}}, true},
+		{"unknown effect", []any{message{"id": 1, "name": "arbitrary.wav", "tier": 1}}, false},
+		{"invalid tier", []any{message{"id": 1, "name": "bolt", "tier": 7}}, false},
+		{"duplicate", []any{message{"id": 1, "name": "bolt", "tier": 1}, message{"id": 1, "name": "bolt", "tier": 1}}, false},
+		{"fractional identity", []any{message{"id": 1.5, "name": "bolt", "tier": 1}}, false},
+		{"oversized", make([]any, 129), false},
+		{"wrong shape", "sounds", false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			state := fieldFixture()
+			state["sounds"] = test.sounds
+			raw, _ := json.Marshal(state)
+			_, err := validateState(raw)
+			if (err == nil) != test.valid {
+				t.Fatalf("valid = %v, error = %v", test.valid, err)
+			}
+		})
+	}
+}

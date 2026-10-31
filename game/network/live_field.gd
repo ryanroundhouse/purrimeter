@@ -5,8 +5,10 @@ const COUNTERS := ["level","best","run_best","rebirths","training","kills","spaw
 const VALUES := ["bonus_points","elapsed","auto_start_remaining"]
 const TOWER_KEYS := ["cell","kind","tier","hp","spent","cooldown","flash"]
 const ENEMY_KEYS := ["id","kind","boss","cell","next","progress","hp","hp_power","bounty_power","slow","attack","frustration","stun","burn_left"]
+const MAX_SOUNDS := 128
+const SOUND_NAMES := ["bolt","cannon","frost","coin","build","upgrade","wave","clear","escape","break","win","lose","boss","rebirth"]
 
-static func capture(g: Session, revision: int, sequence: int) -> Dictionary:
+static func capture(g: Session, revision: int, sequence: int, sounds: Array = []) -> Dictionary:
 	var garden := {}
 	for key in COUNTERS+VALUES: garden[key]=g.get(key)
 	garden.coins=g.coins.power
@@ -24,11 +26,19 @@ static func capture(g: Session, revision: int, sequence: int) -> Dictionary:
 	var shots := []
 	for s in g.shots.slice(0,1024):
 		shots.append({"from":[s.from.x,s.from.y],"to":[s.to.x,s.to.y],"kind":s.kind,"tier":s.tier,"life":s.life})
-	return {"revision":revision,"sequence":sequence,"garden":garden,"paused":g.paused,"speed":g.speed,"shots":shots}
+	return {"revision":revision,"sequence":sequence,"garden":garden,"paused":g.paused,"speed":g.speed,"shots":shots,"sounds":sounds.duplicate(true)}
 
 static func decode(data: Dictionary) -> Session:
 	if not PowerupSave.number(data.get("revision"),0,1e9,true) or not PowerupSave.number(data.get("sequence"),0,9e15,true): return null
 	if not data.get("paused") is bool or not PowerupSave.number(data.get("speed"),1,2,true): return null
+	# Optional for older clients. Strict ordering lets receivers discard replayed effects.
+	var sounds = data.get("sounds",[])
+	if not sounds is Array or sounds.size()>MAX_SOUNDS: return null
+	var last_sound_id := 0
+	for sound in sounds:
+		if not sound is Dictionary or not PowerupSave.number(sound.get("id"),1,9e15,true) or not PowerupSave.number(sound.get("tier"),1,6,true): return null
+		if not sound.get("name") in SOUND_NAMES or int(sound.id)<=last_sound_id: return null
+		last_sound_id=int(sound.id)
 	if not data.get("garden") is Dictionary: return null
 	var d: Dictionary=data.garden
 	for key in COUNTERS:

@@ -51,3 +51,28 @@ From the repository root, run the public multiplayer check with:
 ```
 
 Require both a successful exit and `Multiplayer checks: 0 failure(s)` in the log. The test uses isolated gardens and identities and briefly creates a password-protected public test room.
+
+## Website and client downloads
+
+The public landing page shares `https://purrimeter.graham.pub` with the relay. It is static content served by nginx; the relay continues to own exactly `/ws` and `/healthz`.
+
+Initial website release: `20261031T142649Z-86e1cd3e4d63`, published and verified on 2026-10-31. Its complete file manifest is served at `/release.json`. Both client downloads matched their local SHA-256 checksums after full public downloads; the public multiplayer integration check passed with zero failures. The relay retained PID `1521024` and its original start time throughout publication.
+
+| Item | Value |
+| --- | --- |
+| Website source | `website/` |
+| Publication command | `scripts/publish_website.sh` |
+| Website releases | `/var/www/purrimeter/releases/<release-id>/` |
+| Active website | `/var/www/purrimeter/current` (symlink) |
+| Static nginx include | `/etc/nginx/snippets/purrimeter-website.conf` |
+| Config backups | `/var/www/purrimeter/config-backups/<release-id>/` |
+| Mac download | `/downloads/Purrimeter-macOS.zip` |
+| Windows download | `/downloads/Purrimeter-Windows.zip` |
+| Client checksums | `/downloads/SHA256SUMS.txt` |
+| Publication manifest | `/release.json` |
+
+Website files and stable download URLs use cache revalidation. Downloads support byte ranges through nginx. Archives are transferred unchanged; public checksums identify the exact downloadable bytes. Preparation and publication are documented in [website.md](website.md).
+
+Publication retains old release directories. For a content rollback, read `previous-release.txt` in the matching config backup, create a temporary symlink to that release directory, and atomically rename it over `/var/www/purrimeter/current` with `mv -Tf`. No nginx reload or relay restart is needed for content-only rollback. Verify `/release.json`, `/healthz`, and both download links afterward. If nginx configuration also needs rollback, restore `site.conf` and, when present, `snippet.conf` from the same backup, run `nginx -t`, then reload nginx. The first deployment's backup has no prior website release and restores the original root 404 behavior.
+
+Website and relay releases are independent. Do not repoint `/opt/purrimeter/current` or restart `purrimeter.service` when updating only the website or downloadable clients.

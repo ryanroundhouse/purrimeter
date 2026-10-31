@@ -30,6 +30,7 @@ var notice := ""
 var pause_open := false
 var test_mode := false
 var passthrough := false
+var app_focused := true
 
 func _ready() -> void:
 	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
@@ -45,6 +46,7 @@ func _ready() -> void:
 	network=GardenNetwork.new(); network.isolated=test_mode; add_child(network)
 	local_view.game.paused=true
 	local_view.menu_requested.connect(open_pause)
+	local_view.audio_settings_changed.connect(sync_audio_selection)
 	local_view.garden_replaced.connect(func(): revision+=1; publish_clock=1.0)
 	network.status_changed.connect(set_status)
 	network.issue.connect(func(_code, message): set_status(message))
@@ -56,7 +58,10 @@ func _ready() -> void:
 	network.room_changed.connect(update_room)
 	network.field_received.connect(receive_field)
 	network.chat_received.connect(receive_chat)
-	network.interrupted.connect(func(): local_view.game.paused=true; local_view.save_game(); set_status("Connection lost. Your garden is paused; reconnecting…"))
+	network.interrupted.connect(func():
+		local_view.game.paused=true; local_view.save_game()
+		for item in remote_cards.values(): item.view.remote_connected=false
+		sync_audio_selection(); set_status("Connection lost. Your garden is paused; reconnecting…"))
 	network.departed.connect(on_departed)
 	chat_player=AudioStreamPlayer.new(); add_child(chat_player); chat_player.stream=load("res://assets/coin.wav"); chat_player.volume_db=-22
 	resized.connect(layout_game)
@@ -224,8 +229,7 @@ func show_game(online: bool) -> void:
 	local_view.show(); local_view.gameplay_enabled=true; local_view.game.paused=true
 	if online:
 		var header := label(str(network.room.get("name","Garden")),26); header.position=Vector2(28,16); header.size=Vector2(1000,48); header.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS; page.add_child(header)
-		state_label=label("Your garden is on the left. Each player progresses independently.",17,MUTED); state_label.position=Vector2(28,58); state_label.size=Vector2(1240,28); page.add_child(state_label)
-		var offline := button("Continue offline",func(): network.leave_game(); show_game(false)); offline.name="Offline"; page.add_child(offline)
+		state_label=label("",17,MUTED); state_label.position=Vector2(28,58); state_label.size=Vector2(1240,28); page.add_child(state_label)
 		var chat_panel := PanelContainer.new(); chat_panel.name="Chat"; page.add_child(chat_panel)
 		var chat_column := column(chat_panel,8)
 		var chat_header := row(chat_column); var title := label("Garden chat",20,MINT); title.size_flags_horizontal=Control.SIZE_EXPAND_FILL; chat_header.add_child(title)
@@ -239,8 +243,10 @@ func show_game(online: bool) -> void:
 
 func clear_remotes() -> void:
 	for item in remote_cards.values():
+		item.view.audio.set_enabled(false)
 		if is_instance_valid(item.card): item.card.queue_free()
 	remote_cards.clear(); expanded=""
+	sync_audio_selection()
 
 func update_room(room: Dictionary) -> void:
 	if screen!="multiplayer": return
@@ -284,7 +290,20 @@ func update_remote_label(item: Dictionary) -> void:
 func receive_field(player: String, data: Dictionary) -> void:
 	if remote_cards.has(player):
 		var item: Dictionary=remote_cards[player]
-		if item.view.receive_field(data): update_remote_label(item)
+		if item.view.receive_field(data): update_remote_label(item); sync_audio_selection()
+
+func sync_audio_selection() -> void:
+	if not is_instance_valid(local_view): return
+	local_view.audio.set_enabled(expanded.is_empty())
+	local_view.audio.focus(app_focused)
+	for player in remote_cards:
+		var view: Control=remote_cards[player].view
+		var selected: bool=player==expanded and view.remote_connected and view.remote_revision>=0
+		if view.audio.enabled!=selected or view.audio.focused!=app_focused or view.audio.muted!=local_view.audio.muted:
+			view.skip_remote_sounds=true
+		view.audio.set_enabled(selected)
+		view.audio.set_mute(local_view.audio.muted)
+		view.audio.focus(app_focused)
 
 func toggle_mute(player: String) -> void:
 	muted[player]=not muted.get(player,false)
@@ -322,8 +341,6 @@ func layout_game() -> void:
 	var right_x := size.x*0.69; var width := size.x-right_x-24
 	var chat := page.get_node_or_null("Chat") as Control
 	if chat!=null: chat.position=Vector2(right_x,size.y-214); chat.size=Vector2(width,190)
-	var offline := page.get_node_or_null("Offline") as Control
-	if offline!=null: offline.position=Vector2(size.x-252,16); offline.size=Vector2(228,44)
 	var index := 0; var count := maxi(1,remote_cards.size())
 	var card_height := (size.y-324-16*(count-1))/count
 	for player in remote_cards:
@@ -352,11 +369,13 @@ func layout_game() -> void:
 		index+=1
 	if chat!=null: chat.visible=expanded.is_empty()
 	local_view.visible=expanded.is_empty(); local_view.gameplay_enabled=expanded.is_empty() and not pause_open
+	sync_audio_selection()
 	queue_redraw()
 
 func expand_field(player: String) -> void:
 	if expanded==player: close_expanded(); return
-	local_view.game.paused=true; expanded=player; layout_game()
+	if not remote_cards.has(player): return
+	expanded=player; layout_game()
 
 func close_expanded() -> void:
 	expanded=""; layout_game()
@@ -371,10 +390,21 @@ func open_pause() -> void:
 	var box := column(center,14); box.custom_minimum_size.x=420
 	box.add_child(label("Garden paused",32,MINT)); box.add_child(label("Other gardeners can keep playing.",17,MUTED) if screen=="multiplayer" else label("Your patrol is waiting for you.",17,MUTED))
 	var resume := button("Resume",func(): close_pause(); local_view.game.paused=false,true); box.add_child(resume)
+	var settings := row(box)
+	var route := button("Route on" if local_view.route_on else "Route off",local_view.action.bind("route"))
+	route.toggle_mode=true; route.button_pressed=local_view.route_on; route.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	route.pressed.connect(func(): route.text="Route on" if local_view.route_on else "Route off")
+	settings.add_child(route)
+	var sound := button("Sound off" if local_view.audio.muted else "Sound on",local_view.action.bind("sound"))
+	sound.toggle_mode=true; sound.button_pressed=not local_view.audio.muted; sound.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	sound.pressed.connect(func(): sound.text="Sound off" if local_view.audio.muted else "Sound on")
+	settings.add_child(sound)
 	box.add_child(button("Export garden",func(): close_pause(); local_view.action("export")))
 	box.add_child(button("Import garden",func(): close_pause(); local_view.action("import")))
 	box.add_child(button("New garden",func(): close_pause(); local_view.action("new")))
 	box.add_child(button("How to play",func(): close_pause(); local_view.action("help")))
+	if screen=="multiplayer":
+		box.add_child(button("Continue offline",func(): close_pause(); network.leave_game(); show_game(false)))
 	box.add_child(button("Main menu",func():
 		close_pause(); local_view.ask("Return to the main menu?","Your garden will be saved. You will leave this multiplayer game." if screen=="multiplayer" else "Your garden will be saved and paused.","Main menu",func(): local_view.save_game(); show_menu())))
 	box.add_child(button("Close menu · stay paused",close_pause)); resume.grab_focus()
@@ -408,10 +438,14 @@ func _process(delta: float) -> void:
 	if screen=="multiplayer":
 		publish_clock+=delta
 		if publish_clock>=0.1:
-			publish_clock=0; sequence+=1; network.publish(LiveField.capture(local_view.game,revision,sequence))
+			publish_clock=0; sequence+=1; network.publish(LiveField.capture(local_view.game,revision,sequence,local_view.live_sounds()))
 
 func _notification(what: int) -> void:
 	if what==NOTIFICATION_WM_CLOSE_REQUEST and not passthrough: quit_game()
+	if not is_node_ready() or passthrough: return
+	if what==NOTIFICATION_APPLICATION_FOCUS_OUT or what==NOTIFICATION_APPLICATION_FOCUS_IN:
+		app_focused=what==NOTIFICATION_APPLICATION_FOCUS_IN
+		sync_audio_selection()
 
 func quit_game() -> void:
 	if is_instance_valid(local_view): local_view.save_game()

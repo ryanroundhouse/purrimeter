@@ -153,14 +153,14 @@ func show_confirmation(heading: String, message: String, callback: Callable, acc
 	finish_dialog(accept_text,callback,true)
 
 func show_rebirth(run_best: int, bonus: float, callback: Callable) -> void:
-	begin_dialog("Rebirth your patrol?","Start a new run with lasting rewards.",Vector2(640,530))
+	begin_dialog("Rebirth your patrol?","Start a new run with lasting rewards.",Vector2(640,570))
 	var gain := run_best*10.0
 	var reward := VBoxContainer.new(); body.add_child(reward)
 	reward.add_theme_constant_override("separation",6)
 	label(reward,"+%s%% permanent coin rewards" % Amount.of(gain).label(),25,MINT)
 	label(reward,"Total coin bonus: +%s%% → +%s%%" % [Amount.of(bonus).label(),Amount.of(bonus+gain).label()],17,GOLD)
 	section(body,"Keep your patrol","Keep all coins, surviving cats, their upgrades, powerups and discoveries. Surviving cats return at full health.")
-	section(body,"Start again at level 1","Clear level 5 again to unlock your next rebirth.")
+	section(body,"Start again at level 1","End this attempt and start level 1 manually. The unfinished level adds no bonus. Clear level 5 again to unlock rebirth.")
 	finish_dialog("Rebirth patrol",callback,true)
 
 func show_help() -> void:

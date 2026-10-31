@@ -139,7 +139,7 @@ func train() -> bool:
 	return buy_powerup("training")
 
 func can_rebirth() -> bool:
-	return not active and run_best>=5
+	return run_best>=5
 
 func set_auto_start(enabled: bool) -> void:
 	if auto_start==enabled: return
@@ -150,7 +150,7 @@ func set_auto_start(enabled: bool) -> void:
 func rebirth() -> bool:
 	if not can_rebirth(): return false
 	var gain := run_best*10.0
-	bonus_points+=gain; rebirths+=1; run_best=0; level=1
+	bonus_points+=gain; rebirths+=1; run_best=0; level=1; active=false; last_defeat=0
 	enemies.clear(); shots.clear(); aftershocks.clear(); wave_plan.clear(); spawned=0; spawn_clock=0
 	for t in towers: t.hp=1.0; t.cooldown=0.0; t.flash=0.0
 	paused=false; auto_start_remaining=0.0; refresh_powerups(); invalidate_routes(); sound.emit("rebirth",6)

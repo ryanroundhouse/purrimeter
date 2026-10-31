@@ -11,6 +11,7 @@ var last: Dictionary = {}
 var muted := false
 var quiet := false
 var focused := true
+var enabled := true
 var _gains := Vector2(1.0,0.0)
 var _fade_from := Vector2(1.0,0.0)
 var _fade_elapsed := CROSSFADE_SECONDS
@@ -56,7 +57,7 @@ func set_level(level: int, active: bool, restart: bool = false) -> void:
 
 func _process(delta: float) -> void:
 	# Real-time fades: independent of combat speed and tactical pause.
-	if quiet or muted or not focused or _fade_elapsed>=CROSSFADE_SECONDS: return
+	if quiet or muted or not focused or not enabled or _fade_elapsed>=CROSSFADE_SECONDS: return
 	_fade_elapsed=minf(CROSSFADE_SECONDS,_fade_elapsed+delta)
 	var target := Vector2(1.0,0.0) if current_theme==0 else Vector2(0.0,1.0)
 	_gains=_fade_from.lerp(target,_fade_elapsed/CROSSFADE_SECONDS)
@@ -70,13 +71,13 @@ func update_volumes() -> void:
 	boss_music.volume_db=MUSIC_DB+linear_to_db(maxf(_gains.y,0.0001))
 
 func update_pause() -> void:
-	var blocked := quiet or muted or not focused
+	var blocked := quiet or muted or not focused or not enabled
 	var fading := _fade_elapsed<CROSSFADE_SECONDS
 	music.stream_paused=blocked or (current_theme>0 and (not fading or _gains.x==0.0))
 	boss_music.stream_paused=blocked or (current_theme==0 and not fading)
 
 func play(name: String, tier: int = 1) -> void:
-	if muted or quiet or not effects.has(name): return
+	if muted or quiet or not focused or not enabled or not effects.has(name): return
 	var now := Time.get_ticks_msec()
 	if now-last.get(name,0)<75: return
 	last[name]=now
@@ -88,10 +89,18 @@ func play(name: String, tier: int = 1) -> void:
 func set_mute(value: bool) -> void:
 	muted=value
 	update_pause()
-	if value:
-		for pool in effects.values():
-			for player in pool: player.stop()
+	if value: stop_effects()
+
+func stop_effects() -> void:
+	for pool in effects.values():
+		for player in pool: player.stop()
+
+func set_enabled(value: bool) -> void:
+	enabled=value
+	update_pause()
+	if not value: stop_effects()
 
 func focus(active: bool) -> void:
 	focused=active
 	if music: update_pause()
+	if not active: stop_effects()

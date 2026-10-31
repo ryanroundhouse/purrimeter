@@ -40,7 +40,7 @@ The complete design was confirmed for implementation, including the following:
 - Shots cross towers; splash affects enemies only. Frost refreshes duration without stacking strength. Upgrading preserves health percentage.
 - Target priority uses estimated remaining route time, including necessary breaches.
 - Click-to-build and click-to-inspect controls, placement feedback, ranges, health, prices, optional route overlay, Space pause, Escape cancel, 1×/2× speed.
-- Autosave and restore paused, pause on losing focus, New Game confirmation, Next Wave only after clearing the current wave.
+- Historical behavior: autosave and restore paused, pause on losing focus, New Game confirmation, Next Wave only after clearing the current wave. The current focus behavior in `rebirth-and-pause-menu.md` keeps gameplay running while silencing music and gameplay effects.
 - Numerical balance, wave compositions, and rounding delegated to implementation and testing.
 - Deliver a native Swift macOS .app, source, and build instructions.
 - Art direction supersedes initial geometric visuals: animated SNES-style pixel art for every tower and enemy. Cat-themed towers (Tabby/Bolt, British Shorthair/Cannon, Siamese/Frost), original music and sound effects.

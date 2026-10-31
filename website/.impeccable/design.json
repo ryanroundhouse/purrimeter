@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-31T14:27:50.122561+00:00",
+  "title": "Design System: Purrimeter website",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "oklch(15% 0.010 250)",
+          "oklch(25% 0.019 250)",
+          "oklch(35% 0.027 250)",
+          "oklch(45% 0.030 250)",
+          "oklch(60% 0.030 250)",
+          "oklch(75% 0.025 250)",
+          "oklch(85% 0.018 250)",
+          "oklch(95% 0.007 250)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel",
+        "tonalRamp": [
+          "oklch(15% 0.012 245)",
+          "oklch(25% 0.023 245)",
+          "oklch(35% 0.032 245)",
+          "oklch(45% 0.035 245)",
+          "oklch(60% 0.035 245)",
+          "oklch(75% 0.030 245)",
+          "oklch(85% 0.021 245)",
+          "oklch(95% 0.009 245)"
+        ]
+      },
+      "cream": {
+        "role": "neutral",
+        "displayName": "Cream",
+        "tonalRamp": [
+          "oklch(15% 0.009 90)",
+          "oklch(25% 0.016 90)",
+          "oklch(35% 0.023 90)",
+          "oklch(45% 0.025 90)",
+          "oklch(60% 0.025 90)",
+          "oklch(75% 0.021 90)",
+          "oklch(85% 0.015 90)",
+          "oklch(95% 0.006 90)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted sage",
+        "tonalRamp": [
+          "oklch(15% 0.009 165)",
+          "oklch(25% 0.016 165)",
+          "oklch(35% 0.023 165)",
+          "oklch(45% 0.025 165)",
+          "oklch(60% 0.025 165)",
+          "oklch(75% 0.021 165)",
+          "oklch(85% 0.015 165)",
+          "oklch(95% 0.006 165)"
+        ]
+      },
+      "mint": {
+        "role": "primary",
+        "displayName": "Mint",
+        "tonalRamp": [
+          "oklch(15% 0.035 160)",
+          "oklch(25% 0.065 160)",
+          "oklch(35% 0.090 160)",
+          "oklch(45% 0.100 160)",
+          "oklch(60% 0.100 160)",
+          "oklch(75% 0.085 160)",
+          "oklch(85% 0.060 160)",
+          "oklch(95% 0.025 160)"
+        ]
+      },
+      "gold": {
+        "role": "secondary",
+        "displayName": "Gold",
+        "tonalRamp": [
+          "oklch(15% 0.042 75)",
+          "oklch(25% 0.078 75)",
+          "oklch(35% 0.108 75)",
+          "oklch(45% 0.120 75)",
+          "oklch(60% 0.120 75)",
+          "oklch(75% 0.102 75)",
+          "oklch(85% 0.072 75)",
+          "oklch(95% 0.030 75)"
+        ]
+      },
+      "garden": {
+        "role": "secondary",
+        "displayName": "Garden green",
+        "tonalRamp": [
+          "oklch(15% 0.017 160)",
+          "oklch(25% 0.033 160)",
+          "oklch(35% 0.045 160)",
+          "oklch(45% 0.050 160)",
+          "oklch(60% 0.050 160)",
+          "oklch(75% 0.043 160)",
+          "oklch(85% 0.030 160)",
+          "oklch(95% 0.013 160)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Garden line",
+        "tonalRamp": [
+          "oklch(15% 0.010 165)",
+          "oklch(25% 0.019 165)",
+          "oklch(35% 0.027 165)",
+          "oklch(45% 0.030 165)",
+          "oklch(60% 0.030 165)",
+          "oklch(75% 0.025 165)",
+          "oklch(85% 0.018 165)",
+          "oklch(95% 0.007 165)"
+        ]
+      },
+      "mint-hover": {
+        "role": "primary",
+        "displayName": "Mint hover",
+        "tonalRamp": [
+          "oklch(15% 0.028 160)",
+          "oklch(25% 0.052 160)",
+          "oklch(35% 0.072 160)",
+          "oklch(45% 0.080 160)",
+          "oklch(60% 0.080 160)",
+          "oklch(75% 0.068 160)",
+          "oklch(85% 0.048 160)",
+          "oklch(95% 0.020 160)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Pixel display",
+        "purpose": "Hero heading; mobile sizing is documented in DESIGN.md."
+      },
+      "headline": {
+        "displayName": "Section headline",
+        "purpose": "Installation heading."
+      },
+      "title": {
+        "displayName": "Feature title",
+        "purpose": "Feature statements."
+      },
+      "body": {
+        "displayName": "Reading text",
+        "purpose": "Prose and instructions."
+      },
+      "label": {
+        "displayName": "Download action",
+        "purpose": "Primary action line inside download links."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "download-feedback",
+        "value": "background-color 160ms ease-out, border-color 160ms ease-out",
+        "purpose": "Download hover feedback; removed for reduced motion."
+      },
+      {
+        "name": "anchor-scroll",
+        "value": "smooth",
+        "purpose": "Anchor navigation; auto for reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "middle",
+        "value": "1000px"
+      },
+      {
+        "name": "mobile",
+        "value": "760px"
+      },
+      {
+        "name": "narrow",
+        "value": "420px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Download",
+      "kind": "button",
+      "refersTo": "download",
+      "description": "Ordinary platform download link with compatibility metadata.",
+      "html": "<a class=\"ds-download\" href=\"#download\"><span class=\"ds-label\">Download for Windows<svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5\"/></svg></span><span class=\"ds-detail\">64-bit (x64) \u00b7 Extract &amp; play</span></a>",
+      "css": ".ds-download{display:block;padding:14px 18px;border:1px solid var(--muted, #b0c3bd);border-radius:5px;text-decoration:none;background:var(--panel, #202e3a);color:var(--cream, #f4edd7);font-family:var(--body, \"Avenir Next\", \"Segoe UI\", sans-serif);transition:background-color 160ms ease-out,border-color 160ms ease-out}.ds-download:hover{background:var(--garden, #284b3b);border-color:var(--mint, #89dfb5);color:var(--cream, #f4edd7)}.ds-download:focus-visible{outline:3px solid var(--gold, #ffc46b);outline-offset:6px}.ds-label{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:17px;font-weight:650;line-height:1.4}.ds-detail{display:block;color:var(--muted, #b0c3bd);font-size:12px;margin-top:3px;line-height:1.6}.ds-download svg{flex-shrink:0}@media(prefers-reduced-motion:reduce){.ds-download{transition:none}}"
+    },
+    {
+      "name": "Recommended download",
+      "kind": "button",
+      "refersTo": "download-recommended",
+      "description": "Detected platform emphasis; alternate download stays available.",
+      "html": "<a class=\"ds-download ds-recommended\" href=\"#download\"><span class=\"ds-label\">Download for macOS<svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5\"/></svg></span><span class=\"ds-detail\">Intel &amp; Apple Silicon \u00b7 macOS 11+</span><span class=\"ds-recommendation\">Recommended for this device</span></a>",
+      "css": ".ds-download{display:block;padding:14px 18px;border:1px solid var(--muted, #b0c3bd);border-radius:5px;text-decoration:none;background:var(--panel, #202e3a);color:var(--cream, #f4edd7);font-family:var(--body, \"Avenir Next\", \"Segoe UI\", sans-serif);transition:background-color 160ms ease-out,border-color 160ms ease-out}.ds-download:hover{background:var(--garden, #284b3b);border-color:var(--mint, #89dfb5);color:var(--cream, #f4edd7)}.ds-download:focus-visible{outline:3px solid var(--gold, #ffc46b);outline-offset:6px}.ds-label{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:17px;font-weight:650;line-height:1.4}.ds-detail{display:block;color:var(--muted, #b0c3bd);font-size:12px;margin-top:3px;line-height:1.6}.ds-download svg{flex-shrink:0}@media(prefers-reduced-motion:reduce){.ds-download{transition:none}}.ds-recommended{background:var(--mint, #89dfb5);border-color:var(--mint, #89dfb5);color:var(--ink, #131c26)}.ds-recommended:hover{background:#a2ebc7;border-color:#a2ebc7;color:var(--ink, #131c26)}.ds-recommended .ds-detail{color:var(--ink, #131c26)}.ds-recommendation{display:block;margin-top:6px;font-size:11px;font-weight:650;line-height:1.6}"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "description": "Plain text section navigation, with installation help retained on mobile.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Main navigation\"><a href=\"#the-game\">The game</a><a href=\"#install\">Installation help</a></nav>",
+      "css": ".ds-nav{display:flex;gap:32px;font:14px/1.6 var(--body, \"Avenir Next\", \"Segoe UI\", sans-serif)}.ds-nav a{color:var(--cream, #f4edd7);text-decoration:none;padding-block:10px}.ds-nav a:hover{color:var(--mint, #89dfb5)}.ds-nav a:focus-visible{outline:3px solid var(--gold, #ffc46b);outline-offset:6px}@media(max-width:760px){.ds-nav{gap:16px;font-size:12px}.ds-nav a:first-child{display:none}}"
+    },
+    {
+      "name": "Installation disclosure",
+      "kind": "custom",
+      "description": "Native expandable instructions with flat separators and an open-state chevron.",
+      "html": "<details class=\"ds-disclosure\"><summary>Installing on macOS<svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg></summary><div class=\"ds-content\">Unzip the download and open the <strong>macos</strong> folder.</div></details>",
+      "css": ".ds-disclosure{border-block:1px solid var(--line, #42564f);color:var(--cream, #f4edd7);font:16px/1.6 var(--body, \"Avenir Next\", \"Segoe UI\", sans-serif)}.ds-disclosure summary{display:flex;justify-content:space-between;gap:20px;align-items:center;padding:21px 0;cursor:pointer;list-style:none;font-weight:600}.ds-disclosure summary::-webkit-details-marker{display:none}.ds-disclosure summary:hover{color:var(--mint, #89dfb5)}.ds-disclosure summary:focus-visible{outline:3px solid var(--gold, #ffc46b);outline-offset:6px}.ds-disclosure[open] summary svg{transform:rotate(180deg)}.ds-content{padding-bottom:24px;color:var(--muted, #b0c3bd);font-size:14px}.ds-content strong{color:var(--cream, #f4edd7);font-weight:600}"
+    },
+    {
+      "name": "Feature statement",
+      "kind": "custom",
+      "description": "Pixel title and readable prose on the mint feature surface.",
+      "html": "<article class=\"ds-feature\"><h2>Little cats.<br>Lasting progress.</h2><p>Grow three distinct cat roles through six tower tiers.</p></article>",
+      "css": ".ds-feature{background:var(--mint, #89dfb5);color:var(--ink, #131c26)}.ds-feature h2{margin:0;font:600 32px/1.05 var(--display, \"Pixelify Sans\", sans-serif)}.ds-feature p{font:15px/1.7 var(--body, \"Avenir Next\", \"Segoe UI\", sans-serif);max-width:38ch;margin:18px 0 0}@media(max-width:1000px){.ds-feature h2{font-size:28px}}@media(max-width:760px){.ds-feature{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:24px}.ds-feature h2{font-size:27px}.ds-feature p{margin-top:0;font-size:14px}}@media(max-width:420px){.ds-feature{grid-template-columns:minmax(0,1fr);gap:12px}.ds-feature h2 br{display:none}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "An invitation into the actual garden",
+    "overview": "An invitation into the actual garden: navy surfaces, cream text, mint emphasis, and the existing pixel artwork carry the website\u2019s identity. Pixel lettering gives headings their game voice; plain text keeps downloads and installation instructions readable.\n\nThis system applies only to the website. It inherits Purrimeter\u2019s established identity and records the shipped surface, without changing the desktop game\u2019s design.",
+    "keyCharacteristics": [
+      "Existing game imagery, shown without decorative cropping.",
+      "Pixel display type paired with readable interface text.",
+      "Flat surfaces, restrained corners, and clear keyboard focus."
+    ],
+    "rules": [
+      {
+        "name": "The Readable Instructions Rule",
+        "body": "Use pixel lettering for display roles; use the body face for actions, metadata, and instructions.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Garden Rule",
+        "body": "Separate surfaces with color and thin borders; the website has no shadow vocabulary.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do preserve the existing cat icon, game artwork, and pixel display voice.",
+      "Do keep screenshot proportions intact and retain full-size access.",
+      "Do provide visible focus and honor reduced-motion preferences.",
+      "Do keep both platform downloads available when highlighting a recommendation."
+    ],
+    "donts": [
+      "Don\u2019t use pixel lettering for installation instructions or download metadata.",
+      "Don\u2019t add floating shadows to the flat website surfaces.",
+      "Don\u2019t use a platform recommendation to hide the other download."
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 extends Control
 signal menu_requested
 signal garden_replaced
+signal audio_settings_changed
 const PatrolDialog = preload("res://ui/patrol_dialog.gd")
 const INK := Color("131c26")
 const PANEL := Color("202e3a")
@@ -54,6 +55,10 @@ var remote_sequence := -1
 var remote_from := {}
 var remote_to := {}
 var remote_clock := 0.1
+var remote_sound_id := 0
+var skip_remote_sounds := true
+var sound_sequence := 0
+var recent_sounds: Array = []
 
 func _ready() -> void:
 	testing="--smoke-test" in OS.get_cmdline_user_args() or "--music-test" in OS.get_cmdline_user_args()
@@ -65,7 +70,8 @@ func _ready() -> void:
 	for row in Powerups.ITEMS: powerup_icons[row[0]]=load("res://assets/powerups/"+row[0]+".svg")
 	enemy_texture=load("res://assets/characters.png")
 	bosses=load("res://assets/bosses.png") if ResourceLoader.exists("res://assets/bosses.png") else enemy_texture
-	add_child(audio); audio.setup(read_only or testing or preview or DisplayServer.get_name()=="headless")
+	audio.enabled=not read_only
+	add_child(audio); audio.setup(testing or preview or "--multiplayer-test" in OS.get_cmdline_user_args() or "--app-preview" in OS.get_cmdline_user_args() or DisplayServer.get_name()=="headless")
 	connect_game()
 	if not testing and not preview and not read_only:
 		if FileAccess.file_exists(SaveStore.SAVE_PATH):
@@ -84,7 +90,8 @@ func _ready() -> void:
 
 func connect_game() -> void:
 	selected_enemy=-1
-	game.sound.connect(audio.play)
+	recent_sounds.clear()
+	game.sound.connect(play_game_sound)
 	game.notice.connect(func(message): status=message)
 	game.changed.connect(func(): save_clock=4.0; sync_music(); validate_selection())
 	sync_music(true)
@@ -92,12 +99,26 @@ func connect_game() -> void:
 func sync_music(restart: bool = false) -> void:
 	audio.set_level(game.level,game.active,restart)
 
+func play_game_sound(name: String, tier: int = 1) -> void:
+	audio.play(name,tier)
+	# Spectators use their own preferences, independently of the owner's mute/focus state.
+	sound_sequence+=1
+	recent_sounds.append({"id":sound_sequence,"name":name,"tier":tier,"at":Time.get_ticks_msec()})
+	if recent_sounds.size()>LiveField.MAX_SOUNDS: recent_sounds.pop_front()
+
+func live_sounds() -> Array:
+	var cutoff := Time.get_ticks_msec()-500
+	while not recent_sounds.is_empty() and recent_sounds[0].at<cutoff: recent_sounds.pop_front()
+	var result := []
+	for sound in recent_sounds: result.append({"id":sound.id,"name":sound.name,"tier":sound.tier})
+	return result
+
 func _notification(what: int) -> void:
 	if read_only: return
 	if what==NOTIFICATION_WM_CLOSE_REQUEST:
 		if not hosted: save_game(); get_tree().quit()
 	if what==NOTIFICATION_APPLICATION_FOCUS_OUT and is_node_ready():
-		game.paused=true; audio.focus(false); save_game()
+		audio.focus(false); save_game()
 	if what==NOTIFICATION_APPLICATION_FOCUS_IN and is_node_ready(): audio.focus(true)
 
 func _process(delta: float) -> void:
@@ -134,12 +155,21 @@ func receive_field(data: Dictionary) -> bool:
 	var sequence := int(data.sequence)
 	if revision<remote_revision or (revision==remote_revision and sequence<=remote_sequence): return false
 	var prior := {}
+	var replaced := revision!=remote_revision
 	if revision==remote_revision:
 		for e in game.enemies: prior[e.id]=enemy_position(e)
 	else:
 		selected=-1; selected_enemy=-1; selected_powerup="training"; powerup_page=0
 	remote_revision=revision; remote_sequence=sequence; remote_from={}; remote_to={}
 	game=next_game; remote_clock=0.0
+	if replaced: remote_sound_id=0
+	sync_music(replaced)
+	for sound in data.get("sounds",[]):
+		if int(sound.id)<=remote_sound_id: continue
+		remote_sound_id=int(sound.id)
+		if sound.name=="wave": sync_music(true)
+		if not replaced and not skip_remote_sounds: audio.play(sound.name,int(sound.tier))
+	skip_remote_sounds=false
 	for e in game.enemies:
 		remote_to[e.id]=game.position(e); remote_from[e.id]=prior.get(e.id,remote_to[e.id])
 	validate_selection(); queue_redraw(); return true
@@ -266,6 +296,7 @@ func action(id: String) -> void:
 		"sound":
 			audio.set_mute(not audio.muted)
 			if not testing and not preview: prefs.set_value("audio","muted",audio.muted); prefs.save("user://settings.cfg")
+			audio_settings_changed.emit()
 		"start":
 			if game.start(): status="Level %d · %s" % [game.level,Balance.title(game.level)]
 		"upgrade": game.upgrade(selected)
@@ -411,14 +442,8 @@ func _draw() -> void:
 	text_fit("Personal best  %d" % game.best,Vector2(528,60),204,15,MUTED)
 	button("Resume" if game.paused else "Pause",Rect2(772,25,108,44),"pause")
 	button("%d× Speed" % game.speed,Rect2(888,25,108,44),"speed",true,game.speed==2)
-	button("Sound off" if audio.muted else "Sound on",Rect2(1004,25,116,44),"sound")
-	button("Menu · Esc",Rect2(1128,25,124,44),"menu")
+	button("Menu · Esc",Rect2(1004,25,248,44),"menu")
 	draw_line(Vector2(28,90),Vector2(1252,90),LINE,1)
-	var state := "Tactical pause" if game.paused else ("Defending the garden" if game.active else "Ready to build")
-	draw_circle(Vector2(34,112),4,MINT if game.paused or not game.active else GOLD)
-	text(state,Vector2(46,101),16,MINT if game.paused or not game.active else GOLD)
-	var boss_present: bool=game.enemies.any(func(e): return e.boss>=0)
-	if not boss_present: right_text("One escape ends the attempt",Vector2(730,103),14,MUTED)
 	draw_board()
 	buttons.append({"rect":BOARD,"id":"board","enabled":true})
 	if focus_id=="board":
@@ -433,8 +458,6 @@ func _draw() -> void:
 	if focus_id=="board":
 		message="Arrows move · Enter %s · Esc cancels" % ("recruits" if placing>=0 else "inspects")
 	text_fit(message,Vector2(28,851),704,16,CREAM)
-	button("Route on" if route_on else "Route off",Rect2(772,851,110,36),"route",true,route_on)
-	button("New garden",Rect2(1098,851,154,36),"new")
 
 func draw_countdown() -> void:
 	if game.auto_start_remaining<=0.0: return
@@ -586,7 +609,7 @@ func draw_sidebar() -> void:
 		draw_enemy_inspector(inspected_enemy())
 	else:
 		draw_powerups()
-	var rebirth_label := "Rebirth · +%s%% coins" % Amount.of(game.run_best*10.0).label() if game.can_rebirth() else ("Rebirth between levels" if game.run_best>=5 else "Rebirth · clear level 5")
+	var rebirth_label := "Rebirth · +%s%% coins" % Amount.of(game.run_best*10.0).label() if game.can_rebirth() else "Rebirth · clear level 5"
 	button(rebirth_label,Rect2(772,647,284,38),"rebirth",game.can_rebirth())
 	right_text("Coin bonus +%s%%" % Amount.of(game.bonus_points).label(),Vector2(1252,643),15,GOLD)
 	right_text("%d rebirths" % game.rebirths,Vector2(1252,666),14,MUTED)
@@ -810,7 +833,7 @@ func capture() -> void:
 
 func smoke_test() -> void:
 	await get_tree().process_frame
-	# Native window focus can legitimately auto-pause before the test begins.
+	# Start the isolated fixture in a known state.
 	game.paused=false
 	var results := {}
 	action("cat0"); click_at(center(115)); results["recruit input"]=game.towers.size()==1
@@ -829,7 +852,8 @@ func smoke_test() -> void:
 	queue_redraw(); await get_tree().process_frame; await get_tree().process_frame
 	results["rendered controls"]=buttons.size()>10
 	step_focus(1); results["keyboard focus starts at toolbar"]=focus_id=="pause"
-	step_focus(-1); results["keyboard focus wraps backward"]=focus_id=="new"
+	step_focus(-1); results["keyboard focus wraps backward"]=focus_id=="auto_start"
+	results["menu actions removed from HUD"]=not buttons.any(func(b): return b.id in ["sound","route","new"])
 	var key := InputEventKey.new(); key.pressed=true; key.keycode=KEY_2
 	_input(key)
 	results["keyboard recruit selects garden"]=placing==1 and focus_id=="board"
@@ -879,7 +903,7 @@ func smoke_test() -> void:
 	results["help copy fits without scrolling"]=confirm.body.size.y<=confirm.scroll.size.y+1
 	confirm.accept_button.pressed.emit()
 	results["help dismissal keeps combat paused"]=not confirm.visible and game.paused
-	game.active=false; game.level=23; game.run_best=22; game.bonus_points=150
+	game.active=false; game.level=23; game.run_best=22; game.bonus_points=150; game.start()
 	game.tower_at(120).hp=0.27
 	action("rebirth")
 	await get_tree().process_frame; await get_tree().process_frame
@@ -893,14 +917,14 @@ func smoke_test() -> void:
 	key.shift_pressed=false
 	results["rebirth copy fits without scrolling"]=confirm.body.size.y<=confirm.scroll.size.y+1
 	confirm.cancel_button.pressed.emit()
-	results["cancel preserves rebirth state"]=game.level==23 and game.bonus_points==150 and is_equal_approx(game.tower_at(120).hp,0.27)
+	results["cancel preserves rebirth state"]=game.level==23 and game.active and game.paused and game.bonus_points==150 and is_equal_approx(game.tower_at(120).hp,0.27)
 	action("rebirth")
 	key.keycode=KEY_ESCAPE; Input.parse_input_event(key)
 	await get_tree().process_frame
 	results["escape dismisses without rebirth"]=not confirm.visible and game.level==23
 	action("rebirth")
 	confirm.accept_button.pressed.emit()
-	results["confirm applies rebirth once"]=not confirm.visible and game.level==1 and game.bonus_points==370 and game.rebirths==1 and game.tower_at(120).hp==1.0 and game.coins.label()==coins_before
+	results["confirm applies rebirth once"]=not confirm.visible and not game.active and game.level==1 and game.bonus_points==370 and game.rebirths==1 and game.tower_at(120).hp==1.0 and game.coins.label()==coins_before
 	confirm.accept()
 	results["closed dialog cannot repeat action"]=game.rebirths==1 and game.bonus_points==370
 	action("help"); confirm.accept_button.pressed.emit()

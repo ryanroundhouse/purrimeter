@@ -15,6 +15,7 @@ Design confirmed through the user interview and implemented in the shared Godot 
 - Loading a saved active boss level selects that level's theme and starts it from the beginning; exact music playback positions are not saved.
 - Tactical pause leaves music playing. Losing window focus or turning Sound off pauses playback; playback resumes when the window has focus and Sound is on.
 - Combat speed does not affect music speed.
+- Losing focus keeps combat and Auto countdowns running while silencing music and gameplay effects. In multiplayer, View selects the other garden’s current theme and effects; the local garden keeps its running or paused state. See `rebirth-and-pause-menu.md`.
 
 ## Acceptance scenarios
 

@@ -18,6 +18,54 @@ func until(predicate: Callable, seconds: float = 5.0) -> bool:
 
 func _initialize() -> void: run.call_deferred()
 
+func menu_button(text: String) -> Button:
+	for control in app.overlay.find_children("*","Button",true,false):
+		if control.text==text: return control
+	return null
+
+func check_view_audio(g: Session, net: GardenNetwork) -> void:
+	var view: Control=app.remote_cards[net.id].view
+	app.local_view.audio.quiet=false; view.audio.quiet=false
+	app.app_focused=true; app.sync_audio_selection()
+	check(not app.local_view.audio.enabled and view.audio.enabled and view.audio.current_theme==1,"View selects only the remote boss theme")
+	check(app.remote_cards.values().all(func(item): return item.view==view or not item.view.audio.enabled),"small previews remain silent")
+	var sounds := [{"id":1,"name":"build","tier":1}]
+	net.publish(LiveField.capture(g,0,10,sounds))
+	await until(func(): return view.remote_sequence==10)
+	check(not view.audio.last.has("build"),"entering View discards previously buffered effects")
+	sounds.append({"id":2,"name":"cannon","tier":4})
+	net.publish(LiveField.capture(g,0,11,sounds))
+	await until(func(): return view.remote_sequence==11)
+	check(view.audio.last.has("cannon") and view.audio.effects.cannon.any(func(p): return p.playing and is_equal_approx(p.pitch_scale,0.925)),"fresh remote effects arrive through the relay with tower tier pitch")
+	var played: int=view.audio.last.get("cannon",-1)
+	await create_timer(.1).timeout
+	net.publish(LiveField.capture(g,0,12,sounds)); await until(func(): return view.remote_sequence==12)
+	check(view.audio.last.get("cannon",-1)==played,"repeated snapshot history never replays an effect")
+	app.local_view.action("sound")
+	check(view.audio.muted and view.audio.music.stream_paused and view.audio.boss_music.stream_paused,"viewer Sound setting controls remote music and effects")
+	app.local_view.action("sound")
+	app._notification(NOTIFICATION_APPLICATION_FOCUS_OUT); app.local_view._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
+	sounds.append({"id":3,"name":"frost","tier":2})
+	net.publish(LiveField.capture(g,0,13,sounds)); await until(func(): return view.remote_sequence==13)
+	check(not app.local_view.game.paused and view.audio.boss_music.stream_paused and not view.audio.last.has("frost"),"unfocused viewing keeps local combat running but silences remote audio")
+	app._notification(NOTIFICATION_APPLICATION_FOCUS_IN); app.local_view._notification(NOTIFICATION_APPLICATION_FOCUS_IN)
+	net.publish(LiveField.capture(g,0,14,sounds)); await until(func(): return view.remote_sequence==14)
+	check(not view.audio.last.has("frost") and not view.audio.boss_music.stream_paused,"focus return restores music without replaying missed effects")
+	view.remote_connected=false; app.sync_audio_selection()
+	check(not view.audio.enabled and view.audio.boss_music.stream_paused,"disconnected viewed garden becomes silent")
+	view.remote_connected=true; app.sync_audio_selection()
+	net.publish(LiveField.capture(g,0,15,sounds)); await until(func(): return view.remote_sequence==15)
+	check(view.audio.enabled and not view.audio.last.has("frost"),"reconnected garden resumes without stale effects")
+	app.close_expanded()
+	check(app.local_view.audio.enabled and not view.audio.enabled and not app.local_view.game.paused,"closing View restores local audio without pausing running combat")
+	app.local_view.game.paused=true; app.expand_field(net.id); app.close_expanded()
+	check(app.local_view.game.paused,"viewing and closing preserves a manual pause")
+	app.local_view.game.paused=false; app.expand_field(net.id)
+	# Source sounds remain available to other viewers even when this client is muted.
+	app.local_view.audio.set_mute(true); app.local_view.game.sound.emit("upgrade",6)
+	check(app.local_view.live_sounds().any(func(s): return s.name=="upgrade" and s.tier==6),"muted local garden still publishes sound events")
+	app.local_view.audio.set_mute(false); app.sync_audio_selection()
+
 func snapshot(name: String) -> void:
 	if "--screenshots" not in OS.get_cmdline_user_args() or DisplayServer.get_name()=="headless": return
 	await process_frame; await process_frame; await RenderingServer.frame_post_draw
@@ -60,6 +108,7 @@ func check_resume_after_chat() -> void:
 	app.local_view.game.paused=true
 
 func run() -> void:
+	AudioServer.set_bus_mute(0,true)
 	var g := fixture(10)
 	var state: Dictionary=JSON.parse_string(JSON.stringify(LiveField.capture(g,0,1),"",true,true))
 	var copy := LiveField.decode(state)
@@ -68,6 +117,14 @@ func run() -> void:
 	check(LiveField.decode(malformed)==null,"remote artwork indexes are validated")
 	malformed=state.duplicate(true); malformed.garden.enemies[0].progress="not a number"
 	check(LiveField.decode(malformed)==null,"malformed remote positions are rejected")
+	malformed=state.duplicate(true); malformed.sounds=[{"id":1,"name":"unknown","tier":1}]
+	check(LiveField.decode(malformed)==null,"unknown remote sound names are rejected")
+	malformed.sounds=[{"id":1,"name":"bolt","tier":7}]
+	check(LiveField.decode(malformed)==null,"invalid remote sound tiers are rejected")
+	malformed.sounds=[{"id":2,"name":"bolt","tier":1},{"id":1,"name":"coin","tier":1}]
+	check(LiveField.decode(malformed)==null,"out-of-order sound identities are rejected")
+	malformed=state.duplicate(true); malformed.erase("sounds")
+	check(LiveField.decode(malformed)!=null,"older clients without sound events remain compatible")
 	app=load("res://app.tscn").instantiate(); root.add_child(app)
 	await process_frame; await process_frame
 	check(app.screen=="menu" and not app.local_view.visible,"launch opens the main menu")
@@ -78,11 +135,20 @@ func run() -> void:
 	check(app.local_view.placing==-1 and not app.pause_open,"first Escape cancels placement")
 	Input.parse_input_event(escape); await process_frame
 	check(app.pause_open and app.local_view.game.paused,"next Escape opens the pause menu")
+	var route := menu_button("Route on"); var sound := menu_button("Sound on")
+	check(route!=null and sound!=null and menu_button("New garden")!=null,"Escape menu contains route, sound and New Garden")
+	if route!=null and sound!=null:
+		route.pressed.emit(); sound.pressed.emit()
+		check(not app.local_view.route_on and app.local_view.audio.muted and route.text=="Route off" and sound.text=="Sound off" and app.pause_open,"menu toggles update state and labels without dismissing the menu")
+		route.pressed.emit(); sound.pressed.emit()
 	await snapshot("pause")
+	if "--screenshots" in OS.get_cmdline_user_args() and DisplayServer.get_name()!="headless":
+		var previous_size := root.size; root.size=Vector2i(1280,720)
+		await snapshot("pause-small"); root.size=previous_size; await process_frame
 	Input.parse_input_event(escape); await process_frame
 	check(not app.pause_open and app.local_view.game.paused,"closing the menu leaves the garden paused")
 	app.local_view.queue_redraw(); await process_frame
-	check(not app.local_view.buttons.any(func(b): return b.id in ["export","import"]),"import and export moved out of the gameplay toolbar")
+	check(not app.local_view.buttons.any(func(b): return b.id in ["export","import","sound","route","new"]),"menu actions are absent from the gameplay toolbar")
 	app.show_menu(); app.show_settings("menu"); await snapshot("settings")
 	var address := "ws://127.0.0.1:18080/ws"
 	var args := OS.get_cmdline_user_args(); var arg := args.find("--server")
@@ -139,7 +205,8 @@ func run() -> void:
 	app.chat_input.release_focus(); app.expand_field(b.id); await process_frame
 	var viewer: Control=app.remote_cards[b.id].view
 	viewer.interact_cell(119); var before: Dictionary=viewer.game.snapshot(); viewer.action("sell"); viewer.action("new")
-	check(viewer.game.snapshot()==before and viewer.selected==119 and app.local_view.game.paused,"expanded inspection is read-only and pauses only local combat")
+	check(viewer.game.snapshot()==before and viewer.selected==119 and not app.local_view.game.paused,"expanded inspection is read-only and preserves running local combat")
+	await check_view_audio(g,b)
 	await snapshot("inspect")
 	viewer.selected=-1; viewer.selected_enemy=-1; Input.parse_input_event(escape); await process_frame
 	check(app.expanded.is_empty(),"Escape closes an expanded remote field")
