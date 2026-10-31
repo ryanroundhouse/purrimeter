@@ -2,6 +2,18 @@
 
 An endless pixel-art cat tower defence game for native macOS and Windows, built from one Godot 4.7.2 project.
 
+The launch menu offers **Single player** and **Multiplayer**. Both use your same saved garden. Multiplayer supports public, optionally password-protected games for up to three players, with live remote fields, independent progression, and shared chat.
+
+## Multiplayer
+
+Choose a player name in **Connection settings**, then open Multiplayer to create or join a game. The default server is `wss://purrimeter.graham.pub/ws`; it becomes available after the owner configures DNS and deploys the server. The address can be changed in settings.
+
+Your garden stays on the left. One other field fills the right-hand field area; with three players, the other two share it vertically. **View** enlarges a field for read-only cat, enemy, and powerup inspection. Each player controls their own levels, rebirths, pause, and speed. Opening a menu or inspecting an enlarged remote field pauses only your combat.
+
+Press **T** to focus chat, **Enter** to send, and **Esc** to leave the text box. **Mute** hides one player's messages; chat notification sound is separately switchable. The owner can kick a player; ownership transfers when they leave. Dropped connections reserve a place for 60 seconds and reconnect automatically, leaving your garden paused. **Continue offline** keeps your personal game going without the other players.
+
+Server hosting instructions are in [server/README.md](server/README.md). The self-hosting release is `dist/Purrimeter-Server.tar.gz`, including Linux amd64/arm64 binaries and Docker Compose/Caddy configuration. No VPS changes or DNS updates are performed by the build scripts.
+
 ## Play the builds
 
 - **Mac:** open `dist/macos/Purrimeter.app`. The original `build/Purrimeter.app` handoff is updated too.
@@ -13,6 +25,8 @@ These are personal-use builds: Mac signing is ad hoc and Windows is unsigned. Pu
 ## Controls
 
 Click a cat card, then an empty tile to recruit. Click a placed cat to inspect, upgrade, repair or sell. **1 / 2 / 3** select cats, **Space** pauses, **Esc** cancels placement, and **N** starts the next attempt. Building, repairs and upgrades work while paused. Use the 1×/2× speed and Sound buttons as needed. Leaving the game window pauses combat and music.
+
+With no placement or inspection active, **Esc** opens the pause menu; the visible **Menu** button opens it directly. The menu contains Export, Import, New Garden, help, and a confirmed return to the main menu. Closing it keeps combat paused; **Resume** continues it. Export, Import, and New Garden also work during multiplayer, preserving your membership and chat.
 
 Click an enemy or boss to inspect its animated portrait, name, current/max health, speed, tower damage, and active effects. A highlight follows the selected enemy; inspection does not change targeting. Cats take priority on occupied tiles, and recruitment mode keeps placing cats. **Esc** or **Back to powerups** closes inspection; death or the end of the attempt clears it automatically. Both cat and enemy inspector portraits animate while paused.
 
@@ -50,6 +64,8 @@ The original Swift game's save was deleted as requested. Existing Godot version-
 ./scripts/setup_godot.sh  # downloads official pinned Godot and export templates
 ./scripts/test.sh
 ./scripts/build.sh       # creates BOTH Mac and Windows packages
+./scripts/test_multiplayer.sh # Go race tests + three isolated Godot clients
+./scripts/build_server.sh     # Linux binaries + Docker deployment archive
 ```
 
 No paid engine, Windows computer, Apple developer account or Windows compiler is needed to export these personal-use packages from the Mac. Set `GODOT` to an alternate Godot 4.7.2 executable if desired. Export templates are kept in `.tools/templates`, outside the shipped game. The repo must remain together so the relative template paths in `game/export_presets.cfg` resolve.
@@ -73,6 +89,9 @@ Native GUI checks should run from a normal desktop session outside an agent sand
 - `game/core/amount.gd`: fractional currency and overflow-resistant large amounts.
 - `game/core/balance.gd`: cat/enemy stats, boss rotation and wave compositions.
 - `game/ui/`: window interface, sprite animation, attack effects and audio.
+- `game/ui/app.gd`: launch menu, game browser, pause menu, remote views, and chat.
+- `game/network/`: WebSocket client, separate installation settings, default endpoint, and validated visible field representation.
+- `server/`: Go relay, protocol/lifecycle tests, and VPS deployment configuration.
 - `game/tests/`: behavior, campaign, and artwork inspection tools.
 - `game/assets/`: runtime artwork and audio. See `docs/artwork.md` for generation prompts.
 - `legacy/macos/`: superseded Swift prototype, preserved for reference.

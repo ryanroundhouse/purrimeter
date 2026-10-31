@@ -5,7 +5,7 @@ config/name="Purrimeter"
 config/icon="res://assets/icon.png"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="Purrimeter"
-run/main_scene="res://main.tscn"
+run/main_scene="res://app.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/description="The Garden Guard — an endless cat tower defence game"
 

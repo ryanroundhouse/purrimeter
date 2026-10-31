@@ -10,7 +10,7 @@ Impeccable's platform vocabulary does not include desktop games. This product is
 
 ## Users
 
-The primary players are the owner on macOS and their son on Windows. This is a personal/family game. A broader public audience is not an established requirement.
+The original players are the owner on macOS and their son on Windows. The game now also supports public multiplayer discovery on an owner-hosted server, with up to three independent gardeners watching one another play and chatting.
 
 Players build a defensive patrol of cats, shape enemy routes, and improve their patrol through repeated attempts and persistent progression.
 
@@ -30,6 +30,9 @@ The defining combination is cat-themed maze building, enemies that breach towers
 - During active attempts, **Level health** below the field/arrival counts shows the remaining health of the whole wave, including unspawned enemies and bosses. Its bar and percentage drain with damage and disappear between attempts, leaving the existing preview/countdown.
 - Tactical pause permits building, repairs, and upgrades. Combat and music pause when the game loses focus. Combat supports 1×/2× speed and a sound toggle.
 - Autosaves preserve progress; loading resumes paused. JSON Export/Import transfers saves between computers. Starting a New Garden requires confirmation.
+- Launch into a Single player / Multiplayer menu. Escape cancels placement or inspection first, then opens a pause menu with Export/Import and a confirmed return to the main menu. Both modes use the same personal garden; importing or starting a New Garden during multiplayer preserves membership and chat.
+- Multiplayer shows the local field on the left and one or two remote fields on the right. Remote fields support read-only inspection. Levels, rebirths, pause and speed are independent. Game names and optional passwords are set at creation; the browser lists games with free places. Shared chat, local muting, owner kicks, ownership transfer, and 60-second reconnect reservations are included. See `docs/multiplayer.md`.
+- The default relay endpoint is `wss://purrimeter.graham.pub/ws`, overridable in Connection settings. The server package targets a Linux VPS. DNS and live deployment remain the owner's setup work; local implementation does not publish the service.
 - Auto-start next level defaults off and is saved with the garden. Successful clears show a central shrinking, fading 3–2–1 countdown lasting three real seconds at either combat speed. Pause freezes it, manual Start skips it, and switching it off or rebirthing cancels it. Loading restores a pending countdown paused. Defeat, rebirth, and new gardens wait for a manual start. See `docs/auto-start-next-level.md`.
 - Distribution is currently for personal use: macOS signing is ad hoc and Windows is unsigned. Public release signing and notarization are not configured.
 
@@ -58,6 +61,7 @@ Preserve the name Purrimeter — The Garden Guard, the cat identities, garden-de
 - `docs/progression-rework.md`: confirmed current gameplay and implementation decisions. `docs/game-design.md` is historical and must not override the active progression rules.
 - `docs/adr/`: open-route priority, shared desktop implementation, and retained-state endless progression decisions.
 - `game/core/` and `game/ui/`: active simulation and desktop interface. `legacy/macos/` is the superseded Swift prototype.
+- `game/network/`, `server/`, and `docs/multiplayer.md`: the public relay protocol, identity and room rules, live field views, chat, and deployment instructions.
 - `game/assets/` and `docs/artwork.md`: existing cat/enemy/boss sprites, icon, original synthesized audio, and artwork provenance.
 - `game/tests/` and `docs/verification.md`: behavior, campaign, scene, artwork, and package checks. The verification record reports macOS testing; the Windows executable has not been tested on a Windows machine or VM. Do not claim otherwise without new evidence.
 - Human balance testing beyond the first rebirth and boss remains limited. No public-market validation or commercial positioning is established.
@@ -72,4 +76,4 @@ Preserve the name Purrimeter — The Garden Guard, the cat identities, garden-de
 
 ## Open Decisions
 
-No additional player-specific accessibility needs, age-specific requirements, or difficulty changes were established during initialization. Do not infer an age or ability level from the family relationship. Broader distribution and public-release requirements remain outside the confirmed scope.
+No additional player-specific accessibility needs, age-specific requirements, or difficulty changes were established. Do not infer an age or ability level from the family relationship. Public multiplayer is confirmed; public-release signing and notarization remain outside the configured distribution workflow.

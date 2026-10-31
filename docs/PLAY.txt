@@ -4,12 +4,26 @@ Windows: extract the entire ZIP, then double-click Purrimeter.exe.
 Keep Purrimeter.pck beside the executable. No editor or installation is needed.
 Mac: open Purrimeter.app.
 
+Choose Single player or Multiplayer at launch. Both use your same saved garden.
+Multiplayer supports up to three players. Choose a name in Connection settings.
+The default server is purrimeter.graham.pub (available once its owner deploys it).
+Create a named game with an optional password, or join an open game from the list.
+Your field is on the left; other fields share the right. View enlarges another
+player's field for read-only inspection. Each player progresses and rebirths independently.
+T focuses chat, Enter sends, and Esc leaves the text box. Mute hides a player's messages.
+The game owner can kick players. Ownership passes on when they leave.
+A dropped connection pauses your garden and reserves your place for 60 seconds.
+Reconnect automatically, then Resume; Continue offline keeps your garden locally.
+
 Click a cat card, then an empty tile to recruit. Keys 1/2/3 select cats.
 Click a placed cat to upgrade, repair or sell. Each cat has five upgrades.
 Click an enemy or boss to inspect its animated portrait, health, speed, damage and effects.
 Inspection does not change targeting. Esc or Back to powerups closes the inspector.
 Level health below the arrival counts includes the whole wave, even enemies yet to arrive.
 Space pauses. Build while paused. Esc cancels placement. N starts the level.
+With no placement or inspection active, Esc opens the pause menu. Menu opens it directly.
+The menu contains Export, Import, New Garden, help, and a confirmed return to the main menu.
+Closing the menu keeps combat paused. Resume continues it. Other players keep playing.
 Auto-start next level is off by default; use the Auto checkbox beside Start. After a clear,
 a large 3-2-1 counts down in the garden. Space pauses it; N starts early.
 Your choice is saved. Defeat and rebirth still wait for a manual start.
@@ -37,7 +51,8 @@ surviving cats, upgrades, powerups and discoveries. Cats heal fully. Each rebirt
 10 percentage points of coin bonus per highest level cleared that run.
 Bonuses add together. Clear level 5 again to qualify for another rebirth.
 
-The game autosaves and resumes paused. Export/Import lets you transfer
+The game autosaves and resumes paused. Export/Import in the pause menu lets you transfer
 progress between computers. New Garden resets all progress after confirmation.
+Import and New Garden also work in multiplayer without leaving the shared game.
 
 Audio can be muted with the Sound button. Leaving the window pauses the game.

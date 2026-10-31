@@ -1,0 +1,3 @@
+# Relay independent player simulations
+
+Public multiplayer carries each player's existing garden, permits edited saves, and has no shared combat, rewards, or competitive outcome. Each desktop client therefore continues to simulate and save its own garden while a server manages game membership and chat and relays visible gameplay, rather than running authoritative combat or maintaining separate server-owned progression. This preserves offline play and save transfer, but other players' displayed progress is unverified; validation of network messages must remain separate from trust in claimed gameplay achievements.

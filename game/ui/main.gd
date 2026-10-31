@@ -1,4 +1,6 @@
 extends Control
+signal menu_requested
+signal garden_replaced
 const PatrolDialog = preload("res://ui/patrol_dialog.gd")
 const INK := Color("131c26")
 const PANEL := Color("202e3a")
@@ -42,6 +44,16 @@ var confirm: PatrolDialog
 var file_dialog: FileDialog
 var file_action := ""
 var prefs := ConfigFile.new()
+var read_only := false
+var remote_compact := false
+var remote_connected := true
+var gameplay_enabled := true
+var hosted := false
+var remote_revision := -1
+var remote_sequence := -1
+var remote_from := {}
+var remote_to := {}
+var remote_clock := 0.1
 
 func _ready() -> void:
 	testing="--smoke-test" in OS.get_cmdline_user_args() or "--music-test" in OS.get_cmdline_user_args()
@@ -53,9 +65,9 @@ func _ready() -> void:
 	for row in Powerups.ITEMS: powerup_icons[row[0]]=load("res://assets/powerups/"+row[0]+".svg")
 	enemy_texture=load("res://assets/characters.png")
 	bosses=load("res://assets/bosses.png") if ResourceLoader.exists("res://assets/bosses.png") else enemy_texture
-	add_child(audio); audio.setup(testing or preview or DisplayServer.get_name()=="headless")
+	add_child(audio); audio.setup(read_only or testing or preview or DisplayServer.get_name()=="headless")
 	connect_game()
-	if not testing and not preview:
+	if not testing and not preview and not read_only:
 		if FileAccess.file_exists(SaveStore.SAVE_PATH):
 			status="Welcome back. Your patrol is paused and ready." if SaveStore.read_into(game) else "Save could not be read. A fresh garden is ready."
 		prefs.load("user://settings.cfg")
@@ -67,8 +79,8 @@ func _ready() -> void:
 	file_dialog.filters=PackedStringArray(["*.json ; Purrimeter save"])
 	file_dialog.file_selected.connect(file_selected)
 	get_tree().auto_accept_quit=false
-	if preview: make_preview(); capture.call_deferred()
-	if "--smoke-test" in OS.get_cmdline_user_args(): smoke_test.call_deferred()
+	if preview and not read_only: make_preview(); capture.call_deferred()
+	if "--smoke-test" in OS.get_cmdline_user_args() and not read_only: smoke_test.call_deferred()
 
 func connect_game() -> void:
 	selected_enemy=-1
@@ -81,15 +93,18 @@ func sync_music(restart: bool = false) -> void:
 	audio.set_level(game.level,game.active,restart)
 
 func _notification(what: int) -> void:
+	if read_only: return
 	if what==NOTIFICATION_WM_CLOSE_REQUEST:
-		save_game(); get_tree().quit()
+		if not hosted: save_game(); get_tree().quit()
 	if what==NOTIFICATION_APPLICATION_FOCUS_OUT and is_node_ready():
 		game.paused=true; audio.focus(false); save_game()
 	if what==NOTIFICATION_APPLICATION_FOCUS_IN and is_node_ready(): audio.focus(true)
 
 func _process(delta: float) -> void:
 	ui_clock+=minf(delta,0.1)
-	if not preview and not testing:
+	if read_only:
+		if remote_connected: remote_clock=minf(0.1,remote_clock+delta)
+	elif not preview and not testing:
 		accumulator+=minf(delta,0.1)*game.speed
 		while accumulator>=1.0/60.0:
 			game.step(1.0/60.0,1.0/(60.0*game.speed)); accumulator-=1.0/60.0
@@ -99,18 +114,47 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func save_game() -> void:
-	if testing or preview: return
+	if read_only or testing or preview: return
 	if SaveStore.write(game)!=OK: status="Unable to save. Use Export Save to keep your progress."
 
 func cell_at(p: Vector2) -> int:
 	if not BOARD.has_point(p): return -1
 	return int((p.y-BOARD.position.y)/TILE)*16+int((p.x-BOARD.position.x)/TILE)
 
+func enemy_position(e: Dictionary) -> Vector2:
+	if read_only and remote_to.has(e.id):
+		return (remote_from.get(e.id,remote_to[e.id]) as Vector2).lerp(remote_to[e.id],clampf(remote_clock/0.1,0,1))
+	return game.position(e)
+
+func receive_field(data: Dictionary) -> bool:
+	if not read_only: return false
+	var next_game := LiveField.decode(data)
+	if next_game==null: return false
+	var revision := int(data.revision)
+	var sequence := int(data.sequence)
+	if revision<remote_revision or (revision==remote_revision and sequence<=remote_sequence): return false
+	var prior := {}
+	if revision==remote_revision:
+		for e in game.enemies: prior[e.id]=enemy_position(e)
+	else:
+		selected=-1; selected_enemy=-1; selected_powerup="training"; powerup_page=0
+	remote_revision=revision; remote_sequence=sequence; remote_from={}; remote_to={}
+	game=next_game; remote_clock=0.0
+	for e in game.enemies:
+		remote_to[e.id]=game.position(e); remote_from[e.id]=prior.get(e.id,remote_to[e.id])
+	validate_selection(); queue_redraw(); return true
+
 func _input(event: InputEvent) -> void:
+	if not gameplay_enabled or not is_visible_in_tree() or (read_only and remote_compact): return
+	var typing := get_viewport().gui_get_focus_owner()
+	if typing is LineEdit or typing is TextEdit: return
+	if typing!=null and not is_ancestor_of(typing) and event is InputEventKey: return
 	if confirm.visible or file_dialog.visible: return
+	if event is InputEventMouseButton and not Rect2(Vector2.ZERO,size).has_point(get_local_mouse_position()): return
 	if event is InputEventMouseMotion:
 		focus_id=""; hover=cell_at(get_local_mouse_position())
 	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:
+		if typing!=null and not is_ancestor_of(typing): typing.release_focus()
 		focus_id=""
 		click_at(get_local_mouse_position())
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -132,7 +176,12 @@ func _input(event: InputEvent) -> void:
 					row=clampi(row+int(event.keycode==KEY_DOWN)-int(event.keycode==KEY_UP),0,15)
 					keyboard_cell=row*16+column; hover=keyboard_cell
 			KEY_SPACE: action("pause")
-			KEY_ESCAPE: placing=-1; selected=-1; selected_enemy=-1; focus_id=""
+			KEY_ESCAPE:
+				if placing>=0 or selected>=0 or selected_enemy>=0:
+					placing=-1; selected=-1; selected_enemy=-1; focus_id=""
+				elif not read_only: menu_requested.emit()
+				else: return
+				get_viewport().set_input_as_handled()
 			KEY_1, KEY_2, KEY_3:
 				action("cat%d" % (event.keycode-KEY_1)); focus_id="board"; hover=keyboard_cell
 			KEY_N: action("start")
@@ -167,7 +216,7 @@ func interact_cell(cell: int, point: Vector2 = Vector2.INF) -> void:
 		var enemies := sorted_enemies()
 		enemies.reverse()
 		for e in enemies:
-			var hit := cell_at(BOARD.position+(game.position(e)+Vector2.ONE*0.5)*TILE)==cell if point==Vector2.INF else enemy_rect(e).has_point(point)
+			var hit := cell_at(BOARD.position+(enemy_position(e)+Vector2.ONE*0.5)*TILE)==cell if point==Vector2.INF else enemy_rect(e).has_point(point)
 			if e.hp>0 and hit:
 				selected_enemy=e.id; break
 
@@ -185,18 +234,19 @@ func validate_selection() -> void:
 func sorted_enemies() -> Array:
 	var enemies := game.enemies.duplicate()
 	enemies.sort_custom(func(a,b):
-		var ay := game.position(a).y
-		var by := game.position(b).y
+		var ay := enemy_position(a).y
+		var by := enemy_position(b).y
 		return a.id<b.id if ay==by else ay<by)
 	return enemies
 
 func enemy_rect(e: Dictionary) -> Rect2:
-	var p := BOARD.position+(game.position(e)+Vector2.ONE*0.5)*TILE
+	var p := BOARD.position+(enemy_position(e)+Vector2.ONE*0.5)*TILE
 	if e.boss>=0: return Rect2(p-Vector2(61,74),Vector2(122,122))
 	var extent := 42.0 if e.kind==2 else 36.0
 	return Rect2(p-Vector2(extent/2,extent/2+4),Vector2.ONE*extent)
 
 func action(id: String) -> void:
+	if read_only and not (id.begins_with("powerup:") or id in ["powerup_back","powerup_available","powerup_owned","powerup_prev","powerup_next"]): return
 	if id.begins_with("powerup:"):
 		selected_powerup=id.trim_prefix("powerup:"); queue_redraw(); return
 	if id.begins_with("cat"):
@@ -204,6 +254,7 @@ func action(id: String) -> void:
 		if not focus_id.is_empty(): focus_id="board"; hover=keyboard_cell
 		return
 	match id:
+		"menu": menu_requested.emit()
 		"pause": game.paused=not game.paused
 		"resume": game.paused=false
 		"speed": game.speed=2 if game.speed==1 else 1
@@ -232,7 +283,7 @@ func action(id: String) -> void:
 			if game.can_rebirth():
 				game.paused=true
 				confirm.show_rebirth(game.run_best,game.bonus_points,func(): game.rebirth(); selected=-1; placing=-1)
-		"new": ask("Start a completely new garden?","This resets coins, cats, all powerups and discoveries, best level and rebirth bonuses.","New garden",func(): game=Session.new(); connect_game(); selected=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0; status="A fresh garden. A new patrol."; save_game())
+		"new": ask("Start a completely new garden?","This resets coins, cats, all powerups and discoveries, best level and rebirth bonuses.","New garden",func(): game=Session.new(); game.paused=true; connect_game(); selected=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0; status="A fresh garden. A new patrol."; save_game(); garden_replaced.emit())
 		"export":
 			game.paused=true; file_action="export"; file_dialog.file_mode=FileDialog.FILE_MODE_SAVE_FILE; file_dialog.current_file="purrimeter-save.json"; file_dialog.title="Export your patrol"; file_dialog.popup_centered_ratio(0.65)
 		"import":
@@ -249,7 +300,7 @@ func file_selected(path: String) -> void:
 	if file_action=="export": status="Patrol exported." if SaveStore.write(game,path)==OK else "Export failed. Choose a writable folder."
 	else:
 		ask("Replace this patrol?","Importing replaces your current progress with the selected save.","Replace patrol",func():
-			if SaveStore.read_into(game,path): sync_music(true); selected=-1; selected_enemy=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0; status="Patrol imported and paused."; save_game()
+			if SaveStore.read_into(game,path): sync_music(true); selected=-1; selected_enemy=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0; status="Patrol imported and paused."; save_game(); garden_replaced.emit()
 			else: status="Invalid save. Your current patrol has not changed.")
 
 func box(rect: Rect2, color: Color, radius: float = 0.0) -> void:
@@ -267,6 +318,7 @@ func wrapped(value: String, at: Vector2, width: float, size: int = 14, color: Co
 	paragraph.draw(get_canvas_item(),at,color)
 
 func button(label: String, rect: Rect2, id: String, enabled: bool = true, lit: bool = false) -> void:
+	if read_only and not (id.begins_with("powerup:") or id in ["powerup_back","powerup_available","powerup_owned","powerup_prev","powerup_next"]): enabled=false
 	var hovered := focus_id.is_empty() and rect.has_point(get_local_mouse_position())
 	var fill := MINT if lit and enabled else PANEL
 	if hovered and enabled: fill=fill.lightened(0.1)
@@ -345,11 +397,13 @@ func bar(rect: Rect2, fraction: float, color: Color, track: Color = INK) -> void
 	box(rect,track,2); box(Rect2(rect.position,Vector2(rect.size.x*clampf(fraction,0,1),rect.size.y)),color,2)
 
 func _draw() -> void:
+	if read_only and remote_compact:
+		buttons.clear(); draw_board(); return
 	box(Rect2(Vector2.ZERO,size),INK)
 	if preview_gallery: draw_gallery(); return
 	buttons.clear()
-	text("PURRIMETER",Vector2(28,20),32)
-	text("The Garden Guard",Vector2(30,59),16,MUTED)
+	text("GARDEN VIEW" if read_only else "PURRIMETER",Vector2(28,20),32)
+	text("Read-only · inspect cats, enemies and powerups" if read_only else "The Garden Guard",Vector2(30,59),16,MUTED)
 	right_text(game.coins.label(),Vector2(492,18),32,GOLD)
 	right_text("coins",Vector2(492,58),15,MUTED)
 	text_fit("Level %d" % game.level,Vector2(528,24),204,25,MINT)
@@ -357,7 +411,7 @@ func _draw() -> void:
 	button("Resume" if game.paused else "Pause",Rect2(772,25,108,44),"pause")
 	button("%d× Speed" % game.speed,Rect2(888,25,108,44),"speed",true,game.speed==2)
 	button("Sound off" if audio.muted else "Sound on",Rect2(1004,25,116,44),"sound")
-	button("How to play",Rect2(1128,25,124,44),"help")
+	button("Menu · Esc",Rect2(1128,25,124,44),"menu")
 	draw_line(Vector2(28,90),Vector2(1252,90),LINE,1)
 	var state := "Tactical pause" if game.paused else ("Defending the garden" if game.active else "Ready to build")
 	draw_circle(Vector2(34,112),4,MINT if game.paused or not game.active else GOLD)
@@ -379,8 +433,6 @@ func _draw() -> void:
 		message="Arrows move · Enter %s · Esc cancels" % ("recruits" if placing>=0 else "inspects")
 	text_fit(message,Vector2(28,851),704,16,CREAM)
 	button("Route on" if route_on else "Route off",Rect2(772,851,110,36),"route",true,route_on)
-	button("Export",Rect2(892,851,88,36),"export")
-	button("Import",Rect2(990,851,88,36),"import")
 	button("New garden",Rect2(1098,851,154,36),"new")
 
 func draw_countdown() -> void:
@@ -433,7 +485,7 @@ func draw_board() -> void:
 		for i in range(t.tier): box(Rect2(p+Vector2(-13+i*5,18),Vector2(3,3)),GOLD)
 		if t.hp<0.999: bar(Rect2(p+Vector2(-16,-24),Vector2(32,3)),t.hp,MINT)
 	for e in sorted_enemies():
-		var p := BOARD.position+(game.position(e)+Vector2.ONE*0.5)*TILE
+		var p := BOARD.position+(enemy_position(e)+Vector2.ONE*0.5)*TILE
 		var frame := 2 if e.attack>0 else int(game.elapsed*5+e.id)%4
 		var frustration := clampf(e.get("frustration",0.0)/Frenzy.LIMIT,0.0,1.0)
 		var tint := Color.WHITE.lerp(Color(1.0,0.28,0.22),frustration)
@@ -448,7 +500,7 @@ func draw_board() -> void:
 	if not inspected.is_empty(): draw_rect(enemy_rect(inspected).grow(3),GOLD,false,2)
 	for shot in game.shots: draw_shot(shot)
 	for e in game.enemies:
-		if e.boss>=0:
+		if e.boss>=0 and not remote_compact:
 			text_fit(Balance.BOSSES[e.boss].name,Vector2(282,104),235,14,Balance.BOSSES[e.boss].color)
 			bar(Rect2(530,110,150,7),e.hp,Balance.BOSSES[e.boss].color)
 			right_text("%d%%" % roundi(e.hp*100),Vector2(732,103),14,MUTED)
@@ -497,8 +549,8 @@ func draw_shot(s: Dictionary) -> void:
 		if tier>=4: draw_arc(b,10+tier*2,ui_clock*4,ui_clock*4+PI*1.6,20,Color(color,fade),2)
 
 func draw_sidebar() -> void:
-	text("Recruit your patrol",Vector2(772,103),22)
-	right_text("Keys 1 / 2 / 3",Vector2(1252,110),14,MUTED)
+	text("Their patrol" if read_only else "Recruit your patrol",Vector2(772,103),22)
+	right_text("Read-only" if read_only else "Keys 1 / 2 / 3",Vector2(1252,110),14,MUTED)
 	for kind in range(3):
 		var y := 143+kind*73
 		var r := Rect2(772,y,480,65)

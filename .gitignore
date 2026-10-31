@@ -3,3 +3,6 @@ build/
 .tools/
 dist/
 game/.godot/
+server/data/
+server/relay
+server/.env

@@ -8,7 +8,16 @@ A game in which the player builds towers to defeat enemies crossing a square pla
 The square area through which enemies travel and on which towers occupy space.
 
 **Multiplayer game**:
-A shared game for two players, each with their own playing field and independent level and rebirth progression, where both can watch one another play and chat.
+A shared game for up to three players, each controlling their own playing field and progressing independently while watching one another play and chatting. Players do not affect one another's combat, rewards, or progression.
+
+**Garden**:
+A player's persistent playing field and progression, carried between single player and multiplayer games.
+
+**Game owner**:
+The player responsible for moderating a multiplayer game, initially its creator. Ownership passes to the longest-connected remaining player when the owner leaves.
+
+**Game chat**:
+Messages shared among the players in a multiplayer game. Each player sees messages received during their current visit and can mute other players.
 
 **Entrance**:
 The point where enemies enter the playing field.

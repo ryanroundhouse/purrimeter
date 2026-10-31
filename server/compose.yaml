@@ -1,0 +1,33 @@
+services:
+  relay:
+    build: .
+    restart: unless-stopped
+    environment:
+      LISTEN_ADDR: :8080
+      SIGNING_KEY_FILE: /data/signing.key
+      TRUST_PROXY: "true"
+    volumes:
+      - relay_data:/data
+    networks: [relay]
+    mem_limit: 512m
+    cpus: 1.0
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      GAME_HOST: ${GAME_HOST:?Set GAME_HOST to your public hostname}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [relay]
+networks:
+  relay:
+volumes:
+  relay_data:
+  caddy_data:
+  caddy_config:
