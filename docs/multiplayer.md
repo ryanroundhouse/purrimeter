@@ -1,6 +1,6 @@
 # Multiplayer design
 
-Status: implemented following three interview rounds and delegated technical/interface decisions. Local regression, relay, and three-client integration verification are recorded in `docs/verification.md`. Public DNS/VPS deployment is not yet performed.
+Status: implemented following three interview rounds and delegated technical/interface decisions, and deployed at `wss://purrimeter.graham.pub/ws`. Local regression, relay, and public three-client integration verification are recorded in `docs/verification.md`. See `docs/deployment.md` for VPS operations.
 
 ## Confirmed requirements
 
@@ -33,7 +33,7 @@ Status: implemented following three interview rounds and delegated technical/int
 - **Audio:** only the local field produces combat sounds and music. Provide a separately switchable chat notification sound.
 - **Browser:** list only games with available places, displaying occupancy (for example 1/3 or 2/3), name, lock status, and Join. Reservations count toward capacity. Game name and password are fixed at creation for that game's lifetime.
 - **Input and resuming:** typing in chat does not pause combat and suppresses gameplay shortcuts. Enter sends; Escape leaves the text box. Closing the Escape menu leaves combat paused, with an explicit Resume action. Opening an enlarged remote field pauses local combat.
-- **Server discovery and delivery:** ship `wss://purrimeter.graham.pub/ws` as the default public-server address, with a settings override. The owner supplied this hostname during implementation. Deliver a server package and VPS setup instructions; actual DNS/VPS deployment remains separate, and VPS access has not been supplied.
+- **Server discovery and delivery:** ship `wss://purrimeter.graham.pub/ws` as the default public-server address, with a settings override. The owner supplied this hostname during implementation and subsequently authorized deployment to their claw VPS and creation of its Cloudflare DNS record. Deliver a server package and VPS setup instructions.
 - **Delegation:** the implementer selects server technology, deployment packaging, synchronization, layout, text limits, and connection/message rate limits, documents those choices, and tests them against the agreed behavior.
 
 ## Selected implementation approach
@@ -61,4 +61,4 @@ The WebSocket/TCP trade-off is occasional delayed remote viewing under packet lo
 
 ## Interview outcome
 
-Round one settled independent gameplay, shared progression, public access, ordinary departures, pause/speed, and Escape priority, and expanded capacity to three. Round two settled identity, client simulation, reconnect grace, moderation, chat, remote viewing, and audio, with live Import/New Garden explicitly retained. Round three settled the remaining behavioral edge cases and delegated routine implementation choices. No behavioral question remains pending. The owner subsequently supplied purrimeter.graham.pub as the production hostname; VPS access and live deployment remain separate.
+Round one settled independent gameplay, shared progression, public access, ordinary departures, pause/speed, and Escape priority, and expanded capacity to three. Round two settled identity, client simulation, reconnect grace, moderation, chat, remote viewing, and audio, with live Import/New Garden explicitly retained. Round three settled the remaining behavioral edge cases and delegated routine implementation choices. No behavioral question remains pending. The owner subsequently supplied purrimeter.graham.pub as the production hostname and authorized the completed VPS deployment.

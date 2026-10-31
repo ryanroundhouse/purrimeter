@@ -65,7 +65,7 @@ go run .
 
 Set the client address to `ws://127.0.0.1:8080/ws`. Unencrypted connections are accepted by the client only for loopback development; public connections require `wss://` with a valid certificate.
 
-The owner supplied `purrimeter.graham.pub` as the public hostname. That default is recorded in `game/network/server.cfg` and included in the desktop exports. Changing the bundled default requires rebuilding with `./scripts/build.sh`; players can override it without rebuilding. DNS and live VPS deployment are separate from the local implementation and have not been performed here.
+The owner supplied `purrimeter.graham.pub` as the public hostname. That default is recorded in `game/network/server.cfg` and included in the desktop exports. Changing the bundled default requires rebuilding with `./scripts/build.sh`; players can override it without rebuilding. The public server is deployed; see the [VPS operations notes](../docs/deployment.md).
 
 ## Protocol and operational limits
 
