@@ -82,6 +82,8 @@ Multiplayer resume fix (2026-10-31): a native input reproduction failed when cha
 
 ## Remaining platform limits
 
+Mac window transition (2026-10-31): the owner reported stale Create-page pixels with gameplay drawn in a small lower-left region; manually resizing the normal window corrected it. The exact framebuffer artifact was not reproduced locally. To remove the suspected trigger, mode changes now retain the native window size and change only the logical canvas, with one common minimum size of 1280×720. The native `tests/window_transition.gd` regression failed on the previous automatic resizing and passes after its removal, also checking that the Create page is freed and gameplay fills its logical viewport. Confirming the original visual symptom on the affected machine remains necessary.
+
 The Windows executable has not been run on a physical Windows computer or Windows VM in this environment. Its resource pack and shared gameplay are tested, but Windows driver/input integration still needs a real-device check. Audio resources load and prepare; no subjective listening review was performed. Balance beyond the first rebirth and boss has automated budget checks, not a human playthrough. Currency/stat arithmetic uses floating-point log space, retaining fractional payouts with finite precision.
 
 The earlier Swift prototype's sandboxed preview crash is historical: that attempt aborted during macOS application registration before game code. Native Godot checks run outside the restricted agent sandbox. The old save was explicitly deleted and is not migrated.

@@ -111,11 +111,10 @@ func configure_window(wide: bool) -> void:
 	var window := get_window()
 	var desired := Vector2i(1920,1080) if wide else Vector2i(1280,900)
 	if window.content_scale_size==desired: return
+	# Keep the native window stable across screens. Resizing it while replacing
+	# the scene can leave a stale macOS framebuffer until the next manual resize.
+	# Only the logical canvas changes; the player controls the physical window.
 	window.content_scale_size=desired
-	window.min_size=Vector2i(1280,720) if wide else Vector2i(960,675)
-	if DisplayServer.get_name()!="headless":
-		var available := DisplayServer.screen_get_usable_rect().size
-		window.size=Vector2i(mini(1536,available.x),mini(864,available.y)) if wide else Vector2i(mini(1152,available.x),mini(810,available.y))
 
 func title_page(title: String, subtitle: String) -> VBoxContainer:
 	var margin := MarginContainer.new(); page.add_child(margin); margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
