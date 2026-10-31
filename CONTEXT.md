@@ -1,6 +1,6 @@
-# Tower Defence
+# Purrimeter — The Garden Guard
 
-A game in which the player builds towers to defeat enemies crossing a square playing field.
+An endless cat tower defence game in which the player builds towers to defeat enemies crossing a square playing field.
 
 ## Language
 
