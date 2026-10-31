@@ -1,0 +1,43 @@
+PURRIMETER — THE GARDEN GUARD
+
+Windows: extract the entire ZIP, then double-click Purrimeter.exe.
+Keep Purrimeter.pck beside the executable. No editor or installation is needed.
+Mac: open Purrimeter.app.
+
+Click a cat card, then an empty tile to recruit. Keys 1/2/3 select cats.
+Click a placed cat to upgrade, repair or sell. Each cat has five upgrades.
+Click an enemy or boss to inspect its animated portrait, health, speed, damage and effects.
+Inspection does not change targeting. Esc or Back to powerups closes the inspector.
+Level health below the arrival counts includes the whole wave, even enemies yet to arrive.
+Space pauses. Build while paused. Esc cancels placement. N starts the level.
+Auto-start next level is off by default; use the Auto checkbox beside Start. After a clear,
+a large 3-2-1 counts down in the garden. Space pauses it; N starts early.
+Your choice is saved. Defeat and rebirth still wait for a manual start.
+Tab / Shift+Tab move between controls and the garden; Enter activates.
+On the garden, arrow keys move the cursor; Enter recruits or inspects a cat or enemy.
+During paused combat, Resume level continues the current attempt.
+Select powerup icons to see permanent benefits, next-rank requirements and prices.
+Available shows discovered powers with ranks remaining; Owned shows your collection.
+Each rank needs its own milestone and coins. New icons appear as you progress.
+Patrol Training has unlimited ranks; earn lifetime kills to unlock further ranks.
+After inspecting a cat or enemy, Back to powerups restores your previous selection.
+
+Enemies take the shortest open path. Block every route and they attack cats.
+Repeated backtracking turns an enemy red. After 12 tile-lengths of revisits,
+red with sweat signals permanent frenzy: it breaks through cats toward the exit.
+Slow and stun still work. Long unchanged mazes do not trigger frenzy.
+Enemies move diagonally, but cannot cut across cat corners. Cats touching
+at a corner form a wall. Keep both side tiles clear during a diagonal crossing.
+One escaping enemy ends the attempt and sends you back one level.
+Your coins and surviving cats stay, including damage. Repair as needed.
+Each level doubles total enemy health. Bosses arrive every tenth level.
+
+After clearing level 5, Rebirth returns you to level 1 with all coins,
+surviving cats, upgrades, powerups and discoveries. Cats heal fully. Each rebirth adds
+10 percentage points of coin bonus per highest level cleared that run.
+Bonuses add together. Clear level 5 again to qualify for another rebirth.
+
+The game autosaves and resumes paused. Export/Import lets you transfer
+progress between computers. New Garden resets all progress after confirmation.
+
+Audio can be muted with the Sound button. Leaving the window pauses the game.

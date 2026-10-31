@@ -1,0 +1,5 @@
+# Preserve powerup discoveries independently of current garden conditions
+
+Powerup icons are hidden until their discovery prerequisites are met, but discoveries and purchased ranks persist through defeat, rebirth, and loss of a qualifying cat; only New Garden resets them. Rechecking current conditions to hide icons would make the collection regress during an otherwise permanent progression system. Discovery is therefore a lasting achievement, separate from the prerequisite and coin cost for purchasing each next rank. Existing Patrol Training purchases remain earned when the powerup system is introduced.
+
+Rank prerequisites recognize lifetime achievements, including progress earned before the preceding purchase. Unlimited Patrol Training uses increasing lifetime enemy-kill milestones rather than mandatory higher-level clears, so replaying challenges remains a path to more strength when the player cannot yet defeat a harder challenge. Other powerups can use progression milestones to spread discoveries and rank purchases across the game.

@@ -1,0 +1,30 @@
+config_version=5
+
+[application]
+config/name="Purrimeter"
+config/icon="res://assets/icon.png"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="Purrimeter"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/description="The Garden Guard — an endless cat tower defence game"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=900
+window/size/window_width_override=1152
+window/size/window_height_override=810
+window/size/min_width=960
+window/size/min_height=675
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[rendering]
+textures/vram_compression/import_etc2_astc=true
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+textures/canvas_textures/default_texture_filter=0
+
+[audio]
+driver/enable_input=false

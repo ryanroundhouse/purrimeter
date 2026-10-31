@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+godot_bin="${GODOT:-$PWD/.tools/Godot.app/Contents/MacOS/Godot}"
+if [ ! -x "$godot_bin" ]; then ./scripts/setup_godot.sh; fi
+mkdir -p dist/macos dist/windows build
+"$godot_bin" --headless --path game --editor --import --quit
+"$godot_bin" --headless --path game --export-release macOS ../dist/macos/Purrimeter.app
+"$godot_bin" --headless --path game --export-release Windows ../dist/windows/Purrimeter.exe
+cp docs/PLAY.txt dist/windows/README.txt
+cp docs/GODOT-LICENSE.txt docs/GODOT-COPYRIGHT.txt dist/windows/
+cp docs/PLAY.txt dist/macos/README.txt
+cp docs/GODOT-LICENSE.txt docs/GODOT-COPYRIGHT.txt dist/macos/
+codesign --force --deep --sign - dist/macos/Purrimeter.app
+codesign --verify --deep --strict dist/macos/Purrimeter.app
+ditto -c -k --sequesterRsrc --keepParent dist/macos dist/Purrimeter-macOS.zip
+(cd dist/windows && zip -q -r ../Purrimeter-Windows.zip .)
+# Keep the original handoff location current, too.
+# ditto merges directories; remove the generated old bundle so legacy resources
+# cannot invalidate the freshly exported signature.
+rm -rf build/Purrimeter.app
+ditto dist/macos/Purrimeter.app build/Purrimeter.app
+codesign --verify --deep --strict build/Purrimeter.app
+printf '\nBuilt dist/Purrimeter-macOS.zip and dist/Purrimeter-Windows.zip\n'

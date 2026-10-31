@@ -1,0 +1,3 @@
+# Preserve possessions on defeat and support endless growth
+
+The user explicitly chose to keep coins and surviving damaged towers when an escape moves progression backward, rather than restoring a checkpoint. Enemy health doubles every level, so six capped tower tiers and a finite field would impose a fixed power ceiling; unlimited persistent Patrol Training provides additional growth while rebirth adds permanent additive income bonuses. Logarithmic amount and stat representations keep exponential progression finite in memory, with ordinary floating-point precision rather than exact arbitrary-precision accounting.

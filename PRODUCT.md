@@ -1,0 +1,75 @@
+# Purrimeter — The Garden Guard
+
+<!-- impeccable:product-schema 1 -->
+
+## Platform
+
+Native desktop: macOS and Windows, built from one Godot project.
+
+Impeccable's platform vocabulary does not include desktop games. This product is neither a website nor an iOS/Android app; apply desktop game conventions rather than mobile platform guidance.
+
+## Users
+
+The primary players are the owner on macOS and their son on Windows. This is a personal/family game. A broader public audience is not an established requirement.
+
+Players build a defensive patrol of cats, shape enemy routes, and improve their patrol through repeated attempts and persistent progression.
+
+## Product Purpose
+
+Provide a standalone, endless cat tower defence game that the family can play on their respective computers. Success means readable tactical decisions, understandable progression, reliable preservation of earned progress, and the same gameplay on both platforms.
+
+## Positioning
+
+The defining combination is cat-themed maze building, enemies that breach towers when blocked or driven into frenzy by repeated backtracking, and persistent growth through six tower tiers, unlimited Patrol Training, and rebirth coin bonuses. These are product mechanisms, not claims of market uniqueness.
+
+## Operating Context
+
+- One Godot 4.7.2 project produces a universal macOS app and a portable Windows x86-64 executable/resource pack. Players do not need the Godot editor.
+- Play uses a mouse and keyboard in a resizable desktop window. Click a cat card and a tile to recruit; click an existing cat to inspect, upgrade, repair, or sell. Shortcuts include 1/2/3 for cat selection, Space for pause, Esc to cancel placement, and N to start an attempt.
+- Click an enemy or boss to inspect its animated portrait, health, speed, tower damage, and effects in the shared sidebar. Inspection does not change targeting. One selected enemy is highlighted while moving; death or attempt completion clears it. Cats take click priority on occupied tiles, and recruitment retains placement behavior. Inspector portraits for cats and enemies animate during tactical pause. See `docs/enemy-inspection-and-level-health.md`.
+- During active attempts, **Level health** below the field/arrival counts shows the remaining health of the whole wave, including unspawned enemies and bosses. Its bar and percentage drain with damage and disappear between attempts, leaving the existing preview/countdown.
+- Tactical pause permits building, repairs, and upgrades. Combat and music pause when the game loses focus. Combat supports 1×/2× speed and a sound toggle.
+- Autosaves preserve progress; loading resumes paused. JSON Export/Import transfers saves between computers. Starting a New Garden requires confirmation.
+- Auto-start next level defaults off and is saved with the garden. Successful clears show a central shrinking, fading 3–2–1 countdown lasting three real seconds at either combat speed. Pause freezes it, manual Start skips it, and switching it off or rebirthing cancels it. Loading restores a pending countdown paused. Defeat, rebirth, and new gardens wait for a manual start. See `docs/auto-start-next-level.md`.
+- Distribution is currently for personal use: macOS signing is ad hoc and Windows is unsigned. Public release signing and notarization are not configured.
+
+## Capabilities and Constraints
+
+- Preserve the square 16×16 playing field and one-cell towers. All enemies move in eight directions at constant physical speed; diagonal movement and attacks require both adjacent side squares to be clear of towers. Corner-touching towers form a wall, and side squares stay reserved during diagonal crossings. Outside frenzy, enemies take the shortest open route whenever one exists and consider breaches only when fully blocked. After 12 tile-lengths of repeated travel, an enemy permanently enters frenzy, moves closer to the exit, and commits to destroying obstructions regardless of open detours. Redness builds with frustration; red with animated sweat identifies frenzy. Combat stats and control effects remain unchanged. See `docs/diagonal-movement.md` and `docs/frenzy.md`.
+- Preserve three cat roles: Tuxedo Scout (Bolt) for fast single-target attacks, Chunky Gunner, an orange tabby (Cannon), for splash damage, and Siamese Sage (Frost) for slowing enemies. Each has a purchased form plus five upgrades, with six distinct animated forms and attack effects. Visual tower tiers do not implicitly add combat abilities; purchased powerups explicitly add piercing, chain hits, burns, freezes, and other abilities within those roles.
+- One enemy escaping immediately loses the attempt. Defeat moves back one level, with a floor of level one, while retaining coins, training, upgrades, and surviving cats including their damage. It does not restore a checkpoint.
+- Progression is endless. Total enemy health doubles per level; total base coin bounty grows by 1.5×. Every tenth level features a boss, cycling caterpillar, cobra, spider, and hound. Large boss artwork retains a one-cell logical routing footprint.
+- Thirty permanent powerups cover patrol stats, economy, durability, and role-specific combat abilities. All purchased effects work automatically together. Powerups are hidden until discovered; discovery and ranks survive defeat, rebirth, and saving. Each rank has its own lifetime milestone and coin price. The sidebar has Available/Owned tabs, selected-icon details, and a return path from cat inspection. See `docs/powerups.md`.
+- Patrol Training is unlimited and increases all cats' damage and maximum health by 25% per purchase, preserving health percentage. Its cost starts at 100 coins and grows by 1.5× per purchase. Training does not add visual tiers. Rank one is available from level one; subsequent ranks require increasing lifetime kills, so replaying challenges always provides a path to further growth.
+- Rebirth is available between attempts after clearing level five in the current run. It returns to level one, retains coins, surviving cats, tiers, training, and existing bonuses, and heals surviving cats. Each rebirth adds 10 percentage points of permanent coin bonus per highest level cleared that run. Bonuses add; eligibility must be earned again after rebirth.
+- At level one, an empty patrol with fewer than 50 coins receives enough for one Tuxedo Scout. Other defeat consequences remain intact.
+- Save import must validate data before replacing progress. Preview and test runs must not modify the player's save. The legacy Swift save is not migrated.
+- Use `CONTEXT.md` for domain terminology: a level is an enemy challenge, a tower tier is an upgrade rank, and a run is progression between rebirths.
+- Detailed confirmed progression rules and delegated numerical balance decisions live in `docs/progression-rework.md`; routing and persistence decisions live in `docs/adr/`.
+
+## Brand Commitments
+
+Preserve the name Purrimeter — The Garden Guard, the cat identities, garden-defence theme, and existing animated SNES-style pixel artwork. The existing chiptune music and synthesized effects are part of the game. This initialization confirms the current identity; it does not authorize a rebrand or replacement artwork.
+
+## Evidence on Hand
+
+- `README.md`: player controls, progression, saves, build instructions, and source map.
+- `CONTEXT.md`: shared domain vocabulary.
+- `docs/progression-rework.md`: confirmed current gameplay and implementation decisions. `docs/game-design.md` is historical and must not override the active progression rules.
+- `docs/adr/`: open-route priority, shared desktop implementation, and retained-state endless progression decisions.
+- `game/core/` and `game/ui/`: active simulation and desktop interface. `legacy/macos/` is the superseded Swift prototype.
+- `game/assets/` and `docs/artwork.md`: existing cat/enemy/boss sprites, icon, original synthesized audio, and artwork provenance.
+- `game/tests/` and `docs/verification.md`: behavior, campaign, scene, artwork, and package checks. The verification record reports macOS testing; the Windows executable has not been tested on a Windows machine or VM. Do not claim otherwise without new evidence.
+- Human balance testing beyond the first rebirth and boss remains limited. No public-market validation or commercial positioning is established.
+
+## Product Principles
+
+1. Make tactical state understandable: routes, placement, range, damage, costs, and available actions should help the player decide what to do next.
+2. Preserve earned progress and make destructive actions explicit. Defeat has consequences without silently rolling back possessions.
+3. Keep gameplay and saves consistent across macOS and Windows through the shared implementation.
+4. Preserve the cats' distinct combat roles and identities as their visible power grows.
+5. Support deliberate play through tactical pause, focus-loss pause, and clear progression feedback.
+
+## Open Decisions
+
+No additional player-specific accessibility needs, age-specific requirements, or difficulty changes were established during initialization. Do not infer an age or ability level from the family relationship. Broader distribution and public-release requirements remain outside the confirmed scope.
