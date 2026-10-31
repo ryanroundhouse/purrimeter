@@ -34,6 +34,31 @@ func guest(name: String, address: String) -> GardenNetwork:
 	net.issue.connect(func(code, _message): errors.append(code))
 	return net
 
+func check_resume_after_chat() -> void:
+	# Native mouse position is needed by the custom-drawn field's hit testing.
+	# Headless runs still exercise keyboard focus; native runs cover the click.
+	app.local_view.game.start(); app.local_view.game.paused=true
+	app.chat_input.grab_focus()
+	var key := InputEventKey.new(); key.keycode=KEY_SPACE; key.pressed=true
+	Input.parse_input_event(key); await process_frame
+	check(app.local_view.game.paused,"Space in chat does not resume combat")
+	if DisplayServer.get_name()!="headless":
+		var at: Vector2=app.local_view.get_global_transform()*Vector2(826,47)
+		root.warp_mouse(at)
+		await until(func(): return Rect2(772,25,108,44).has_point(app.local_view.get_local_mouse_position()))
+		var click := InputEventMouseButton.new(); click.button_index=MOUSE_BUTTON_LEFT; click.pressed=true; click.position=at
+		root.push_input(click,true); await process_frame
+		click.pressed=false; root.push_input(click,true); await process_frame
+		check(not app.local_view.game.paused and not app.chat_input.has_focus(),"clicking Resume after chat returns control to the connected garden")
+		var elapsed: float=app.local_view.game.elapsed
+		app.local_view.game.step(0.1)
+		check(app.local_view.game.elapsed>elapsed,"resumed multiplayer garden advances combat")
+	app.chat_input.clear(); app.chat_input.release_focus()
+	app.local_view.game.paused=true
+	Input.parse_input_event(key); await process_frame
+	check(not app.local_view.game.paused,"Space resumes multiplayer after leaving chat")
+	app.local_view.game.paused=true
+
 func run() -> void:
 	var g := fixture(10)
 	var state: Dictionary=JSON.parse_string(JSON.stringify(LiveField.capture(g,0,1),"",true,true))
@@ -76,6 +101,7 @@ func run() -> void:
 	check(b.room.is_empty(),"wrong password never grants membership")
 	b.join_game(room_id,"cats")
 	check(await until(func(): return b.room.get("id")==room_id and app.remote_cards.size()==1),"second player joins with the correct password")
+	await check_resume_after_chat()
 	b.publish(state)
 	check(await until(func(): return app.remote_cards.has(b.id) and app.remote_cards[b.id].view.game.level==10),"remote field shows independent level and deployed cats")
 	var moving: Control=app.remote_cards[b.id].view

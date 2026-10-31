@@ -76,6 +76,10 @@ The complete `./scripts/test.sh` suite passes: 163 behavioral checks, 67 frenzy 
 - A Certbot renewal dry run for this hostname passed using the deployed ACME webroot. Both `purrimeter.service` and `certbot.timer` are enabled.
 - Ran the full Godot multiplayer integration suite with three clients against `wss://purrimeter.graham.pub/ws`: **0 failures**. This exercised password admission, remote movement, three-player layout, chat, Import/New Garden, reconnection, kicking, and ownership transfer over public TLS. Log: `build/multiplayer-production.log` (local ignored artifact). Godot reported two ObjectDB instances at shutdown; all checks completed and the test process exited successfully.
 
+## Multiplayer resume fix
+
+Multiplayer resume fix (2026-10-31): a native input reproduction failed when chat retained focus and the player clicked Resume. The text-entry guard had rejected mouse events before the field could release chat focus. Restricting that guard to keyboard events restores garden clicks while preserving shortcut suppression during typing. The public three-client native integration suite now covers chat-focused Resume, subsequent combat advancement, and Space after leaving chat, and passes with zero failures.
+
 ## Remaining platform limits
 
 The Windows executable has not been run on a physical Windows computer or Windows VM in this environment. Its resource pack and shared gameplay are tested, but Windows driver/input integration still needs a real-device check. Audio resources load and prepare; no subjective listening review was performed. Balance beyond the first rebirth and boss has automated budget checks, not a human playthrough. Currency/stat arithmetic uses floating-point log space, retaining fractional payouts with finite precision.

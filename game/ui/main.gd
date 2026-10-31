@@ -147,7 +147,8 @@ func receive_field(data: Dictionary) -> bool:
 func _input(event: InputEvent) -> void:
 	if not gameplay_enabled or not is_visible_in_tree() or (read_only and remote_compact): return
 	var typing := get_viewport().gui_get_focus_owner()
-	if typing is LineEdit or typing is TextEdit: return
+	# Typing suppresses shortcuts, but a garden click must be able to leave chat.
+	if event is InputEventKey and (typing is LineEdit or typing is TextEdit): return
 	if typing!=null and not is_ancestor_of(typing) and event is InputEventKey: return
 	if confirm.visible or file_dialog.visible: return
 	if event is InputEventMouseButton and not Rect2(Vector2.ZERO,size).has_point(get_local_mouse_position()): return
