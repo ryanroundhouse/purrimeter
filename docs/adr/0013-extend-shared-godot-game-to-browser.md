@@ -1,0 +1,3 @@
+# Extend the shared Godot game to browser play
+
+The browser version must preserve the full game's rules, progression, save compatibility, artwork, and cross-platform multiplayer. Extend the existing Godot project with responsive interfaces and browser-specific platform handling instead of maintaining a separate web game, keeping one gameplay implementation at the cost of working within Godot's browser and mobile constraints. Start with a single-threaded Web export and real-phone feasibility checks before extensive interface work; this extends [ADR 0002](0002-shared-godot-desktop-game.md) and remains an accepted design awaiting implementation.

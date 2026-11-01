@@ -14,7 +14,7 @@ A shared game for up to three players, each controlling their own playing field 
 A player's persistent playing field and progression, carried between single player and multiplayer games.
 
 **Game release**:
-A published version of Purrimeter available together for macOS and Windows under one release identity.
+A published version of Purrimeter available together for macOS, Windows, and browser play under one release identity.
 
 **Current game release**:
 The game release designated by a multiplayer server as required for new multiplayer admissions. Players already in a multiplayer game may continue when the server designates a newer release.
