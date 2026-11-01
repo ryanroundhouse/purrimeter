@@ -6,8 +6,10 @@ services:
       LISTEN_ADDR: :8080
       SIGNING_KEY_FILE: /data/signing.key
       TRUST_PROXY: "true"
+      GAME_RELEASE_FILE: /releases/current.json
     volumes:
       - relay_data:/data
+      - ./releases:/releases:ro
     networks: [relay]
     mem_limit: 512m
     cpus: 1.0

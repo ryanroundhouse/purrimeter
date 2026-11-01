@@ -38,6 +38,7 @@ var ui_clock := 0.0
 var save_clock := 0.0
 var accumulator := 0.0
 var testing := false
+var startup_save_valid := true
 var preview := false
 var preview_path := ""
 var preview_gallery := false
@@ -59,6 +60,8 @@ var remote_sound_id := 0
 var skip_remote_sounds := true
 var sound_sequence := 0
 var recent_sounds: Array = []
+var fanfare: Control
+var achievement_save_valid := true
 
 func _ready() -> void:
 	testing="--smoke-test" in OS.get_cmdline_user_args() or "--music-test" in OS.get_cmdline_user_args()
@@ -74,10 +77,16 @@ func _ready() -> void:
 	add_child(audio); audio.setup(testing or preview or "--multiplayer-test" in OS.get_cmdline_user_args() or "--app-preview" in OS.get_cmdline_user_args() or DisplayServer.get_name()=="headless")
 	connect_game()
 	if not testing and not preview and not read_only:
+		achievement_save_valid=SaveStore.read_achievements(game.achievements)
 		if FileAccess.file_exists(SaveStore.SAVE_PATH):
-			status="Welcome back. Your patrol is paused and ready." if SaveStore.read_into(game) else "Save could not be read. A fresh garden is ready."
+			startup_save_valid=SaveStore.read_into(game)
+			status="Welcome back. Your patrol is paused and ready." if startup_save_valid else "Save could not be read. A fresh garden is ready."
 		prefs.load("user://settings.cfg")
 		audio.set_mute(prefs.get_value("audio","muted",false))
+	if not achievement_save_valid: status="Achievement record could not be read. Export your garden to keep a recovery copy."
+	if not testing and not preview and not read_only: save_achievements()
+	fanfare=preload("res://ui/achievement_fanfare.gd").new(); add_child(fanfare)
+	fanfare.book=game.achievements; fanfare.audio=audio; fanfare.persist=save_achievements
 	sync_music(true)
 	confirm=PatrolDialog.new(); add_child(confirm)
 	file_dialog=FileDialog.new(); add_child(file_dialog)
@@ -91,6 +100,7 @@ func _ready() -> void:
 func connect_game() -> void:
 	selected_enemy=-1
 	recent_sounds.clear()
+	if not game.achievements.earned_now.is_connected(on_achievement): game.achievements.earned_now.connect(on_achievement)
 	game.sound.connect(play_game_sound)
 	game.notice.connect(func(message): status=message)
 	game.changed.connect(func(): save_clock=4.0; sync_music(); validate_selection())
@@ -132,10 +142,27 @@ func _process(delta: float) -> void:
 		save_clock+=delta
 		if save_clock>=4.0: save_game(); save_clock=0.0
 	validate_selection()
+	if fanfare!=null and not read_only:
+		fanfare.advance(delta,is_visible_in_tree() and gameplay_enabled and audio.focused and not confirm.visible and not file_dialog.visible)
 	queue_redraw()
+
+func on_achievement(_id: String) -> void:
+	save_achievements()
+
+func save_achievements() -> void:
+	if read_only or testing or preview or not achievement_save_valid: return
+	if SaveStore.write_achievements(game.achievements)!=OK: status="Unable to save achievements. Export your garden to keep your progress."
+
+func new_garden() -> void:
+	var book := game.achievements
+	game=Session.new(); game.achievements=book; game.paused=true; connect_game()
+	selected=-1; selected_enemy=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0
+	status="A fresh garden. Your achievements are yours to keep."
+	save_game(); garden_replaced.emit()
 
 func save_game() -> void:
 	if read_only or testing or preview: return
+	save_achievements()
 	if SaveStore.write(game)!=OK: status="Unable to save. Use Export Save to keep your progress."
 
 func cell_at(p: Vector2) -> int:
@@ -315,7 +342,7 @@ func action(id: String) -> void:
 			if game.can_rebirth():
 				game.paused=true
 				confirm.show_rebirth(game.run_best,game.bonus_points,func(): game.rebirth(); selected=-1; placing=-1)
-		"new": ask("Start a completely new garden?","This resets coins, cats, all powerups and discoveries, best level and rebirth bonuses.","New garden",func(): game=Session.new(); game.paused=true; connect_game(); selected=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0; status="A fresh garden. A new patrol."; save_game(); garden_replaced.emit())
+		"new": ask("Start a completely new garden?","This resets coins, cats, powerups, discoveries, best level and rebirth bonuses. Your achievements and lifetime achievement progress remain.","New garden",new_garden)
 		"export":
 			game.paused=true; file_action="export"; file_dialog.file_mode=FileDialog.FILE_MODE_SAVE_FILE; file_dialog.current_file="purrimeter-save.json"; file_dialog.title="Export your patrol"; file_dialog.popup_centered_ratio(0.65)
 		"import":
@@ -391,12 +418,7 @@ func center(cell: int) -> Vector2:
 	return BOARD.position+Vector2(cell%16,cell/16)*TILE+Vector2.ONE*TILE/2
 
 func cat_sprite(kind: int, tier: int, frame: int, rect: Rect2, alpha: float = 1.0) -> void:
-	var texture: Texture2D=cat_textures[kind]
-	var bounds: Array=SpriteBounds.CATS[kind][tier-1][frame]
-	var source := Rect2(bounds[0],bounds[1],bounds[2],bounds[3])
-	var fit := minf(rect.size.x/310.0,rect.size.y/310.0)
-	var target := Rect2(Vector2(rect.get_center().x-source.size.x*fit/2,rect.end.y-source.size.y*fit-rect.size.y*0.04),source.size*fit)
-	draw_texture_rect_region(texture,target,source,Color(1,1,1,alpha),false,true)
+	CatSkinArt.draw(self,game.skin_id(kind),tier,frame,rect,Color(1,1,1,alpha))
 
 func enemy_sprite(kind: int, frame: int, rect: Rect2, tint: Color = Color.WHITE) -> void:
 	var bands := [Vector2(802,940),Vector2(980,1138),Vector2(1150,1357),Vector2(1360,1607)]
@@ -845,7 +867,7 @@ func smoke_test() -> void:
 	action("sell"); results["sell control"]=game.towers.is_empty()
 	results["cat artwork"]=cat_textures.all(func(texture): return texture.get_width()>0)
 	results["boss artwork"]=bosses.get_width()>0
-	results["music and effects"]=audio.music.stream!=null and audio.effects.size()==14
+	results["music and effects"]=audio.music.stream!=null and audio.effects.size()==15 and audio.effects.has("achievement")
 	results["auto-start defaults off"]=not game.auto_start
 	# Exercise the input path and rendered hit targets without reading a player save.
 	game=Session.new(); connect_game(); focus_id=""; selected=-1; placing=-1; keyboard_cell=119

@@ -97,6 +97,7 @@ static func reward_dead(g) -> void:
 		var multiplier: float = (1.0+g.bonus_points/100.0)*(1.0+0.1*g.powerup_rank("bounty"))
 		if e.boss>=0: multiplier*=1.0+0.2*g.powerup_rank("purse")
 		g.coins=g.coins.plus(Amount.from_power(e.bounty_power).times(multiplier)); g.kills+=1
+		g.achievements.record(g,"kill",e)
 		g.sound.emit("coin",1); any_kills=true
 		if e.slow>0 and g.powerup_rank("winter")>0:
 			for other in g.enemies:

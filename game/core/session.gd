@@ -3,6 +3,13 @@ extends RefCounted
 signal sound(name: String, tier: int)
 signal changed
 signal notice(message: String)
+var achievements := Achievements.new()
+var achievement_run: Dictionary = {}
+var viewed_skins: Dictionary = {} # Remote presentation only; never grants ownership.
+
+func skin_id(kind: int) -> String:
+	return viewed_skins.get(str(kind),CatSkins.selected(achievements,kind))
+
 var towers: Array = []
 var enemies: Array = []
 var shots: Array = []
@@ -79,6 +86,7 @@ func buy_powerup(id: String) -> bool:
 	if id=="training": training+=1
 	else: powerup_ranks[id]=powerup_rank(id)+1
 	discovered[id]=true; refresh_powerups()
+	achievements.record(self,"powerup")
 	invalidate_routes(); sound.emit("upgrade",6); changed.emit(); return true
 
 func training_cost() -> Amount:
@@ -111,6 +119,7 @@ func build(kind: int, cell: int) -> bool:
 	var price := recruit_cost(kind)
 	coins=coins.minus(price)
 	towers.append({"cell":cell,"kind":kind,"tier":1,"hp":1.0,"spent":price.power,"cooldown":0.0,"flash":0.0})
+	achievements.record(self,"build")
 	refresh_powerups(); invalidate_routes(); sound.emit("build",1); changed.emit(); return true
 
 func upgrade(cell: int) -> bool:
@@ -119,6 +128,7 @@ func upgrade(cell: int) -> bool:
 	var cost := upgrade_cost(t)
 	if not coins.enough(cost): return false
 	coins=coins.minus(cost); t.spent=Amount.from_power(t.spent).plus(cost).power; t.tier+=1
+	achievements.record(self,"upgrade")
 	refresh_powerups(); invalidate_routes(); sound.emit("upgrade",t.tier); changed.emit(); return true
 
 func repair(cell: int) -> bool:
@@ -127,12 +137,14 @@ func repair(cell: int) -> bool:
 	var cost := repair_cost(t)
 	if not coins.enough(cost): return false
 	coins=coins.minus(cost); t.hp=1.0
+	achievements.record(self,"repair",{"cell":cell})
 	refresh_powerups(); invalidate_routes(); sound.emit("build",1); changed.emit(); return true
 
 func sell(cell: int) -> bool:
 	var t := tower_at(cell)
 	if t.is_empty(): return false
 	coins=coins.plus(refund(t)); towers.erase(t)
+	achievements.record(self,"sell",{"cell":cell})
 	invalidate_routes(); recover(); sound.emit("coin",1); changed.emit(); return true
 
 func train() -> bool:
@@ -154,6 +166,7 @@ func rebirth() -> bool:
 	enemies.clear(); shots.clear(); aftershocks.clear(); wave_plan.clear(); spawned=0; spawn_clock=0
 	for t in towers: t.hp=1.0; t.cooldown=0.0; t.flash=0.0
 	paused=false; auto_start_remaining=0.0; refresh_powerups(); invalidate_routes(); sound.emit("rebirth",6)
+	achievements.record(self,"rebirth")
 	notice.emit("REBIRTH · +%s%% coin bonus. Your patrol returns stronger." % Amount.of(gain).label())
 	changed.emit(); return true
 
@@ -162,6 +175,7 @@ func recover() -> void:
 		coins=Amount.of(50)
 
 func defeat() -> void:
+	achievements.record(self,"defeat")
 	last_defeat=level; level=maxi(1,level-1); active=false; paused=true; auto_start_remaining=0.0
 	enemies.clear(); shots.clear(); aftershocks.clear(); wave_plan.clear(); spawned=0; spawn_clock=0
 	invalidate_routes(); recover(); sound.emit("lose",1)
@@ -171,6 +185,7 @@ func defeat() -> void:
 func start() -> bool:
 	if active: return false
 	wave_plan=Balance.plan(level); spawned=0; spawn_clock=0; active=true; paused=false; auto_start_remaining=0.0
+	achievements.record(self,"start")
 	last_defeat=0; sound.emit("wave",1); notice.emit("Level %d · %s" % [level,Balance.title(level)]); changed.emit(); return true
 
 func foe_speed(e: Dictionary) -> float:
@@ -306,9 +321,11 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 				var blocker := tower_at(next)
 				if not blocker.is_empty():
 					if e.get("frenzied",false): e.frenzy_target=next
+					achievements.fail_condition(self,"unhurt","A cat took damage during the attempt.")
 					blocker.hp-=pow(10.0,clampf(log(foe_dps(e)*dt)/log(10.0)-cat_stat(blocker,"hp_power"),-300,100))
 					e.attack=0.15
-					if blocker.hp<=0: towers.erase(blocker); invalidate_routes(); sound.emit("break",1)
+					if blocker.hp<=0:
+						towers.erase(blocker); achievements.record(self,"destroyed",{"cell":blocker.cell}); invalidate_routes(); sound.emit("break",1)
 				else:
 					e.next=next; e.progress=0.0; e.frenzy_target=-1
 		if e.next>=0:
@@ -318,6 +335,7 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 				e.cell=e.next; e.next=-1; e.progress=0.0
 				if e.cell==Routes.EXIT: defeat(); return
 	if spawned>=wave_plan.size() and enemies.is_empty():
+		achievements.record(self,"clear")
 		active=false; best=maxi(best,level); run_best=maxi(run_best,level); level+=1
 		wave_plan.clear(); aftershocks.clear(); spawned=0; spawn_clock=0.0
 		for t in towers: t.hp=minf(1.0,t.hp+0.05*powerup_rank("catnap"))
@@ -329,13 +347,17 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 
 func snapshot() -> Dictionary:
 	refresh_powerups()
-	return {"version":3,"powerups":powerup_ranks.duplicate(true),"discovered":discovered.duplicate(true),"cat_milestones":cat_milestones.duplicate(),"combat_seed":combat_seed,"aftershocks":aftershocks.duplicate(true),"coins":coins.power,"towers":towers.duplicate(true),"enemies":enemies.duplicate(true),"level":level,"best":best,"run_best":run_best,"rebirths":rebirths,"bonus_points":bonus_points,"training":training,"kills":kills,"active":active,"spawned":spawned,"spawn_clock":spawn_clock,"next_id":next_id,"elapsed":elapsed,"last_defeat":last_defeat,"auto_start":auto_start,"auto_start_remaining":auto_start_remaining}
+	return {"version":3,"achievements":achievements.snapshot(),"achievement_run":achievement_run.duplicate(true),"powerups":powerup_ranks.duplicate(true),"discovered":discovered.duplicate(true),"cat_milestones":cat_milestones.duplicate(),"combat_seed":combat_seed,"aftershocks":aftershocks.duplicate(true),"coins":coins.power,"towers":towers.duplicate(true),"enemies":enemies.duplicate(true),"level":level,"best":best,"run_best":run_best,"rebirths":rebirths,"bonus_points":bonus_points,"training":training,"kills":kills,"active":active,"spawned":spawned,"spawn_clock":spawn_clock,"next_id":next_id,"elapsed":elapsed,"last_defeat":last_defeat,"auto_start":auto_start,"auto_start_remaining":auto_start_remaining}
 
 func restore(data: Dictionary) -> bool:
 	# Validate everything before replacing the live run.
 	var ints := ["level","best","run_best","rebirths","training","kills","spawned","next_id","last_defeat"]
 	if data.get("version",0)!=2 and data.get("version",0)!=3: return false
 	if not PowerupSave.valid(data): return false
+	if data.has("achievements") and not Achievements.valid(data.achievements): return false
+	if not Achievements.valid_run(data.get("achievement_run",{})): return false
+	var saved_attempt: Dictionary = data.get("achievement_run",{}).get("attempt",{})
+	if not saved_attempt.is_empty() and (not data.get("active",false) or saved_attempt.level!=data.get("level")): return false
 	for key in ints:
 		if not data.has(key) or not (data[key] is float or data[key] is int) or not is_finite(float(data[key])) or data[key]<0 or data[key]>(9e15 if key in ["training","kills"] else 1e9): return false
 	if data.level<1 or data.run_best>data.best: return false
@@ -378,4 +400,7 @@ func restore(data: Dictionary) -> bool:
 		Frenzy.restore(e)
 	PowerupSave.apply(self,data)
 	refresh_powerups()
+	achievement_run=data.get("achievement_run",{}).duplicate(true)
+	if data.has("achievements"): achievements.merge(data.achievements)
+	else: achievements.credit_saved(self)
 	wave_plan=plan if active else []; paused=true; shots.clear(); invalidate_routes(); return true

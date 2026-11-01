@@ -13,11 +13,15 @@ import (
 	"github.com/coder/websocket"
 )
 
-func fixtureHub() *hub { return newHub([]byte("01234567890123456789012345678901")) }
+func fixtureHub() *hub {
+	h := newHub([]byte("01234567890123456789012345678901"))
+	h.allowDevelopment = true
+	return h
+}
 func fixturePeer(t *testing.T, h *hub, name string) *peer {
 	t.Helper()
 	p := newPeer(nil, func() {})
-	b, _ := json.Marshal(message{"type": "hello", "version": 1, "name": name})
+	b, _ := json.Marshal(message{"type": "hello", "version": 1, "release": "development", "name": name})
 	if !h.authenticate(p, b) {
 		t.Fatal("authentication failed")
 	}
@@ -123,7 +127,7 @@ func TestReservationsReconnectAndExpiry(t *testing.T) {
 		t.Fatal("disconnect prematurely released ownership or place")
 	}
 	returning := newPeer(nil, func() {})
-	raw, _ := json.Marshal(message{"type": "hello", "version": 1, "name": "Renamed", "token": h.token(a.id)})
+	raw, _ := json.Marshal(message{"type": "hello", "version": 1, "release": "development", "name": "Renamed", "token": h.token(a.id)})
 	if !h.authenticate(returning, raw) {
 		t.Fatal("authenticated reconnect failed")
 	}
@@ -174,7 +178,7 @@ func TestKickPermissionsAndIdentity(t *testing.T) {
 		t.Fatal("kick bypassed via resume")
 	}
 	duplicate := newPeer(nil, func() {})
-	raw, _ := json.Marshal(message{"type": "hello", "version": 1, "name": "Imposter", "token": h.token(a.id)})
+	raw, _ := json.Marshal(message{"type": "hello", "version": 1, "release": "development", "name": "Imposter", "token": h.token(a.id)})
 	if h.authenticate(duplicate, raw) || !hasError(duplicate, "duplicate") {
 		t.Fatal("duplicate installation admitted")
 	}
@@ -299,7 +303,7 @@ func TestActualWebSocketHandshakeAndProtocol(t *testing.T) {
 		}
 		return m
 	}
-	write(message{"type": "hello", "version": 1, "name": "Native client"})
+	write(message{"type": "hello", "version": 1, "release": "development", "name": "Native client"})
 	if read()["type"] != "welcome" || read()["type"] != "games" {
 		t.Fatal("handshake out of order")
 	}
@@ -318,8 +322,9 @@ func TestRestartPreservesIdentityWithoutRestoringGames(t *testing.T) {
 	p := fixturePeer(t, h, "Gardener")
 	id := create(t, h, p, "")
 	restarted := newHub(h.key)
+	restarted.allowDevelopment = true
 	returning := newPeer(nil, func() {})
-	raw, _ := json.Marshal(message{"type": "hello", "version": 1, "name": "Gardener", "token": h.token(p.id)})
+	raw, _ := json.Marshal(message{"type": "hello", "version": 1, "release": "development", "name": "Gardener", "token": h.token(p.id)})
 	if !restarted.authenticate(returning, raw) || returning.id != p.id {
 		t.Fatal("identity did not survive server restart")
 	}

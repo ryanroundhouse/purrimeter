@@ -15,7 +15,7 @@ cleanup() {
   rm -rf "$test_dir"
 }
 trap cleanup EXIT
-LISTEN_ADDR=127.0.0.1:0 SIGNING_KEY_FILE="$test_dir/signing.key" ./build/purrimeter-relay > "$test_dir/server.log" 2>&1 &
+ALLOW_DEVELOPMENT_BUILDS=true LISTEN_ADDR=127.0.0.1:0 SIGNING_KEY_FILE="$test_dir/signing.key" ./build/purrimeter-relay > "$test_dir/server.log" 2>&1 &
 relay_pid=$!
 # The relay prints its bound address after net.Listen, including its ephemeral port.
 port=""

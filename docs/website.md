@@ -11,7 +11,7 @@
 
 The domain already serves the multiplayer relay. Preserve `/ws`, `/healthz`, HTTPS, and certificate renewal when adding the website. See [deployment.md](deployment.md).
 
-Available client packages are universal macOS (Intel and Apple Silicon, macOS 11 or later) and Windows x64. There are no Linux or mobile builds. macOS builds currently use ad hoc signing and are not notarized; Windows builds are unsigned. No GitHub releases or automated public-release workflow currently exist.
+Available client packages are universal macOS (Intel and Apple Silicon, macOS 11 or later) and Windows x64. There are no Linux or mobile builds. macOS builds currently use ad hoc signing and are not notarized; Windows builds are unsigned. Signed game releases now use the repository build/publication scripts; GitHub releases are not used.
 
 Multiplayer supports up to three players with independent gardens and progression, plus chat. Marketing copy must reflect this rather than imply shared combat.
 
@@ -52,7 +52,7 @@ The user confirmed this scope and authorized implementation and deployment.
 
 The website is buildless HTML, CSS, and JavaScript. Python 3.11+ and Node.js 18+ prepare a publication; no npm dependencies are needed. The packager copies only the page, stylesheet, script, public assets, and existing client ZIPs. Source, tests, deployment scripts, and design documents are not served.
 
-To prepare a local preview using the current `dist/Purrimeter-macOS.zip` and `dist/Purrimeter-Windows.zip`:
+First create a signed release with `scripts/build_release.py MAJOR.MINOR.PATCH` (see [update operations](game-update-operations.md)). To prepare a local preview using its matching `dist/game-release.json`, `dist/Purrimeter-macOS.zip`, and `dist/Purrimeter-Windows.zip`:
 
 ```sh
 ./scripts/publish_website.sh --prepare-only
@@ -69,6 +69,8 @@ After building and testing any game changes using the existing game workflows, e
 
 Publication needs SSH access as `ryan@146.190.246.30` and passwordless sudo on the existing VPS. It uploads a snapshot to a temporary staging directory, verifies all hashes remotely, retains the previous website release, and atomically switches the public symlink. The initial deployment replaces only the existing root 404 handler with a static-site nginx include; `/ws`, `/healthz`, HTTP redirection, and ACME challenge handling remain intact. It tests nginx configuration before reload, checks the public release manifest and relay health, and restores the previous configuration/release if activation fails. It never restarts the relay.
 
-Ordinary `scripts/build.sh` runs do not publish anything. Publication snapshots the current archives without rebuilding them. The ZIP checks verify packaging integrity; they do not replace gameplay tests or a Windows-device test.
+Ordinary `scripts/build.sh` runs produce development builds and do not publish anything. Publication snapshots existing signed release archives without rebuilding them and refuses archives that differ from their signed game manifest. The ZIP checks verify packaging integrity; they do not replace gameplay tests or a Windows-device test.
 
 See [deployment.md](deployment.md) for server paths and rollback, [website-assets.md](website-assets.md) for asset sources, and [../website/DESIGN.md](../website/DESIGN.md) for the website's visual system.
+
+The website publication manifest `/release.json` remains separate from signed game metadata `/game-release.json`. The relay serves its verified current designation at `/updates`. Activation first retains immutable platform packages and signed metadata under `/game-releases/<game-release-id>/`, then switches the website pointer. Both platforms must match the signed game release before publication; updating website content alone does not change multiplayer admission.

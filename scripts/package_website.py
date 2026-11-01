@@ -23,6 +23,19 @@ def package():
         "Purrimeter-macOS.zip": "macos/Purrimeter.app/Contents/MacOS/Purrimeter",
         "Purrimeter-Windows.zip": "Purrimeter.exe",
     }
+    # The signed game manifest identifies these exact archives, independently of the website.
+    signed = ROOT / "dist" / "game-release.json"
+    release_tool = ROOT / "build" / "purrimeter-release"
+    game_release = json.loads(subprocess.check_output([str(release_tool), "verify", str(signed)], text=True))
+    for platform, name in (("macos", "Purrimeter-macOS.zip"), ("windows", "Purrimeter-Windows.zip")):
+        package = game_release["packages"][platform]
+        archive_path = ROOT / "dist" / name
+        if sha256(archive_path) != package["sha256"] or archive_path.stat().st_size != package["size"]:
+            raise ValueError(f"{name}: does not match signed game release; build a release first")
+        with zipfile.ZipFile(archive_path) as archive:
+            stamp = json.loads(archive.read("macos/game-build.json" if platform == "macos" else "game-build.json"))
+            if stamp["id"] != game_release["id"] or stamp["sequence"] != game_release["sequence"]:
+                raise ValueError("platform build identity differs from signed release")
     # Inspect before replacing the previous local preview.
     for name, executable in clients.items():
         with zipfile.ZipFile(ROOT / "dist" / name) as archive:
@@ -41,6 +54,7 @@ def package():
     for name in ("index.html", "style.css", "download.js"):
         shutil.copy2(ROOT / "website" / name, site / name)
     shutil.copytree(ROOT / "website" / "assets", site / "assets")
+    shutil.copy2(signed, site / "game-release.json")
     (site / "downloads").mkdir()
     checksums = []
     for name in clients:

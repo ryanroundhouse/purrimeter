@@ -62,3 +62,18 @@ Import and New Garden also work in multiplayer without leaving the shared game.
 
 Mute music and gameplay effects with Sound in the Escape menu. Leaving the window
 keeps combat and Auto countdowns running, with music and effects silent until you return.
+
+ACHIEVEMENTS
+Open Achievements in the main or Escape menu to explore 30 challenges and your
+progress. Earned badges celebrate with a banner and chime. They grant recognition
+and survive New Garden. Exports carry achievements; imports keep earned badges
+and higher counters without counting overlapping progress twice.
+
+CAT SKINS
+Each cat has five looks: its original skin and four achievement unlocks. Open
+Cat Skins from the main or Escape menu. Locked looks are silhouettes with exact
+requirements and progress. Unlocked skins have animated previews for all six tiers.
+Choose Equip to apply one look to every existing and future cat of that type.
+Skins never change combat. Unlocks and choices survive New Garden, and previously
+earned achievements grant skins immediately. Exports include selections; imports
+keep this device's choices when present. Other gardeners see your equipped skins.

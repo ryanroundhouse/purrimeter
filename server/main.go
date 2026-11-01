@@ -24,12 +24,22 @@ func main() {
 		log.Fatal(err)
 	}
 	h := newHub(key)
+	h.allowDevelopment = os.Getenv("ALLOW_DEVELOPMENT_BUILDS") == "true"
+	releasePath := os.Getenv("GAME_RELEASE_FILE")
+	if releasePath != "" {
+		if err := h.reloadRelease(releasePath); err != nil {
+			log.Fatal(err)
+		}
+	} else if !h.allowDevelopment {
+		log.Fatal("GAME_RELEASE_FILE is required; use ALLOW_DEVELOPMENT_BUILDS=true only on local/test servers")
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		_, _ = w.Write([]byte("ok\n"))
 	})
 	mux.HandleFunc("/ws", h.serve)
+	mux.HandleFunc("/updates", h.serveRelease)
 	srv := &http.Server{Addr: env("LISTEN_ADDR", "127.0.0.1:8080"), Handler: mux, ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 8192}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -40,6 +50,11 @@ func main() {
 			select {
 			case <-ticker.C:
 				h.expire()
+				if releasePath != "" {
+					if err := h.reloadRelease(releasePath); err != nil {
+						log.Printf("Release reload rejected: %v", err)
+					}
+				}
 			case <-ctx.Done():
 				return
 			}

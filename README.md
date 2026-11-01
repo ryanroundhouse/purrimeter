@@ -6,6 +6,12 @@ Download the game at **[purrimeter.graham.pub](https://purrimeter.graham.pub/)**
 
 The launch menu offers **Single player** and **Multiplayer**. Both use your same saved garden. Multiplayer supports public, optionally password-protected games for up to three players, with live remote fields, independent progression, and shared chat.
 
+## Game updates
+
+The game checks the selected server in the background at launch. Open **Check for updates** on the main menu or **Game updates** in the pause menu to download a verified official release, then choose **Restart and play**. Your garden and settings are preserved. Single player remains available offline or if you decline an update; joining multiplayer requires the server’s current game release.
+
+Existing multiplayer visits can continue after a release is published, including their 60-second reconnect reservations. Existing builds without an updater need one manual download of version 3.0.0. See [update operations](docs/game-update-operations.md) for signing, publication, recovery, and self-hosting.
+
 ## Multiplayer
 
 Choose a player name in **Connection settings**, then open Multiplayer to create or join a game. The default server is `wss://purrimeter.graham.pub/ws` and is live. The address can be changed in settings.
@@ -41,7 +47,7 @@ Click an enemy or boss to inspect its animated portrait, name, current/max healt
 - Enemies take the shortest open route; fully blocked enemies attack towers along the quickest estimated breach route.
 - Repeated backtracking builds frustration. After 12 tile-lengths of revisits, that enemy enters permanent **frenzy**, moving toward the exit and destroying obstructing cats even when an open route exists. Increasing redness warns you; red with animated sweat means frenzy. Long unchanged mazes are unaffected. Slow, stun, and normal combat stats still apply; saves preserve the history.
 - All enemies move diagonally at the same physical speed as straight movement. Towers block their whole square and prevent corner cutting, so corner-touching towers form a wall. Squares needed to clear a diagonal crossing temporarily reject construction. Blocked enemies can attack diagonally only when both side squares are clear, destroying the tower before entering its square.
-- **One escape loses the attempt.** Return one level, keeping coins, upgrades, training and surviving cats—including damage. At level one, an empty patrol with fewer than 50 coins receives enough for one Tuxedo Scout.
+- **One escape loses the attempt.** Return one level, keeping coins, upgrades, training and surviving cats—including damage. At level one, an empty patrol with fewer than 50 coins receives enough for one Scout.
 - Total enemy health **doubles every level**. Total base coin bounty grows by **1.5×**. Progression continues beyond level 20.
 - **Level health** beneath the field/arrival counts shows the entire wave's remaining health, including enemies still waiting to arrive and the boss. Damage drains the bar; arrivals do not refill it. The bar appears during active attempts, including tactical pause.
 - A huge boss appears every tenth level: caterpillar, cobra, spider, then hound, cycling thereafter. Bosses use the same routing rules; their artwork is larger than their logical footprint.
@@ -50,6 +56,12 @@ Click an enemy or boss to inspect its animated portrait, name, current/max healt
 - **Patrol Training** increases all cats' damage and maximum health by 25% per purchase, compounded, while preserving their health percentage. Initial cost: 100 coins; each purchase costs 1.5× the previous one. It has unlimited ranks: rank one is available immediately, and rank n requires 4 × n × (n − 1) lifetime kills. Replayed levels count.
 - **Rebirth** unlocks after clearing level 5 and can be used during combat or between attempts. Return to level 1, retain coins, surviving cats, tiers, training and existing bonuses, and fully heal cats. Remaining enemies disappear; the unfinished level adds no rebirth bonus. Level one waits for a manual Start, even with Auto enabled.
 - Each rebirth adds **10 percentage points per highest level cleared that run** to permanent coin rewards. Two level-five rebirths give +100% total, or 2× normal rewards. Clear level 5 again to qualify after each rebirth.
+
+## Achievements
+
+Earn **30 achievements** through milestones, lifetime progress, tactical challenges, and mastery goals. Open **Achievements** from the main menu or Escape menu to browse All / In Progress / Earned and inspect exact requirements. New unlocks celebrate with a brief banner and chime. Achievements grant recognition, persist through New Garden, and travel with exported saves; imports keep earned badges and the higher counter values without adding overlapping totals. Existing saves receive credit for recorded accomplishments.
+
+Open **Cat Skins** from the main or Escape menu to choose among **five skins per cat**. Four per type unlock through achievements; locked looks stay silhouetted while their requirements and progress remain visible. Preview unlocked skins across all six tiers, then Equip to change all existing and future cats of that type. Skins are cosmetic, permanent, retroactive for earned achievements, and visible to other gardeners. Save transfers include selections, preserving the destination device's existing choices.
 
 ## Saves
 
@@ -85,6 +97,8 @@ Native GUI checks should run from a normal desktop session outside an agent sand
 ## Source map
 
 - `game/core/session.gd`: simulation, economy, progression and save validation.
+- `game/core/achievements.gd`: the 30-achievement catalog, lifetime progress, challenge evidence, and migration.
+- `game/ui/achievements_panel.gd`, `achievement_fanfare.gd`: collection menu and queued celebrations.
 - `game/core/powerups.gd`, `powerup_combat.gd`, `powerup_save.gd`: the 30-powerup catalog, milestone rules, combat effects, and save migration.
 - `game/core/routes.gd`: shortest open paths and weighted breaches.
 - `game/core/frenzy.gd`: repeated-travel tracking and frenzy save validation.

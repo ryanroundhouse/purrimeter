@@ -1,9 +1,9 @@
 class_name Balance
 extends RefCounted
 const CATS = [
-	{"name":"Tuxedo Scout", "role":"BOLT · Fast single target", "price":50.0, "hp":160.0, "damage":14.0, "interval":0.48, "range":3.4, "color":Color("ffc46b")},
-	{"name":"Chunky Gunner", "role":"CANNON · Explosive splash", "price":80.0, "hp":260.0, "damage":36.0, "interval":1.65, "range":3.0, "color":Color("fb8875")},
-	{"name":"Siamese Sage", "role":"FROST · Slows the swarm", "price":70.0, "hp":180.0, "damage":5.0, "interval":0.85, "range":2.8, "color":Color("78cfff")}
+	{"name":"Scout", "role":"BOLT · Fast single target", "price":50.0, "hp":160.0, "damage":14.0, "interval":0.48, "range":3.4, "color":Color("ffc46b")},
+	{"name":"Gunner", "role":"CANNON · Explosive splash", "price":80.0, "hp":260.0, "damage":36.0, "interval":1.65, "range":3.0, "color":Color("fb8875")},
+	{"name":"Sage", "role":"FROST · Slows the swarm", "price":70.0, "hp":180.0, "damage":5.0, "interval":0.85, "range":2.8, "color":Color("78cfff")}
 ]
 const FOES = [
 	{"name":"Grunt", "weight":38.0, "speed":1.25, "dps":12.0},

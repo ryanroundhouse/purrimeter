@@ -1,0 +1,26 @@
+{
+  "tool": "built-in image_gen",
+  "transparent_background": true,
+  "edits": [
+    {
+      "id": "sage_classic",
+      "prompt": "Use case: precise-object-edit. Edit this production Purrimeter sprite atlas to FIX FRAME SPACING ONLY. Keep this exact cat coat, equipment colors, costumes, staffs, six upgrade tiers and four poses. Repack all 24 sprites into EXACT 4 columns x 6 rows on 1024x1536. Each cell is 256x256. Scale each complete sprite to fit WHOLLY INSIDE the central 210x210 pixels of its cell, with at least 23 pixels transparent margin at every edge. Tall raised staffs MUST shrink with the cat to fit their cell. ALL 24 sprites required. No sprite pixel may cross a cell border; all weapons, crowns, tails and staffs must remain attached and within their cell. Remove every detached speck or particle. No backgrounds, glows, text, labels or shadows. Genuinely transparent alpha background. Preserve the original crisp outlined pixel-art style, right-facing direction, cat identity and escalating equipment in all six rows. Keep scale consistent across each tier's four frames as much as fitting permits.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-16f2df5c-4529-4707-931b-70281bb30414.png"
+    },
+    {
+      "id": "sage_silver",
+      "prompt": "Use case: precise-object-edit. Edit this production Purrimeter sprite atlas to FIX FRAME SPACING ONLY. Keep this exact cat coat, equipment colors, costumes, staffs, six upgrade tiers and four poses. Repack all 24 sprites into EXACT 4 columns x 6 rows on 1024x1536. Each cell is 256x256. Scale each complete sprite to fit WHOLLY INSIDE the central 210x210 pixels of its cell, with at least 23 pixels transparent margin at every edge. Tall raised staffs MUST shrink with the cat to fit their cell. ALL 24 sprites required. No sprite pixel may cross a cell border; all weapons, crowns, tails and staffs must remain attached and within their cell. Remove every detached speck or particle. No backgrounds, glows, text, labels or shadows. Genuinely transparent alpha background. Preserve the original crisp outlined pixel-art style, right-facing direction, cat identity and escalating equipment in all six rows. Keep scale consistent across each tier's four frames as much as fitting permits.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-de0aa5ce-25a6-4022-84b3-58347e416886.png"
+    },
+    {
+      "id": "sage_lilac",
+      "prompt": "Use case: precise-object-edit. Edit this production Purrimeter sprite atlas to FIX FRAME SPACING ONLY. Keep this exact cat coat, equipment colors, costumes, staffs, six upgrade tiers and four poses. Repack all 24 sprites into EXACT 4 columns x 6 rows on 1024x1536. Each cell is 256x256. Scale each complete sprite to fit WHOLLY INSIDE the central 210x210 pixels of its cell, with at least 23 pixels transparent margin at every edge. Tall raised staffs MUST shrink with the cat to fit their cell. ALL 24 sprites required. No sprite pixel may cross a cell border; all weapons, crowns, tails and staffs must remain attached and within their cell. Remove every detached speck or particle. No backgrounds, glows, text, labels or shadows. Genuinely transparent alpha background. Preserve the original crisp outlined pixel-art style, right-facing direction, cat identity and escalating equipment in all six rows. Keep scale consistent across each tier's four frames as much as fitting permits.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-74085401-da73-4038-b3b6-08747cf1e981.png"
+    },
+    {
+      "id": "sage_aurora",
+      "prompt": "Use case: precise-object-edit. Edit this production Purrimeter sprite atlas to FIX FRAME SPACING ONLY. Keep this exact cat coat, equipment colors, costumes, staffs, six upgrade tiers and four poses. Repack all 24 sprites into EXACT 4 columns x 6 rows on 1024x1536. Each cell is 256x256. Scale each complete sprite to fit WHOLLY INSIDE the central 210x210 pixels of its cell, with at least 23 pixels transparent margin at every edge. Tall raised staffs MUST shrink with the cat to fit their cell. ALL 24 sprites required. No sprite pixel may cross a cell border; all weapons, crowns, tails and staffs must remain attached and within their cell. Remove every detached speck or particle. No backgrounds, glows, text, labels or shadows. Genuinely transparent alpha background. Preserve the original crisp outlined pixel-art style, right-facing direction, cat identity and escalating equipment in all six rows. Keep scale consistent across each tier's four frames as much as fitting permits.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-2548fe9e-34d6-41c0-8b87-2d2ae6d68436.png"
+    }
+  ]
+}

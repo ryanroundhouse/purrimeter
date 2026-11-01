@@ -1,0 +1,78 @@
+{
+  "tool": "built-in image_gen",
+  "transparent_background": true,
+  "assets": [
+    {
+      "id": "scout_ginger",
+      "source": "game/assets/tuxedo.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Ginger Scout sprite atlas. Edit the supplied Scout atlas: change fur in ALL 24 sprites to an orange tabby coat with darker ginger stripes and cream muzzle; coordinate all cloth equipment in forest green. Preserve green eyes, pink ears, each crossbow, silhouettes, equipment progression and poses. EXACT 4 columns by 6 rows on 1024x1536 canvas; each row one of SIX upgrade tiers, columns idle, anticipation, attack, recovery. Preserve source positions as closely as possible but ensure transparent separation between every sprite and no clipping. Preserve crisp outlined pixel-art style and facing direction. All 24 sprites required, no labels, no missing rows, no floor, no shadows, no detached effects. GENUINELY TRANSPARENT alpha background including all gaps. Opaque character pixels. Remove the source colored backdrop and glows completely.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-02bbe941-191f-4896-829f-734242728002.png"
+    },
+    {
+      "id": "scout_silver",
+      "source": "game/assets/tuxedo.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Silver Scout sprite atlas. Edit target: supplied tuxedo cat atlas. Change ONLY coats and coordinated equipment COLORS in ALL 24 sprites to silver tabby fur with charcoal stripes; navy cloth equipment. Preserve eyes, pink inner ears, each weapon, silhouettes, equipment shapes and progression, six tiers, four distinct poses, crisp outlined pixel-art style, scale and right-facing direction. EXACT 4 columns by 6 rows on a 1024x1536 canvas: each row is one upgrade tier, columns idle, anticipation, attack, recovery. Preserve sprite placement as closely as possible, with generous fully transparent separation; all 24 sprites present and no clipped weapons or body parts. GENUINELY TRANSPARENT alpha background in all gaps; remove any source colored backdrop and glow completely. No labels, text, floor, shadows, particles or detached effects. Fur, including white and black fur, is opaque.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-b1dad6ec-f032-49d6-8c41-bc64f3d428fc.png"
+    },
+    {
+      "id": "scout_calico",
+      "source": "game/assets/tuxedo.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Calico Scout sprite atlas. Edit target: supplied tuxedo cat atlas. Change ONLY coats and coordinated equipment COLORS in ALL 24 sprites to white calico fur with distinct ginger and black patches; plum cloth equipment. Preserve eyes, pink inner ears, each weapon, silhouettes, equipment shapes and progression, six tiers, four distinct poses, crisp outlined pixel-art style, scale and right-facing direction. EXACT 4 columns by 6 rows on a 1024x1536 canvas: each row is one upgrade tier, columns idle, anticipation, attack, recovery. Preserve sprite placement as closely as possible, with generous fully transparent separation; all 24 sprites present and no clipped weapons or body parts. GENUINELY TRANSPARENT alpha background in all gaps; remove any source colored backdrop and glow completely. No labels, text, floor, shadows, particles or detached effects. Fur, including white and black fur, is opaque.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-9227257b-d1c5-4e48-a367-ca8a0380acd3.png"
+    },
+    {
+      "id": "scout_golden",
+      "source": "game/assets/tuxedo.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Golden Scout sprite atlas. Edit target: supplied tuxedo cat atlas. Change ONLY coats and coordinated equipment COLORS in ALL 24 sprites to rich golden fur; ivory cloth with gold equipment accents. Preserve eyes, pink inner ears, each weapon, silhouettes, equipment shapes and progression, six tiers, four distinct poses, crisp outlined pixel-art style, scale and right-facing direction. EXACT 4 columns by 6 rows on a 1024x1536 canvas: each row is one upgrade tier, columns idle, anticipation, attack, recovery. Preserve sprite placement as closely as possible, with generous fully transparent separation; all 24 sprites present and no clipped weapons or body parts. GENUINELY TRANSPARENT alpha background in all gaps; remove any source colored backdrop and glow completely. No labels, text, floor, shadows, particles or detached effects. Fur, including white and black fur, is opaque.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-afd656ef-7758-4b7d-99a7-a54d05e196c8.png"
+    },
+    {
+      "id": "gunner_smoky",
+      "source": "game/assets/chunky.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Smoky Gunner sprite atlas. Edit target: supplied chunky cat atlas. Change ONLY coats and coordinated equipment COLORS in ALL 24 sprites to solid smoky gray fur; burgundy cloth equipment. Preserve eyes, pink inner ears, each weapon, silhouettes, equipment shapes and progression, six tiers, four distinct poses, crisp outlined pixel-art style, scale and right-facing direction. EXACT 4 columns by 6 rows on a 1024x1536 canvas: each row is one upgrade tier, columns idle, anticipation, attack, recovery. Preserve sprite placement as closely as possible, with generous fully transparent separation; all 24 sprites present and no clipped weapons or body parts. GENUINELY TRANSPARENT alpha background in all gaps; remove any source colored backdrop and glow completely. No labels, text, floor, shadows, particles or detached effects. Fur, including white and black fur, is opaque.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-43153d6b-d5f3-47b9-84e2-86aa29bd5f88.png"
+    },
+    {
+      "id": "gunner_tiger",
+      "source": "game/assets/chunky.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Tiger Gunner sprite atlas. Edit target: supplied chunky cat atlas. Change ONLY coats and coordinated equipment COLORS in ALL 24 sprites to warm brown tabby fur with dark stripes; copper-colored equipment. Preserve eyes, pink inner ears, each weapon, silhouettes, equipment shapes and progression, six tiers, four distinct poses, crisp outlined pixel-art style, scale and right-facing direction. EXACT 4 columns by 6 rows on a 1024x1536 canvas: each row is one upgrade tier, columns idle, anticipation, attack, recovery. Preserve sprite placement as closely as possible, with generous fully transparent separation; all 24 sprites present and no clipped weapons or body parts. GENUINELY TRANSPARENT alpha background in all gaps; remove any source colored backdrop and glow completely. No labels, text, floor, shadows, particles or detached effects. Fur, including white and black fur, is opaque.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-9999a7e5-0f02-440d-b61f-4cca9a7b4037.png"
+    },
+    {
+      "id": "gunner_snow",
+      "source": "game/assets/chunky.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Snow Gunner sprite atlas. Edit target: supplied chunky cat atlas. Change ONLY coats and coordinated equipment COLORS in ALL 24 sprites to snow-white fur with subtle gray shading; steel-blue cloth and metal equipment. Preserve eyes, pink inner ears, each weapon, silhouettes, equipment shapes and progression, six tiers, four distinct poses, crisp outlined pixel-art style, scale and right-facing direction. EXACT 4 columns by 6 rows on a 1024x1536 canvas: each row is one upgrade tier, columns idle, anticipation, attack, recovery. Preserve sprite placement as closely as possible, with generous fully transparent separation; all 24 sprites present and no clipped weapons or body parts. GENUINELY TRANSPARENT alpha background in all gaps; remove any source colored backdrop and glow completely. No labels, text, floor, shadows, particles or detached effects. Fur, including white and black fur, is opaque.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-401048f4-3cdf-41b1-9b72-27305835a5b1.png"
+    },
+    {
+      "id": "gunner_royal",
+      "source": "game/assets/chunky.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Royal Gunner sprite atlas. Edit target: supplied chunky cat atlas. Change ONLY coats and coordinated equipment COLORS in ALL 24 sprites to solid black fur with readable charcoal highlights; crimson cloth and gold equipment accents. Preserve eyes, pink inner ears, each weapon, silhouettes, equipment shapes and progression, six tiers, four distinct poses, crisp outlined pixel-art style, scale and right-facing direction. EXACT 4 columns by 6 rows on a 1024x1536 canvas: each row is one upgrade tier, columns idle, anticipation, attack, recovery. Preserve sprite placement as closely as possible, with generous fully transparent separation; all 24 sprites present and no clipped weapons or body parts. GENUINELY TRANSPARENT alpha background in all gaps; remove any source colored backdrop and glow completely. No labels, text, floor, shadows, particles or detached effects. Fur, including white and black fur, is opaque.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-b2d311c7-78f6-435e-80c1-0c1960cc39dd.png"
+    },
+    {
+      "id": "sage_classic",
+      "source": "game/assets/siamese.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Classic Siamese sprite atlas. Edit target: supplied siamese cat atlas. Change ONLY coats and coordinated equipment COLORS in ALL 24 sprites to cream Siamese fur with dark brown face, ears, paws and tail; blue cloth equipment. Preserve eyes, pink inner ears, each weapon, silhouettes, equipment shapes and progression, six tiers, four distinct poses, crisp outlined pixel-art style, scale and right-facing direction. EXACT 4 columns by 6 rows on a 1024x1536 canvas: each row is one upgrade tier, columns idle, anticipation, attack, recovery. Preserve sprite placement as closely as possible, with generous fully transparent separation; all 24 sprites present and no clipped weapons or body parts. GENUINELY TRANSPARENT alpha background in all gaps; remove any source colored backdrop and glow completely. No labels, text, floor, shadows, particles or detached effects. Fur, including white and black fur, is opaque.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-963ecf9a-7331-4dd5-b952-3b339f8678fa.png"
+    },
+    {
+      "id": "sage_silver",
+      "source": "game/assets/siamese.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Silver Sage sprite atlas. Edit target: supplied siamese cat atlas. Change ONLY coats and coordinated equipment COLORS in ALL 24 sprites to silver fur; deep-blue cloth equipment. Preserve eyes, pink inner ears, each weapon, silhouettes, equipment shapes and progression, six tiers, four distinct poses, crisp outlined pixel-art style, scale and right-facing direction. EXACT 4 columns by 6 rows on a 1024x1536 canvas: each row is one upgrade tier, columns idle, anticipation, attack, recovery. Preserve sprite placement as closely as possible, with generous fully transparent separation; all 24 sprites present and no clipped weapons or body parts. GENUINELY TRANSPARENT alpha background in all gaps; remove any source colored backdrop and glow completely. No labels, text, floor, shadows, particles or detached effects. Fur, including white and black fur, is opaque.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-8c34626c-d891-49c8-98e7-d68359bcfe5e.png"
+    },
+    {
+      "id": "sage_lilac",
+      "source": "game/assets/siamese.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Lilac Sage sprite atlas. Edit target: supplied siamese cat atlas. Change ONLY coats and coordinated equipment COLORS in ALL 24 sprites to soft gray-lilac fur; violet cloth equipment. Preserve eyes, pink inner ears, each weapon, silhouettes, equipment shapes and progression, six tiers, four distinct poses, crisp outlined pixel-art style, scale and right-facing direction. EXACT 4 columns by 6 rows on a 1024x1536 canvas: each row is one upgrade tier, columns idle, anticipation, attack, recovery. Preserve sprite placement as closely as possible, with generous fully transparent separation; all 24 sprites present and no clipped weapons or body parts. GENUINELY TRANSPARENT alpha background in all gaps; remove any source colored backdrop and glow completely. No labels, text, floor, shadows, particles or detached effects. Fur, including white and black fur, is opaque.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-a22c611e-e9ec-4698-bf33-a2604282ffe8.png"
+    },
+    {
+      "id": "sage_aurora",
+      "source": "game/assets/siamese.png",
+      "prompt": "Use case: precise-object-edit. Production Purrimeter Aurora Sage sprite atlas. Edit target: supplied siamese cat atlas. Change ONLY coats and coordinated equipment COLORS in ALL 24 sprites to snow-white fur; teal cloth with purple equipment accents. Preserve eyes, pink inner ears, each weapon, silhouettes, equipment shapes and progression, six tiers, four distinct poses, crisp outlined pixel-art style, scale and right-facing direction. EXACT 4 columns by 6 rows on a 1024x1536 canvas: each row is one upgrade tier, columns idle, anticipation, attack, recovery. Preserve sprite placement as closely as possible, with generous fully transparent separation; all 24 sprites present and no clipped weapons or body parts. GENUINELY TRANSPARENT alpha background in all gaps; remove any source colored backdrop and glow completely. No labels, text, floor, shadows, particles or detached effects. Fur, including white and black fur, is opaque.",
+      "generated_path": "/Users/rg/.codex/generated_images/01a194af-d2f3-7151-839e-2b4dfffb5990/exec-2da7c290-547c-4632-8082-4e6030d022b2.png"
+    }
+  ]
+}

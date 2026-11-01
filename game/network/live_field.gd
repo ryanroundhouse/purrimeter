@@ -12,6 +12,8 @@ static func capture(g: Session, revision: int, sequence: int, sounds: Array = []
 	var garden := {}
 	for key in COUNTERS+VALUES: garden[key]=g.get(key)
 	garden.coins=g.coins.power
+	garden.skins={}
+	for kind in range(3): garden.skins[str(kind)]=g.skin_id(kind)
 	garden.active=g.active; garden.auto_start=g.auto_start
 	garden.powerups=g.powerup_ranks.duplicate(); garden.discovered=g.discovered.duplicate(); garden.cat_milestones=g.cat_milestones.duplicate()
 	garden.towers=[]; garden.enemies=[]
@@ -41,6 +43,7 @@ static func decode(data: Dictionary) -> Session:
 		last_sound_id=int(sound.id)
 	if not data.get("garden") is Dictionary: return null
 	var d: Dictionary=data.garden
+	if not CatSkins.valid_choices(d.get("skins",{})): return null
 	for key in COUNTERS:
 		if not PowerupSave.number(d.get(key),0,9e15 if key in ["training","kills"] else 1e9,true): return null
 	if d.level<1: return null
@@ -81,6 +84,7 @@ static func decode(data: Dictionary) -> Session:
 			for n in s[key]:
 				if not PowerupSave.number(n,0,15): return null
 	var g := Session.new()
+	g.viewed_skins=d.get("skins",{}).duplicate()
 	for key in COUNTERS: g.set(key,int(d[key]))
 	for key in VALUES: g.set(key,float(d[key]))
 	g.coins=Amount.from_power(float(d.coins)); g.active=d.active; g.auto_start=d.auto_start

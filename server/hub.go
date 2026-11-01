@@ -14,6 +14,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/coder/websocket"
+	"purrimeter/server/internal/releases"
 )
 
 const maxMessage = 512 * 1024
@@ -23,6 +24,7 @@ const protocolVersion = 1
 type message map[string]any
 type request struct {
 	Type     string          `json:"type"`
+	Release  string          `json:"release"`
 	Version  int             `json:"version"`
 	Token    string          `json:"token"`
 	Name     string          `json:"name"`
@@ -56,6 +58,7 @@ type peer struct {
 	conn                         *websocket.Conn
 	cancel                       context.CancelFunc
 	id, name, game               string
+	release                      string
 	queue                        chan []byte
 	wake                         chan struct{}
 	mu                           sync.Mutex
@@ -124,6 +127,7 @@ func (p *peer) writeLoop(ctx context.Context) {
 
 type member struct {
 	id, name           string
+	release            string
 	order              uint64
 	peer               *peer
 	expires            time.Time
@@ -143,14 +147,17 @@ type ipEntry struct {
 	touched  time.Time
 }
 type hub struct {
-	mu          sync.Mutex
-	key         []byte
-	peers       map[string]*peer
-	rooms       map[string]*room
-	ips         map[string]*ipEntry
-	connections int
-	order       uint64
-	now         func() time.Time
+	currentRelease   releases.Release
+	releaseEnvelope  []byte
+	allowDevelopment bool
+	mu               sync.Mutex
+	key              []byte
+	peers            map[string]*peer
+	rooms            map[string]*room
+	ips              map[string]*ipEntry
+	connections      int
+	order            uint64
+	now              func() time.Time
 }
 
 func newHub(key []byte) *hub {
@@ -230,6 +237,15 @@ func (h *hub) authenticate(p *peer, raw []byte) bool {
 		p.send(message{"type": "error", "code": "duplicate", "message": "This installation is already connected. Close its other connection first."})
 		return false
 	}
+	p.release = q.Release
+	if q.Release == "" {
+		h.fail(p, "hello", "Download the current Purrimeter game from https://purrimeter.graham.pub to play multiplayer. Your saved garden is safe.")
+		return false
+	}
+	if !h.current(q.Release) && !h.reserved(id, q.Release) {
+		h.requireCurrent(p)
+		return false
+	}
 	p.id = id
 	p.name = strings.TrimSpace(q.Name)
 	h.peers[id] = p
@@ -256,6 +272,9 @@ func (h *hub) handle(p *peer, raw []byte) bool {
 	case "list":
 		h.list(p)
 	case "create":
+		if !h.requireCurrent(p) {
+			break
+		}
 		if !p.joins.allow(h.now(), 0.5, 5) {
 			h.fail(p, "rate", "Please wait before creating another game.")
 			break
@@ -269,6 +288,9 @@ func (h *hub) handle(p *peer, raw []byte) bool {
 		h.rooms[r.id] = r
 		h.add(r, p)
 	case "join":
+		if !h.requireCurrent(p) {
+			break
+		}
 		if !p.joins.allow(h.now(), 0.5, 5) {
 			h.fail(p, "rate", "Too many join attempts. Wait a moment and try again.")
 			break
@@ -301,7 +323,7 @@ func (h *hub) handle(p *peer, raw []byte) bool {
 		if r != nil {
 			m = h.find(r, p.id)
 		}
-		if p.game != "" || m == nil || r.banned[p.id] || m.expires.IsZero() || !h.now().Before(m.expires) {
+		if p.game != "" || m == nil || m.release != p.release || r.banned[p.id] || m.expires.IsZero() || !h.now().Before(m.expires) {
 			h.fail(p, "expired", "Your reserved place has expired. Join a game again.")
 			break
 		}
@@ -397,7 +419,7 @@ func (h *hub) add(r *room, p *peer) {
 		}
 	}
 	h.order++
-	r.members = append(r.members, &member{id: p.id, name: p.name, order: h.order, peer: p, revision: -1, sequence: -1})
+	r.members = append(r.members, &member{id: p.id, name: p.name, release: p.release, order: h.order, peer: p, revision: -1, sequence: -1})
 	p.game = r.id
 	h.joined(r, p)
 	h.broadcast(r)

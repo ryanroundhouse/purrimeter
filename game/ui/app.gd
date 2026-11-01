@@ -31,6 +31,12 @@ var pause_open := false
 var test_mode := false
 var passthrough := false
 var app_focused := true
+var updater: GameUpdater
+var update_note: Label
+var update_back := "menu"
+var update_poll := 0.0
+var achievement_panel: Control
+var skins_panel: Control
 
 func _ready() -> void:
 	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
@@ -65,7 +71,15 @@ func _ready() -> void:
 	network.departed.connect(on_departed)
 	chat_player=AudioStreamPlayer.new(); add_child(chat_player); chat_player.stream=load("res://assets/coin.wav"); chat_player.volume_db=-22
 	resized.connect(layout_game)
+	updater=GameUpdater.new(); updater.isolated=test_mode; add_child(updater)
+	updater.changed.connect(update_controls)
+	updater.ready_to_exit.connect(finish_update)
+	network.release_changed.connect(func(): updater.check(network.address))
+	achievement_panel=preload("res://ui/achievements_panel.gd").new(); add_child(achievement_panel)
 	show_menu()
+	if not test_mode:
+		updater.check(network.address)
+		acknowledge_update.call_deferred()
 	if "--app-preview" in OS.get_cmdline_user_args(): preview_app.call_deferred()
 
 func make_theme() -> Theme:
@@ -105,6 +119,8 @@ func row(parent: Node, gap: int = 12) -> HBoxContainer:
 	var box := HBoxContainer.new(); box.add_theme_constant_override("separation",gap); parent.add_child(box); return box
 
 func clear_page(next: String) -> void:
+	if is_instance_valid(achievement_panel) and achievement_panel.visible: achievement_panel.close()
+	if is_instance_valid(skins_panel) and skins_panel.visible: skins_panel.close()
 	close_pause()
 	if is_instance_valid(page): page.hide(); page.queue_free()
 	page=Control.new(); page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(page)
@@ -133,7 +149,7 @@ func title_page(title: String, subtitle: String) -> VBoxContainer:
 func show_menu() -> void:
 	if network!=null: network.disconnect_server()
 	clear_remotes(); transcript.clear(); muted.clear(); configure_window(false); clear_page("menu")
-	var box := column(page,18); box.position=Vector2(100,172); box.size=Vector2(450,580)
+	var box := column(page,14); box.position=Vector2(100,130); box.size=Vector2(450,650)
 	box.add_child(label("PURRIMETER",48)); box.add_child(label("The Garden Guard",24,MINT))
 	var description := label("Build your patrol. Grow your garden.\nKeep good company.",21,MUTED); box.add_child(description)
 	var space := Control.new(); space.custom_minimum_size.y=22; box.add_child(space)
@@ -141,8 +157,14 @@ func show_menu() -> void:
 	box.add_child(label("Your garden · Level %d · %d rebirths"%[local_view.game.level,local_view.game.rebirths],16,MUTED))
 	box.add_child(button("Multiplayer",func(): notice=""; show_browser(); network.connect_server()))
 	box.add_child(label("Up to 3 gardeners · Live fields and chat",16,MUTED))
+	box.add_child(button("Achievements",open_achievements))
+	box.add_child(button("Cat Skins",open_skins))
 	box.add_child(button("Connection settings",func(): show_settings("menu")))
 	box.add_child(button("Quit",quit_game))
+	var updates := column(page,10); updates.position=Vector2(650,670); updates.size=Vector2(500,180)
+	updates.add_child(label("Game version · "+str(GameUpdater.build().version),16,MUTED))
+	update_note=label(updater.message if updater!=null else "Check for game updates.",17,GOLD); update_note.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; updates.add_child(update_note)
+	updates.add_child(button("Check for updates",func(): show_updates(); if updater.state in ["idle","error","current","newer"]: updater.check(network.address)))
 	if not notice.is_empty():
 		var note := label(notice,16,GOLD); note.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; box.add_child(note)
 
@@ -160,7 +182,7 @@ func show_settings(back: String) -> void:
 	actions.add_child(button("Save settings",func():
 		if name_edit.text.strip_edges().is_empty(): set_status("Enter a player name."); return
 		if not server_edit.text.strip_edges().is_empty() and not network.valid_address(server_edit.text.strip_edges()): set_status("Use wss://hostname/ws. Plain ws:// is supported only for local testing."); return
-		network.disconnect_server(); network.display_name=name_edit.text.strip_edges(); network.address=server_edit.text.strip_edges(); network.chat_sound=sound.button_pressed; network.save_settings(); notice="Settings saved."
+		network.disconnect_server(); network.display_name=name_edit.text.strip_edges(); network.address=server_edit.text.strip_edges(); network.chat_sound=sound.button_pressed; network.save_settings(); updater.cancel_worker(); updater.check(network.address); notice="Settings saved."
 		if return_screen=="browser": show_browser(); network.connect_server()
 		else: show_menu(),true))
 	actions.add_child(button("Back",func():
@@ -368,7 +390,7 @@ func layout_game() -> void:
 		item.name.size=Vector2(card.size.x-120,28); item.name.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 		index+=1
 	if chat!=null: chat.visible=expanded.is_empty()
-	local_view.visible=expanded.is_empty(); local_view.gameplay_enabled=expanded.is_empty() and not pause_open
+	local_view.visible=expanded.is_empty(); local_view.gameplay_enabled=expanded.is_empty() and not pause_open and not (is_instance_valid(achievement_panel) and achievement_panel.visible) and not (is_instance_valid(skins_panel) and skins_panel.visible)
 	sync_audio_selection()
 	queue_redraw()
 
@@ -380,6 +402,33 @@ func expand_field(player: String) -> void:
 func close_expanded() -> void:
 	expanded=""; layout_game()
 
+func open_achievements() -> void:
+	if achievement_panel.visible: return
+	var was_paused: bool = local_view.game.paused
+	var was_enabled: bool = local_view.gameplay_enabled
+	local_view.game.paused=true; local_view.gameplay_enabled=false
+	move_child(achievement_panel,get_child_count()-1)
+	achievement_panel.open(local_view.game)
+	achievement_panel.dismissed.connect(func():
+		local_view.game.paused=was_paused
+		local_view.gameplay_enabled=was_enabled and not pause_open
+		local_view.save_game(),CONNECT_ONE_SHOT)
+
+func open_skins() -> void:
+	if not is_instance_valid(skins_panel):
+		skins_panel=preload("res://ui/skins_panel.gd").new(); add_child(skins_panel)
+		skins_panel.equipped.connect(func(): local_view.save_game(); publish_clock=1.0; queue_redraw())
+	if skins_panel.visible: return
+	var was_paused: bool = local_view.game.paused
+	var was_enabled: bool = local_view.gameplay_enabled
+	local_view.game.paused=true; local_view.gameplay_enabled=false
+	move_child(skins_panel,get_child_count()-1)
+	skins_panel.open(local_view.game)
+	skins_panel.dismissed.connect(func():
+		local_view.game.paused=was_paused
+		local_view.gameplay_enabled=was_enabled and not pause_open
+		local_view.save_game(),CONNECT_ONE_SHOT)
+
 func open_pause() -> void:
 	if screen not in ["single","multiplayer"] or pause_open: return
 	if not expanded.is_empty(): close_expanded()
@@ -387,7 +436,7 @@ func open_pause() -> void:
 	overlay=Control.new(); overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(overlay)
 	var shade := ColorRect.new(); shade.color=Color(INK,0.93); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); overlay.add_child(shade)
 	var center := CenterContainer.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); overlay.add_child(center)
-	var box := column(center,14); box.custom_minimum_size.x=420
+	var box := column(center,8); box.custom_minimum_size.x=420
 	box.add_child(label("Garden paused",32,MINT)); box.add_child(label("Other gardeners can keep playing.",17,MUTED) if screen=="multiplayer" else label("Your patrol is waiting for you.",17,MUTED))
 	var resume := button("Resume",func(): close_pause(); local_view.game.paused=false,true); box.add_child(resume)
 	var settings := row(box)
@@ -399,10 +448,13 @@ func open_pause() -> void:
 	sound.toggle_mode=true; sound.button_pressed=not local_view.audio.muted; sound.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	sound.pressed.connect(func(): sound.text="Sound off" if local_view.audio.muted else "Sound on")
 	settings.add_child(sound)
+	box.add_child(button("Achievements",open_achievements))
+	box.add_child(button("Cat Skins",open_skins))
 	box.add_child(button("Export garden",func(): close_pause(); local_view.action("export")))
 	box.add_child(button("Import garden",func(): close_pause(); local_view.action("import")))
 	box.add_child(button("New garden",func(): close_pause(); local_view.action("new")))
 	box.add_child(button("How to play",func(): close_pause(); local_view.action("help")))
+	box.add_child(button("Game updates",func(): close_pause(); show_updates()))
 	if screen=="multiplayer":
 		box.add_child(button("Continue offline",func(): close_pause(); network.leave_game(); show_game(false)))
 	box.add_child(button("Main menu",func():
@@ -416,6 +468,8 @@ func close_pause() -> void:
 
 func _input(event: InputEvent) -> void:
 	if passthrough or not event is InputEventKey or not event.pressed or event.echo: return
+	if is_instance_valid(achievement_panel) and achievement_panel.visible: return
+	if is_instance_valid(skins_panel) and skins_panel.visible: return
 	var focused := get_viewport().gui_get_focus_owner()
 	if event.keycode==KEY_T and screen=="multiplayer" and not pause_open and expanded.is_empty() and not local_view.confirm.visible and not local_view.file_dialog.visible and not focused is LineEdit:
 		chat_input.grab_focus(); get_viewport().set_input_as_handled(); return
@@ -432,6 +486,11 @@ func _input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if passthrough or network==null: return
+	if not test_mode and updater!=null:
+		update_poll+=delta
+		if update_poll>=60.0:
+			update_poll=0.0
+			if updater.state not in ["downloaded","downloading","preparing"]: updater.check(network.address)
 	if screen=="browser":
 		browser_clock+=delta
 		if browser_clock>=3: browser_clock=0; network.refresh()
@@ -457,11 +516,8 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO,size),INK)
 	if screen=="menu" and is_instance_valid(local_view) and not local_view.cat_textures.is_empty():
 		for i in range(3):
-			var texture: Texture2D=local_view.cat_textures[i]
-			var bounds: Array=SpriteBounds.CATS[i][3][0]
-			var src := Rect2(bounds[0],bounds[1],bounds[2],bounds[3]); var fit := 220.0/310.0
 			var at := Vector2(690+i*155,520-i*62)
-			draw_texture_rect_region(texture,Rect2(at-Vector2(src.size.x*fit/2,src.size.y*fit),src.size*fit),src)
+			CatSkinArt.draw(self,local_view.game.skin_id(i),4,0,Rect2(at-Vector2(110,220),Vector2(220,220)))
 		draw_line(Vector2(648,572),Vector2(1160,572),Color("3d514e"),2)
 		draw_string(ThemeDB.fallback_font,Vector2(690,620),"A little garden. A formidable patrol.",HORIZONTAL_ALIGNMENT_LEFT,-1,20,MUTED)
 	if screen=="multiplayer" and remote_cards.is_empty():
@@ -469,6 +525,14 @@ func _draw() -> void:
 		draw_string(ThemeDB.fallback_font,Vector2(size.x*0.69+20,218),"Keep playing while others join.",HORIZONTAL_ALIGNMENT_LEFT,-1,18,MUTED)
 
 func preview_app() -> void:
+	if "--update-preview" in OS.get_cmdline_user_args():
+		var args := OS.get_cmdline_user_args(); var which := args.find("--update-preview")
+		var mode := args[which+1] if which+1<args.size() else "available"
+		updater.state=mode; updater.latest={"version":"3.1.0"}
+		updater.message={"available":"Purrimeter 3.1.0 is available. Update to join multiplayer; single player is always ready.","checking":"Checking for updates… Single player is ready.","downloaded":"Your update is verified and ready. Restarting saves your garden and leaves multiplayer.","error":"This installation cannot be replaced automatically. Install the verified download manually. Single player is still available."}.get(mode,"Checking for updates…")
+		if mode=="error":
+			var fake := FileAccess.open(updater.work.path_join("package.zip"),FileAccess.WRITE); fake.close()
+		show_updates()
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var args := OS.get_cmdline_user_args(); var i := args.find("--app-preview")
@@ -476,3 +540,62 @@ func preview_app() -> void:
 		await RenderingServer.frame_post_draw
 		get_viewport().get_texture().get_image().save_png(args[i+1])
 	get_tree().quit()
+
+func update_controls() -> void:
+	if screen=="updates": render_updates()
+	elif screen=="menu" and is_instance_valid(update_note): update_note.text=updater.message
+	elif updater.state=="available":
+		set_status(updater.message)
+		local_view.status="An update is available. Open Menu → Game updates when you’re ready."
+
+func show_updates() -> void:
+	update_back=screen
+	if update_back not in ["single","multiplayer","browser"]: update_back="menu"
+	local_view.save_game()
+	render_updates()
+
+func render_updates() -> void:
+	var focused := get_viewport().gui_get_focus_owner()
+	var focus_text: String = focused.text if focused is Button else ""
+	clear_remotes()
+	configure_window(false); clear_page("updates")
+	var box := title_page("Game updates","Keep your patrol ready for company. Your garden and settings stay with you.")
+	box.add_child(label("Installed · "+str(GameUpdater.build().version),22,MINT))
+	if not updater.latest.is_empty(): box.add_child(label("Server release · "+str(updater.latest.version),20,CREAM))
+	var detail := label(updater.message,20,GOLD); detail.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; box.add_child(detail)
+	var actions := row(box)
+	if updater.state=="available": actions.add_child(button("Download update",updater.download,true))
+	if updater.state=="downloaded": actions.add_child(button("Restart and play",updater.install,true))
+	if updater.state=="error": actions.add_child(button("Retry",updater.retry,true))
+	if updater.state not in ["checking","downloading","preparing"]: actions.add_child(button("Check for updates",func(): updater.check(network.address)))
+	if updater.state=="error" and FileAccess.file_exists(updater.work.path_join("package.zip")):
+		box.add_child(button("Show downloaded package",func(): OS.shell_show_in_file_manager(updater.work.path_join("package.zip"))))
+		var manual := label("To install manually: quit Purrimeter, extract the downloaded ZIP, then replace Purrimeter.app on Mac. On Windows replace Purrimeter.exe, Purrimeter.pck and PurrimeterUpdater.exe together. Your saved garden lives separately.",18,MUTED); manual.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; box.add_child(manual)
+	var spacer := Control.new(); spacer.size_flags_vertical=Control.SIZE_EXPAND_FILL; box.add_child(spacer)
+	box.add_child(button("Back · keep playing",func():
+		if update_back in ["single","multiplayer"]: show_game(update_back=="multiplayer" and not network.room.is_empty())
+		elif update_back=="browser": show_browser()
+		else: show_menu()))
+	var candidates := page.find_children("*","Button",true,false)
+	for candidate in candidates:
+		if candidate.text==focus_text: candidate.grab_focus(); return
+	if not candidates.is_empty(): candidates[0].grab_focus()
+
+func finish_update() -> void:
+	local_view.game.paused=true
+	if not local_view.achievement_save_valid or SaveStore.write_achievements(local_view.game.achievements)!=OK or SaveStore.write(local_view.game)!=OK:
+		updater.fail("Your garden could not be saved, so the update was cancelled. Export your garden before retrying."); return
+	network.save_settings(); network.disconnect_server()
+	get_tree().quit()
+
+func acknowledge_update() -> void:
+	if "--update-recovered" in OS.get_cmdline_user_args():
+		updater.message="The update could not start. Your previous game and garden were restored. Check for updates to retry."; updater.state="error"; update_controls()
+	var args := OS.get_cmdline_user_args(); var index := args.find("--update-ack")
+	if index<0 or index+1>=args.size() or not local_view.startup_save_valid or not local_view.achievement_save_valid: return
+	var expected := ProjectSettings.globalize_path("user://updates/healthy")
+	if args[index+1]!=expected: return
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var marker := FileAccess.open(expected,FileAccess.WRITE)
+	if marker!=null: marker.store_string("ready"); marker.close()

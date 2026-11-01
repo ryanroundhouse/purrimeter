@@ -13,6 +13,13 @@ A shared game for up to three players, each controlling their own playing field 
 **Garden**:
 A player's persistent playing field and progression, carried between single player and multiplayer games.
 
+**Game release**:
+A published version of Purrimeter available together for macOS and Windows under one release identity.
+
+**Current game release**:
+The game release designated by a multiplayer server as required for new multiplayer admissions. Players already in a multiplayer game may continue when the server designates a newer release.
+_Avoid_: Latest version (without identifying the multiplayer server)
+
 **New Garden**:
 A fresh garden that replaces the player's current garden, resetting coins, cats, powerups, discoveries, best level, and rebirth bonuses.
 
@@ -109,14 +116,14 @@ The immediate failure of an attempt when an enemy reaches the exit. Progression 
 **Tactical pause**:
 A pause in combat and any next-level countdown during which the player can still build, upgrade, and sell towers.
 
-**Tuxedo Scout (Bolt)**:
-A black-and-white tuxedo cat tower specializing in fast single-target attacks.
+**Scout (Bolt)**:
+A cat tower specializing in fast single-target attacks, with a tuxedo coat as its default skin.
 
-**Chunky Gunner (Cannon)**:
-An orange tabby cat tower specializing in slow cannon attacks that damage enemies around the target.
+**Gunner (Cannon)**:
+A cat tower specializing in slow cannon attacks that damage enemies around the target, with an orange-tabby coat as its default skin.
 
-**Siamese Sage (Frost)**:
-A tower specializing in slowing enemies while dealing low damage.
+**Sage (Frost)**:
+A cat tower specializing in slowing enemies while dealing low damage, with a solid-black coat as its default skin.
 
 **Grunt**:
 The baseline enemy type.
@@ -135,3 +142,15 @@ A purchased increase in a tower's tier, improving its combat role, durability, a
 
 **Repair**:
 A purchased restoration of a damaged tower's health.
+
+**Achievement**:
+A player-wide accomplishment earned by meeting a defined gameplay milestone or challenge, retained through defeat, rebirth, and New Garden. Achievements can unlock cat skins without granting gameplay advantages.
+
+**Cat skin**:
+A cosmetic appearance for a cat type, available by default or permanently unlocked through an achievement. Each type has one player-selected skin shared by all of that player's cats of that type, without changing their combat abilities or tower tiers.
+
+**Achievement progress**:
+The player's recorded advancement toward an achievement's requirements, shared across single player and multiplayer.
+
+**Achievement fanfare**:
+The on-screen celebration shown when the player earns an achievement.

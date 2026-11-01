@@ -23,7 +23,7 @@ func setup(silent: bool = false) -> void:
 	boss_music=AudioStreamPlayer.new(); add_child(boss_music)
 	for theme in range(1,6):
 		boss_themes.append(looping_stream("res://assets/boss_music_%d.wav" % theme))
-	for name in ["bolt","cannon","frost","coin","build","upgrade","wave","clear","escape","break","win","lose","boss","rebirth"]:
+	for name in ["bolt","cannon","frost","coin","build","upgrade","wave","clear","escape","break","win","lose","boss","rebirth","achievement"]:
 		var path: String = "res://assets/"+name+".wav"
 		if not ResourceLoader.exists(path): path="res://assets/wave.wav"
 		effects[name]=[]

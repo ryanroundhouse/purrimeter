@@ -1,6 +1,6 @@
 # Public multiplayer server
 
-Deployed on 2026-10-31 from game/server commit `23e43a5`.
+Updated on 2026-10-31 with signed game release `3.0.0-1793460493` and relay artifact `updates-48f6d4ef3ec1`. The initial relay deployment was commit `23e43a5`.
 
 | Item | Value |
 | --- | --- |
@@ -11,7 +11,10 @@ Deployed on 2026-10-31 from game/server commit `23e43a5`.
 | DNS | Cloudflare DNS-only A record, automatic TTL |
 | Process | `purrimeter.service`, dedicated `purrimeter` system user |
 | Executable | `/opt/purrimeter/current/purrimeter-relay` |
-| Current release | `/opt/purrimeter/releases/23e43a5` |
+| Current release | `/opt/purrimeter/releases/updates-48f6d4ef3ec1` |
+| Game release endpoint | `https://purrimeter.graham.pub/updates` |
+| Release policy file | `/var/www/purrimeter/current/game-release.json` |
+| Release environment | `/etc/systemd/system/purrimeter.service.d/game-release.conf` |
 | Relay listener | `127.0.0.1:18080` |
 | Persistent identity key | `/var/lib/purrimeter/signing.key` |
 | nginx virtual host | `/etc/nginx/sites-available/purrimeter.graham.pub` |
@@ -76,3 +79,11 @@ Website files and stable download URLs use cache revalidation. Downloads support
 Publication retains old release directories. For a content rollback, read `previous-release.txt` in the matching config backup, create a temporary symlink to that release directory, and atomically rename it over `/var/www/purrimeter/current` with `mv -Tf`. No nginx reload or relay restart is needed for content-only rollback. Verify `/release.json`, `/healthz`, and both download links afterward. If nginx configuration also needs rollback, restore `site.conf` and, when present, `snippet.conf` from the same backup, run `nginx -t`, then reload nginx. The first deployment's backup has no prior website release and restores the original root 404 behavior.
 
 Website and relay releases are independent. Do not repoint `/opt/purrimeter/current` or restart `purrimeter.service` when updating only the website or downloadable clients.
+
+## Updater rollout (2026-10-31)
+
+Published website snapshot `20261031T153202Z-f95876e8aa70`, containing signed game release `3.0.0-1793460493` for macOS and Windows. Immutable downloads and signed metadata are retained under `/var/www/purrimeter/game-releases/3.0.0-1793460493/`. The relay now serves `/updates` and reloads the current signed manifest without restarting for future client publications.
+
+The one-time relay upgrade used `scripts/deploy_server.sh`, retaining the previous `releases/23e43a5` binary and preserving `/var/lib/purrimeter/signing.key`. Live verification confirmed signed metadata, successful current-client creation/joining, and rejection of legacy, development, older and newer mismatched releases. Both complete public downloads matched their signed sizes and SHA-256 hashes; the native Mac updater performed its own download verification.
+
+Verification logs are local build artifacts: `build/update-live-verification.log`, `build/update-relay-deployment.log`, `build/update-publication.log`, and `build/update-windows-public-verification.log`. See [game-update-operations.md](game-update-operations.md) for release signing, future publication, self-hosting and recovery. Windows runtime installation remains untested on this Mac.

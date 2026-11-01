@@ -9,6 +9,7 @@ signal issue(code: String, message: String)
 signal interrupted
 signal entered
 signal departed(reason: String)
+signal release_changed
 
 const SETTINGS := "user://multiplayer.cfg"
 var settings := ConfigFile.new()
@@ -125,7 +126,7 @@ func _process(delta: float) -> void:
 	match socket.get_ready_state():
 		WebSocketPeer.STATE_OPEN:
 			if not _hello_sent:
-				_hello_sent=true; send({"type":"hello","version":1,"name":display_name.strip_edges(),"token":token})
+				_hello_sent=true; send({"type":"hello","version":1,"release":GameUpdater.build().get("id","development"),"name":display_name.strip_edges(),"token":token})
 			var budget := 64
 			while socket!=null and socket.get_available_packet_count()>0 and budget>0:
 				budget-=1
@@ -148,12 +149,13 @@ func _lost() -> void:
 		if not reconnecting:
 			reconnecting=true; _deadline=Time.get_ticks_msec()/1000.0+60; interrupted.emit()
 		_retry=Time.get_ticks_msec()/1000.0+2
-		status_changed.emit("Connection lost. Your garden is paused; reconnecting…")
+		status_changed.emit("Connection interrupted (possibly server maintenance). Your garden is paused; reconnecting…")
 	else:
 		_intentional=true; games=[]; games_changed.emit(games); status_changed.emit("Could not reach the server. Check Connection settings and try again.")
 
 func _receive(data: Dictionary) -> void:
 	match data.get("type",""):
+		"release_changed": release_changed.emit()
 		"welcome":
 			id=str(data.get("id","")); token=str(data.get("token","")); authenticated=true
 			settings.set_value("identities",address.sha256_text(),token); save_settings()
@@ -178,9 +180,10 @@ func _receive(data: Dictionary) -> void:
 			room={}; reconnecting=false; departed.emit(str(data.get("message","You were removed from the game.")))
 		"error":
 			var code := str(data.get("code","")); var message := str(data.get("message","Unable to complete that action."))
-			if code in ["identity","duplicate","hello"]:
+			if code in ["identity","duplicate","hello","release"]:
 				_intentional=true; authenticated=false
 				if socket!=null: socket.close(); socket=null
 				if reconnecting: room={}; reconnecting=false; departed.emit(message)
 			if code in ["expired","banned"] and reconnecting: room={}; reconnecting=false; departed.emit(message)
+			if code=="release": release_changed.emit()
 			issue.emit(code,message)

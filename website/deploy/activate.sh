@@ -35,6 +35,34 @@ cp -a "$stage/public" "$destination"
 chown -R root:root "$destination"
 find "$destination" -type d -exec chmod 0755 {} +
 find "$destination" -type f -exec chmod 0644 {} +
+# Publish immutable packages before activating the website/current release pointer.
+python3 - "$destination" "$root/game-releases" <<'PYRELEASE'
+import base64, hashlib, json, re, shutil, sys
+from pathlib import Path
+site, store = map(Path, sys.argv[1:])
+signed = (site / 'game-release.json').read_bytes()
+r = json.loads(base64.b64decode(json.loads(signed)['payload']))
+if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+-[0-9]+', r['id']):
+    raise SystemExit('Invalid game release identity')
+dest = store / r['id']
+dest.mkdir(parents=True, exist_ok=True)
+for platform, name in [('macos', 'Purrimeter-macOS.zip'), ('windows', 'Purrimeter-Windows.zip')]:
+    source = site / 'downloads' / name
+    with source.open('rb') as stream:
+        if hashlib.file_digest(stream, 'sha256').hexdigest() != r['packages'][platform]['sha256']:
+            raise SystemExit('Signed package checksum mismatch')
+    target = dest / name
+    if target.exists():
+        with target.open('rb') as stream:
+            if hashlib.file_digest(stream, 'sha256').hexdigest() != r['packages'][platform]['sha256']:
+                raise SystemExit('Cannot overwrite an immutable game release')
+    else:
+        shutil.copy2(source, target)
+metadata = dest / 'release.json'
+if metadata.exists() and metadata.read_bytes() != signed:
+    raise SystemExit('Cannot overwrite immutable release metadata')
+metadata.write_bytes(signed)
+PYRELEASE
 backup="$root/config-backups/$release"
 mkdir "$backup"
 cp -a "$config" "$backup/site.conf"

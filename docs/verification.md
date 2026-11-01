@@ -101,3 +101,32 @@ The earlier Swift prototype's sandboxed preview crash is historical: that attemp
 Mid-level rebirth, Escape controls, background play, and viewed-garden audio (2026-10-31): `scripts/test.sh` passes, including 168 core checks, 30 level-health checks, 67 frenzy checks, 78 powerup checks, campaign checks, 49 music/focus checks, scene smoke checks, and window transitions. `scripts/test_multiplayer.sh` passes the relay race suite and 63 integration checks; the native run passes 65 checks including mouse input after chat. Coverage includes mid-combat rebirth cleanup and manual restart, focus-loss countdown progression, menu toggles, remote boss music and tiered effects, duplicate-event suppression, viewer mute/focus handling, reconnect silence, and preserved running/manual-pause state while viewing. Inspected the Escape menu at normal and minimum window sizes and the expanded rebirth explanation; the native scene smoke check confirms the dialog fits without scrolling. Mac and Windows distributions and the Linux relay package were rebuilt. Both ZIPs pass integrity checks; the Mac app passes signature verification, and the exported Mac app and Windows resource pack pass isolated smoke checks. The Windows resource pack was tested through Godot on macOS; the Windows executable was not run on Windows. Existing Godot resource/ObjectDB cleanup warnings remain in some test exits. No live relay or website deployment was performed.
 
 Gameplay label cleanup (2026-10-31): removed the field status dot/text, the escape reminder above the field, and the multiplayer layout explanation. Moved Continue offline from the multiplayer window to its Escape menu. Inspected isolated native single-player and multiplayer renders, including the updated menu. Both desktop packages were rebuilt; ZIP integrity and Mac signature checks pass.
+
+## Game updater and release admission (2026-10-31)
+
+- Full Godot gameplay suite passed (`build/update-game-tests.log`). The initial sandboxed run could not write the music test's temporary save; the unrestricted isolated-fixture run passed.
+- Go race tests passed, covering signature tampering, package integrity/archive traversal, startup acceptance and recovery of both application and garden, release admission, live reload, stale browser create/join rejection and 60-second reconnect boundaries (`build/update-go-final.log`).
+- Three-client Godot integration passed, including updates → multiplayer round-trip and keyboard focus, with zero failures (`build/update-multiplayer-final.log`). Existing Godot resource-leak diagnostics remain at test exit.
+- Four update screen states were visually reviewed and approved. See [update-ui-review.md](update-ui-review.md).
+- The exported Mac game passed isolated headless startup. Its actual signed archive staged through the native helper in a disposable installation, including app signature verification. Healthy and failed first-launch transactions are tested with isolated executable fixtures; this does not claim a full real-game upgrade cycle on both operating systems.
+- The actual native updater downloaded and verified the public Mac package. A full public Windows download matched its signed size/hash. Windows game/helper binaries cross-compiled successfully, but installation on Windows has not been run.
+- Live public relay verification passed: current signed release `3.0.0-1793460493` can create and join; legacy, development, older and newer mismatched releases are rejected.
+
+
+## Achievements (3.1.0)
+
+- All 30 achievements are exercised by 83 focused gameplay and persistence checks. Coverage includes real tower damage, restricted squads, repair/sale/replacement identity, uninterrupted clear streaks, boss-kill versus boss-level completion, migration, invalid-import atomicity, repeated-import idempotency, and player-wide profile persistence.
+- Native achievement UI checks pass for the two menu entry points, three filters, all 30 detail layouts, Escape and pause restoration, layout refresh while open, New Garden persistence, banner queuing, hidden-banner timing, and summary presentation.
+- The full gameplay, level-health, frenzy, powerup, campaign, music, smoke, and window-transition suites pass. Relay race tests, updater recovery (including achievement data), and three-client multiplayer integration pass.
+- Inspected native renders at the standard window and a 1280×720 window: menu entry, pause entry, all/empty/earned collection, tactical details, live fanfare, and retrospective summary. Captures live in `build/achievement-review/` and `build/achievement-review-min/`.
+- The signed macOS and Windows release packages build successfully. The exported macOS game passes its isolated native smoke test; Windows is cross-compiled and package-verified, without a Windows runtime test.
+
+- Published game release `3.1.0-1793467239` through website release `20261031T172139Z-04e18e6d3fb6`. The live `/updates` designation exactly matches the signed local manifest; `/healthz` returns `ok`; downloaded macOS and Windows immutable packages match their signed byte counts and SHA-256 hashes. The multiplayer relay was not restarted.
+
+## Achievement cat skins
+
+Implemented fifteen appearances across Scout, Gunner, and Sage, with twelve achievement unlocks and all 288 new animation poses. `scripts/test.sh` and `scripts/test_multiplayer.sh` passed their behavioral checks, including actual relay transmission of selected skins without granting ownership. Final sprite-outline validation and native skin UI tests passed after the Sage artwork refinements. The existing music and multiplayer test teardown still emits resource-leak diagnostics; no behavioral assertion failed.
+
+Native captures at the default and minimum window sizes are in `build/skin-review/` and `build/skin-review-min/`. Independent UI review returned `ship`, with no material fixes. Locked skins stay silhouetted, requirements fit, equipped status remains distinct from preview selection, and portraits exclude neighboring sprite fragments.
+
+Local macOS and Windows packages were rebuilt with all twelve new atlases. macOS code-signature verification and the exported application's built-in smoke test passed. Windows was cross-built, not run on Windows. These local builds have not been published as a game release. See `docs/cat-skins.md` for implementation and prompt provenance.

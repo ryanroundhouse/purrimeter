@@ -1,0 +1,3 @@
+# Keep achievements across garden resets
+
+Achievements belong to the player on this device and share progress across single player and multiplayer, surviving defeat, rebirth, and New Garden. Unlike garden progression, this collection records lasting accomplishments, so starting a fresh garden does not erase recognition or cumulative achievement progress; the trade-off is a separate persistence boundary. Garden exports carry the collection, and imports retain earned badges from either side and the greater cumulative counter values, avoiding repeated-import inflation while deliberately not summing independent play on multiple devices.

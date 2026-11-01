@@ -110,6 +110,7 @@ func check_resume_after_chat() -> void:
 func run() -> void:
 	AudioServer.set_bus_mute(0,true)
 	var g := fixture(10)
+	g.achievements.award("first",true); CatSkins.equip(g.achievements,0,"scout_ginger")
 	var state: Dictionary=JSON.parse_string(JSON.stringify(LiveField.capture(g,0,1),"",true,true))
 	var copy := LiveField.decode(state)
 	check(copy!=null and copy.level==10 and copy.paused and copy.towers.size()==3 and copy.enemies.size()==g.enemies.size(),"live representation round-trips combat independently of saves")
@@ -171,6 +172,7 @@ func run() -> void:
 	b.publish(state)
 	check(await until(func(): return app.remote_cards.has(b.id) and app.remote_cards[b.id].view.game.level==10),"remote field shows independent level and deployed cats")
 	var moving: Control=app.remote_cards[b.id].view
+	check(moving.game.skin_id(0)=="scout_ginger" and not CatSkins.unlocked(moving.game.achievements,"scout_ginger"),"relay shows owner's equipped skin without transferring unlocks")
 	var first_position: Vector2=moving.enemy_position(moving.game.enemies[0])
 	g.paused=false
 	for i in range(30): g.step(1.0/60)
@@ -216,6 +218,15 @@ func run() -> void:
 	var import_path := ProjectSettings.globalize_path("res://../build/multiplayer-import.json")
 	SaveStore.write(third,import_path); app.local_view.file_selected(import_path); app.local_view.confirm.accept_button.pressed.emit()
 	check(app.local_view.game.level==22 and app.local_view.game.paused and app.network.room.id==room_id,"import replaces the local garden while preserving membership")
+	app.show_updates()
+	await until(func(): return app.screen=="updates",1.0)
+	check(app.remote_cards.is_empty() and not app.network.room.is_empty(),"updates clear remote controls while retaining multiplayer membership")
+	app.updater.changed.emit()
+	check(app.get_viewport().gui_get_focus_owner() is Button,"update state changes retain a keyboard action")
+	app.show_game(true)
+	await until(func(): return not app.remote_cards.is_empty(),1.0)
+	check(app.screen=="multiplayer" and not app.remote_cards.is_empty(),"returning from updates rebuilds remote gardens")
+	viewer=app.remote_cards[b.id].view
 	var saved: Dictionary=app.local_view.game.snapshot(); var badfile := FileAccess.open(import_path,FileAccess.WRITE); badfile.store_string("{\"version\":0}"); badfile.close()
 	app.local_view.file_selected(import_path); app.local_view.confirm.accept_button.pressed.emit()
 	check(app.local_view.game.snapshot()==saved,"failed import leaves current progress unchanged")

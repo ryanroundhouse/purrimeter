@@ -8,6 +8,7 @@ mkdir -p dist/server
 for arch in amd64 arm64; do
   CGO_ENABLED=0 GOOS=linux GOARCH="$arch" "$go_bin" -C server build -trimpath -ldflags='-s -w' -o "../dist/server/purrimeter-relay-linux-$arch" .
 done
-cp server/{main.go,hub.go,state.go,go.mod,go.sum,Dockerfile,compose.yaml,Caddyfile,.dockerignore,README.md} dist/server/
+cp server/{main.go,hub.go,state.go,releases.go,go.mod,go.sum,Dockerfile,compose.yaml,Caddyfile,.dockerignore,README.md} dist/server/
+cp -R server/internal dist/server/
 tar -czf dist/Purrimeter-Server.tar.gz -C dist server
 printf 'Built dist/Purrimeter-Server.tar.gz (Linux amd64/arm64 binaries and Docker source)\n'

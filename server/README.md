@@ -80,3 +80,11 @@ The owner supplied `purrimeter.graham.pub` as the public hostname. That default 
 - TLS protects admission and gameplay traffic in transit. Password verifiers stay only in memory. The relay does not validate whether personal progress was earned legitimately.
 
 The service intentionally runs as one process. Multiple replicas would require shared room membership and routing; do not place independent replicas behind round-robin balancing. The Compose memory/CPU limits are protective defaults, not a measured capacity claim. Load-test against your VPS and bandwidth budget before raising limits or inviting a large audience.
+
+## Game release admission
+
+Production startup requires `GAME_RELEASE_FILE` pointing to an official signed game-release manifest. Download one from `https://purrimeter.graham.pub/game-release.json`; to pin a retained release, use `/game-releases/<release-id>/release.json`. The public verification key is compiled into the server; its release-signing private key is not needed for hosting. Docker Compose mounts `./releases:/releases:ro` and expects `releases/current.json`.
+
+The relay serves this metadata at `/updates` and reloads it each second without restarting. Replace the manifest atomically; invalid replacements retain the last valid designation. Proxy `/updates` alongside `/ws` and `/healthz` when using a separate reverse proxy. Clients use the selected `/ws` endpoint's sibling `/updates` URL.
+
+The `hello` message now includes a game `release` identity, separate from wire protocol `version: 1`. Current-release checks also run on create/join. Existing visits may continue and reconnect within their original 60-second reservation using the same release. New production connections without a published release are rejected. A local/test service may explicitly set `ALLOW_DEVELOPMENT_BUILDS=true` to accept the `development` identity; never enable that on the public service.
