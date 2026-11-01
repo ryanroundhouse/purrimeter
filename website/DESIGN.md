@@ -155,6 +155,10 @@ Links and summaries receive a gold three-pixel outline with a six-pixel offset o
 
 ## Do's and Don'ts
 
+### Voice
+
+Lead with what players do and the choices that make the game interesting. Let the cats and garden supply the humour; use complete, natural sentences for explanations. Avoid paired slogans, repeated sentence fragments, small/big contrasts, and possessive sequences such as “Your garden. Your patrol.” Headings should name the section’s subject, screenshot captions should identify the scene, and installation help should be direct. Do not force line breaks to make copy look like a tagline.
+
 ### Do:
 - Do preserve the existing cat icon, game artwork, and pixel display voice.
 - Do keep screenshot proportions intact and retain full-size access.

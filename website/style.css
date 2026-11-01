@@ -64,10 +64,10 @@ figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap
 figcaption span:first-child { color: var(--gold); }
 .game-features { background: var(--mint); color: var(--ink); }
 .feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 64px; padding-block: 44px 48px; }
-.feature-grid h2 { font: 600 32px/1.05 var(--display); }
+.feature-grid h2 { font: 600 32px/1.05 var(--display); text-wrap: balance; }
 .feature-grid p { font-size: 15px; line-height: 1.7; max-width: 38ch; margin-top: 18px; }
 .installation { display: grid; grid-template-columns: .83fr 1.17fr; gap: 56px; padding-block: 72px; }
-.install-intro h2 { font: 500 44px/1.05 var(--display); }
+.install-intro h2 { font: 500 44px/1.05 var(--display); text-wrap: balance; }
 .install-intro p { color: var(--muted); max-width: 40ch; margin-top: 20px; font-size: 14px; }
 details { border-bottom: 1px solid var(--line); }
 details:first-child { border-top: 1px solid var(--line); }
@@ -116,7 +116,6 @@ details[open] summary svg { transform: rotate(180deg); }
 @media (max-width: 420px) {
   .brand-subtitle { font-size: 11px; }
   .feature-grid article { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .feature-grid h2 br { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
