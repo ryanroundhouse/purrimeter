@@ -115,7 +115,7 @@ Spectator field messages include validated draft ownership for accurate stats an
 
 ## Interface direction and verification
 
-Mode: Operate. This is an extension of the existing game, using its ink panels, cream copy, mint choices, gold economy/Keystone accents, fallback typeface, and rounded controls. No new artwork or visual identity is introduced.
+Mode: Operate. This is an extension of the existing game, using its ink panels, cream copy, mint choices, gold economy/Keystone accents, fallback typeface, and rounded controls. The initial implementation introduced no new artwork or visual identity; the approved icon direction below extends the existing line-icon style.
 
 The task is a deliberate lasting choice: confirm rebirth before revelation, inspect the offered effects and current-to-next ranks, then explicitly choose. Three cards sit side by side on wide views; narrow phones stack them in a full-height scrolling panel with a persistent choice button. Keyboard focus never selects a reward by itself. The separate Draft Collection exposes ownership, completion, and every future requirement. Desktop places its entry beside Rebirth; phones expose it inside Powerups. Seed: none (local extension; context launcher unavailable).
 
@@ -126,3 +126,39 @@ The new core suite passes 64 checks, including completion of a partially saved t
 Reproduce with `scripts/test.sh` and `scripts/test_multiplayer.sh`. For the targeted browser test, run the Godot `tests/rebirth_draft.gd` script with `-- --browser-fixture`, build with `scripts/build_web.sh`, then run `PLAYWRIGHT_MODULE=<installed-playwright-module> node scripts/test_draft_browser.cjs`. Rendered UI fixtures use `tests/draft_ui.gd -- --multiplayer-test --mobile-test --draft-captures` and write isolated captures under `/tmp/td-draft-*.png`. Local evidence is copied to `build/rebirth-draft/`.
 
 The [earlier rebirth and pause menu](rebirth-and-pause-menu.md) and [permanent powerup](powerups.md) documents retain the historical progression decisions. This document supersedes their automatic rebirth coin-reward rule.
+
+## Draft icons
+
+The icon design interview is complete and shared understanding is confirmed. Each reward has an authored SVG pictogram in both rebirth offers and Draft Collection.
+
+- Give each draft improvement a distinctive, effect-based pictogram in the existing powerup line-icon style. Retain visible names alongside icons.
+- Cover all twelve normal improvements and the Lasting Fortune fallback. Use the same identity in both rebirth offers and Draft Collection.
+- Keep each improvement's icon stable across ranks. Rank labels convey progression; the existing strength-band accents convey Basic, Advanced, and Keystone.
+- Place an approximately 40px icon beside each card title on desktop and phones, preserving space for effect descriptions.
+- In Draft Collection, dim every unowned improvement, including eligible ones. Keep owned improvements bright even when their next rank is locked or all ranks are complete. Brightness communicates ownership; requirement text communicates next-rank eligibility. Preserve recognizable silhouettes and visible names.
+- Show every offered reward at full brightness during the rebirth choice, regardless of current ownership, so available offers do not look disabled.
+- Retain existing band tints, explicit ownership/eligibility/completion text, and card selection borders/backgrounds. Lasting Fortune retains its mint accent and explicit Fallback label.
+
+### Approved icon subjects
+
+| Improvement | Icon subject |
+| --- | --- |
+| Mixed Patrol | Two different cat profiles together |
+| Supply Cache | Open crate with a coin |
+| Salvage Crew | Broken block with a returning coin |
+| Frost Guard | Shield with a snowflake |
+| Spotter Bolts | Arrow striking a marked target |
+| Cold Front | Snowflake with spreading waves |
+| Cinder Relay | Flame with a transfer arrow |
+| Steady Aim | Crosshair with a small lock |
+| Treasure Trail | Stepping-stone trail ending in a coin |
+| Thermal Shock | Flame and ice meeting in a burst |
+| Nine Lives | Cat face with a heart |
+| Triad Strike | Three converging strikes |
+| Lasting Fortune | Coin with an infinity mark |
+
+Simplify details for small-size recognition, with distinct silhouettes especially for the three economy improvements.
+
+Icons use the existing 32×32 SVG canvas and rounded 1.8px white strokes, tinted by strength band when rendered at 40px. Unowned collection icons use 50% opacity; owned and offered icons use full opacity. Only the icon is dimmed, preserving readable names, effects, and requirements.
+
+Verification: the 64-check core draft suite and existing draft UI suite pass. Native Godot captures cover 1280×900 desktop, 390×844 and 360×740 portrait, and 844×390 landscape, including selection and fallback offers. An isolated review fixture also verifies all thirteen distinct textures, dimmed eligible-but-unowned entries, bright owned entries with locked next ranks, bright completed entries, and the dimmed unowned fallback. Icon captures are stored locally in `build/draft-icons/`. These phone layouts were rendered using mobile test mode, not revalidated on physical devices or in a browser for this icon change.

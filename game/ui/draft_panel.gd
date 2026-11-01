@@ -78,7 +78,13 @@ func add_card(parent: Control, id: String, selectable: bool) -> void:
 		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		margin.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	var column := VBoxContainer.new(); margin.add_child(column); column.add_theme_constant_override("separation",10)
-	label(column,d.name,23,CREAM)
+	var heading := HBoxContainer.new(); column.add_child(heading); heading.add_theme_constant_override("separation",12)
+	var icon := TextureRect.new(); heading.add_child(icon)
+	icon.texture=load("res://assets/drafts/"+id+".svg")
+	icon.custom_minimum_size=Vector2(40,40); icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED; icon.size_flags_vertical=Control.SIZE_SHRINK_CENTER
+	icon.modulate=Color(accent,1.0 if selectable or rank>0 else 0.5)
+	label(heading,d.name,23,CREAM)
 	label(column,"%s · %s"%["Fallback" if id==RebirthDraft.FALLBACK else RebirthDraft.BANDS[d.band],"Rank %d to %d"%[rank,rank+1] if selectable else ("Rank %d / %d"%[rank,d.cap] if d.cap>0 else "Rank %d · unlimited"%rank)],16,accent)
 	label(column,d.description,17,MUTED)
 	if id==RebirthDraft.FALLBACK and selectable:
