@@ -1,5 +1,7 @@
 # Public multiplayer server
 
+For a complete coordinated update, use [`scripts/deploy_all.sh`](deployment-workflow.md). It builds and tests the committed source, updates every downloadable client plus the server archive, conditionally restarts the relay, verifies production, and cleans up expired releases. The targeted commands and historical deployments below remain useful operational context.
+
 Updated on 2026-10-31 with signed game release `3.0.0-1793460493` and relay artifact `updates-48f6d4ef3ec1`. The initial relay deployment was commit `23e43a5`.
 
 | Item | Value |

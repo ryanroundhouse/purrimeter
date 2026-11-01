@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Snapshot the site and matching native/browser release ZIPs; this never builds or publishes."""
+import argparse
 import gzip
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import tarfile
@@ -18,7 +20,7 @@ def sha256(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def package():
+def package(source_commit=None):
     subprocess.run(["node", "--test", "website/tests/download.test.cjs"], cwd=ROOT, check=True)
     clients = {
         "Purrimeter-macOS.zip": "macos/Purrimeter.app/Contents/MacOS/Purrimeter",
@@ -51,6 +53,14 @@ def package():
             if archive.testzip() is not None:
                 raise ValueError(f"{name}: ZIP integrity check failed")
 
+    server_archive = ROOT / "dist/Purrimeter-Server.tar.gz"
+    if not server_archive.is_file():
+        raise ValueError("Missing server download; run scripts/build_server.sh first")
+    with tarfile.open(server_archive) as archive:
+        required = {"server/purrimeter-relay-linux-amd64", "server/purrimeter-relay-linux-arm64", "server/README.md"}
+        if not required.issubset(archive.getnames()):
+            raise ValueError("Server archive is incomplete")
+
     site = ROOT / "build" / "website"
     if site.exists():
         shutil.rmtree(site)
@@ -80,15 +90,17 @@ def package():
     shutil.copy2(signed, site / "game-release.json")
     (site / "downloads").mkdir()
     checksums = []
-    for name in clients:
+    for name in [*clients, server_archive.name]:
         shutil.copy2(ROOT / "dist" / name, site / "downloads" / name)
         checksums.append(f"{sha256(site / 'downloads' / name)}  {name}\n")
     (site / "downloads" / "SHA256SUMS.txt").write_text("".join(checksums))
-    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    if source_commit is not None and not re.fullmatch(r"[a-f0-9]{40}", source_commit):
+        raise ValueError("Source commit must be a full Git commit ID")
+    commit = source_commit or subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     manifest = {
         "prepared_at": datetime.now(timezone.utc).isoformat(),
         "source_commit": commit,
-        "source_dirty": bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True)),
+        "source_dirty": False if source_commit else bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True)),
         "files": {str(p.relative_to(site)): sha256(p) for p in sorted(site.rglob("*")) if p.is_file()},
     }
     (site / "release.json").write_text(json.dumps(manifest, indent=2) + "\n")
@@ -102,4 +114,6 @@ def package():
 
 
 if __name__ == "__main__":
-    package()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source-commit", help="Provenance of an isolated git-archive build (deployment orchestrator only)")
+    package(parser.parse_args().source_commit)

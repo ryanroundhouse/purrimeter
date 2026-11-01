@@ -82,6 +82,15 @@ The original Swift game's save was deleted as requested. Existing Godot version-
 
 ## Build on macOS
 
+To build, test, sign, and deploy the complete committed project to the production VM, including the website, native/browser clients, server, and self-hosting download:
+
+```sh
+./scripts/deploy_all.sh 4.0.2 --preview
+./scripts/deploy_all.sh 4.0.2
+```
+
+Choose a version newer than production and commit changes first. The command includes verification, resumable uploads, conditional relay restarts, and retention-based cleanup. See [the deployment workflow](docs/deployment-workflow.md) for prerequisites and recovery.
+
 ```sh
 ./scripts/setup_godot.sh  # downloads official pinned Godot and export templates
 ./scripts/test.sh

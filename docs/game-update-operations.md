@@ -10,10 +10,13 @@ Signed metadata identifies all three platform URLs, sizes and SHA-256 hashes. Pr
 
 ## Build and publish
 
+Use `./scripts/deploy_all.sh MAJOR.MINOR.PATCH` for the complete production workflow: build and test all components, publish, verify, and clean up. Run with `--preview` for a read-only preflight. See [deployment workflow](deployment-workflow.md) for prerequisites, retention and retry behavior. The lower-level commands below remain available for targeted operations.
+
 ```sh
 ./scripts/test.sh
 ./scripts/test_multiplayer.sh
 ./scripts/build_release.py 3.0.1
+./scripts/build_server.sh
 ./scripts/publish_website.sh --prepare-only
 ./scripts/publish_website.sh
 ```

@@ -50,6 +50,8 @@ The user confirmed this scope and authorized implementation and deployment.
 
 ## Preview and publish
 
+For a complete build and production update, use [the coordinated deployment workflow](deployment-workflow.md). It includes the public self-hosting server archive. The lower-level website packager also requires `dist/Purrimeter-Server.tar.gz`; run `scripts/build_server.sh` when preparing it separately. The coordinated workflow includes retention-based cleanup and does not automatically revert a game designation after publication; the targeted publisher described below retains its original rollback behavior.
+
 The website is buildless HTML, CSS, and JavaScript. Python 3.11+ and Node.js 18+ prepare a publication; no npm dependencies are needed. The packager copies the page, stylesheet, script, public assets, matching native ZIPs, and the browser files extracted from the signed Web ZIP. Source, tests, deployment scripts, and design documents are not served.
 
 First create a signed release with `scripts/build_release.py MAJOR.MINOR.PATCH` (see [update operations](game-update-operations.md)). To prepare a local preview using its matching `dist/game-release.json`, `dist/Purrimeter-macOS.zip`, `dist/Purrimeter-Windows.zip`, and `dist/Purrimeter-Web.zip`:

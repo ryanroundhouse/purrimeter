@@ -1,0 +1,3 @@
+# Bound historical release retention
+
+Deployment includes cleanup because retaining every website, client package and relay indefinitely consumes the VM's finite disk space. Keep the active deployment, two preceding successful deployments, everything published within seven days, and their referenced game packages and recovery targets; prune only eligible artifacts without weakening retention to make an upload fit. Immutable release URLs guarantee unchanged bytes while retained, not permanent availability: an older pending native download may require a fresh update check, and an unfinished browser load may require reloading, which we accept in exchange for reclaiming storage automatically.
