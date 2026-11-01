@@ -58,7 +58,13 @@ func VerifyWithKey(raw []byte, key string) (Release, error) {
 	if json.Unmarshal(body, &r) != nil || r.ID == "" || r.Sequence <= 0 || r.Version == "" {
 		return r, errors.New("invalid release identity")
 	}
-	for _, platform := range []string{"macos", "windows"} {
+	platforms := []string{"macos", "windows"}
+	// Historical desktop releases remain valid; a browser package, when present,
+	// receives the same URL, size and digest validation as native packages.
+	if _, ok := r.Packages["web"]; ok {
+		platforms = append(platforms, "web")
+	}
+	for _, platform := range platforms {
 		p, ok := r.Packages[platform]
 		hash, err := hex.DecodeString(p.SHA256)
 		if !ok || p.Size <= 0 || p.Size > 2<<30 || err != nil || len(hash) != 32 || !SafeURL(p.URL) {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build both platforms under one immutable identity and sign the release."""
+"""Build all three platforms under one immutable identity and sign the release."""
 import hashlib,json,os,re,subprocess,sys,time
 from pathlib import Path
 root=Path(__file__).resolve().parents[1]
@@ -15,7 +15,7 @@ try:
 finally:
  config.write_bytes(old_config);presets.write_text(old_presets)
 manifest={'id':identity,'sequence':sequence,'version':version,'packages':{}}
-for platform,name in [('macos','Purrimeter-macOS.zip'),('windows','Purrimeter-Windows.zip')]:
+for platform,name in [('macos','Purrimeter-macOS.zip'),('windows','Purrimeter-Windows.zip'),('web','Purrimeter-Web.zip')]:
  path=root/'dist'/name
  with path.open('rb') as stream: digest=hashlib.file_digest(stream,'sha256').hexdigest()
  manifest['packages'][platform]={'url':f'https://purrimeter.graham.pub/game-releases/{identity}/{name}','sha256':digest,'size':path.stat().st_size}

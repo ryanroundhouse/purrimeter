@@ -9,7 +9,7 @@ var tabs: Array = []
 var cards: Dictionary = {}
 var previews: Dictionary = {}
 var details: VBoxContainer
-var card_row: HBoxContainer
+var card_row: Container
 var portrait: Control
 var equip_button: Button
 var tier_picker: OptionButton
@@ -22,15 +22,15 @@ func open(session: Session) -> void:
 	var tab_row := HBoxContainer.new(); body.add_child(tab_row)
 	tab_row.add_theme_constant_override("separation",12); tabs.clear()
 	for i in range(3):
-		var tab := Button.new(); tab.text=Balance.CATS[i].name
-		tab.custom_minimum_size=Vector2(160,44); tab.toggle_mode=true
+		var tab := Button.new(); tab.text=["Scout","Gunner","Sage"][i] if size.x<650 else Balance.CATS[i].name
+		tab.custom_minimum_size=Vector2(0 if size.x<650 else 160,44); tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL; tab.toggle_mode=true
 		tab.pressed.connect(func(): kind=i; selection=CatSkins.selected(game.achievements,kind); refresh_cards())
-		tab_row.add_child(tab); tabs.append(tab)
-	card_row=HBoxContainer.new(); body.add_child(card_row); card_row.add_theme_constant_override("separation",10)
-	var columns := HBoxContainer.new(); body.add_child(columns); columns.add_theme_constant_override("separation",28)
-	var showcase := VBoxContainer.new(); columns.add_child(showcase); showcase.custom_minimum_size.x=260
+		tab.set_meta("wide_min",160); tab_row.add_child(tab); tabs.append(tab)
+	card_row=GridContainer.new(); card_row.set_meta("phone_grid",true); card_row.columns=2 if size.x<650 else 5; body.add_child(card_row); card_row.add_theme_constant_override("h_separation",10); card_row.add_theme_constant_override("v_separation",10)
+	var columns := BoxContainer.new(); columns.vertical=size.x<650; body.add_child(columns); columns.add_theme_constant_override("separation",28); columns.set_meta("phone_stack",true)
+	var showcase := VBoxContainer.new(); columns.add_child(showcase); showcase.set_meta("wide_min",260); showcase.custom_minimum_size.x=0 if size.x<650 else 260
 	var stage := PanelContainer.new(); showcase.add_child(stage); stage.add_theme_stylebox_override("panel",surface(Color("3d514e"),8))
-	portrait=Portrait.new(); portrait.custom_minimum_size=Vector2(260,230); stage.add_child(portrait)
+	portrait=Portrait.new(); portrait.custom_minimum_size=Vector2(0,180) if size.x<650 else Vector2(260,230); stage.add_child(portrait)
 	tier_picker=OptionButton.new(); showcase.add_child(tier_picker); tier_picker.custom_minimum_size.y=44
 	for rank in range(1,7): tier_picker.add_item("Preview tier %d" % rank,rank)
 	tier_picker.select(tier-1)

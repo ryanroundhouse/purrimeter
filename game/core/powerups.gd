@@ -8,7 +8,7 @@ const ITEMS = [
 	["eyes", "Keen Eyes", "Patrol", 5, 180, 2.5, "best", 3, 5, -1, "Every cat gains 0.15 tiles of attack range per rank."],
 	["lucky", "Lucky Claws", "Patrol", 5, 260, 2.6, "kills", 60, 150, -1, "Attacks gain a 4% critical-hit chance per rank. Critical hits deal double damage."],
 	["heavy", "Heavy Claws", "Patrol", 5, 400, 2.6, "best", 6, 5, -1, "Critical hits deal an extra 25% of normal damage per rank. Requires Lucky Claws."],
-	["bounty", "Bounty Lessons", "Economy", 5, 160, 2.8, "best", 2, 5, -1, "Enemy coin rewards increase by 10% per rank, multiplying your rebirth bonus."],
+	["bounty", "Bounty Lessons", "Economy", 5, 160, 2.8, "best", 2, 5, -1, "Enemy coin rewards increase by 10% per rank, multiplying your permanent coin bonus."],
 	["purse", "Boss Purse", "Economy", 5, 1800, 3.0, "best", 10, 10, -1, "Boss coin rewards increase by an additional 20% per rank."],
 	["thrifty", "Thrifty Recruiting", "Economy", 5, 200, 2.5, "kills", 30, 120, -1, "Recruiting cats costs 5% less per rank."],
 	["equipment", "Efficient Equipment", "Economy", 5, 300, 2.8, "best", 4, 5, -1, "Tower-tier upgrades cost 5% less per rank."],

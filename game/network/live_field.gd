@@ -16,6 +16,7 @@ static func capture(g: Session, revision: int, sequence: int, sounds: Array = []
 	for kind in range(3): garden.skins[str(kind)]=g.skin_id(kind)
 	garden.active=g.active; garden.auto_start=g.auto_start
 	garden.powerups=g.powerup_ranks.duplicate(); garden.discovered=g.discovered.duplicate(); garden.cat_milestones=g.cat_milestones.duplicate()
+	garden.draft_ranks=g.draft_ranks.duplicate(); garden.draft_rescue_used=g.draft_rescue_used
 	garden.towers=[]; garden.enemies=[]
 	for t in g.towers:
 		var row := {}
@@ -44,6 +45,7 @@ static func decode(data: Dictionary) -> Session:
 	if not data.get("garden") is Dictionary: return null
 	var d: Dictionary=data.garden
 	if not CatSkins.valid_choices(d.get("skins",{})): return null
+	if not DraftSave.valid_ranks(d.get("draft_ranks",{})) or not d.get("draft_rescue_used",false) is bool: return null
 	for key in COUNTERS:
 		if not PowerupSave.number(d.get(key),0,9e15 if key in ["training","kills"] else 1e9,true): return null
 	if d.level<1: return null
@@ -90,6 +92,7 @@ static func decode(data: Dictionary) -> Session:
 	g.coins=Amount.from_power(float(d.coins)); g.active=d.active; g.auto_start=d.auto_start
 	g.paused=data.paused; g.speed=int(data.speed)
 	g.powerup_ranks=d.powerups.duplicate(); g.discovered=d.discovered.duplicate(); g.cat_milestones=d.cat_milestones.duplicate()
+	g.draft_ranks=d.get("draft_ranks",{}).duplicate(); g.draft_rescue_used=d.get("draft_rescue_used",false)
 	g.towers=d.towers.duplicate(true); g.enemies=d.enemies.duplicate(true)
 	for t in g.towers:
 		for key in ["cell","kind","tier"]: t[key]=int(t[key])

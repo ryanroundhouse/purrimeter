@@ -32,7 +32,7 @@ const ITEMS := [
  ["dream","Dream Team","Have a tier-six Bolt, Cannon and Frost placed together.","dream",3,"Mastery","static"],
  ["toys","Full Toy Box","Own at least one rank of all 30 powerups in one garden.","toys",30,"Mastery","winter"],
  ["school","Finishing School","Reach maximum rank on five different capped powerups in one garden. Unlimited Patrol Training does not count.","school",5,"Mastery","lock"],
- ["gold","Golden Garden","Accumulate a rebirth coin bonus of at least +1,000% in one garden.","bonus",1000,"Mastery","bounty"],
+ ["gold","Seasoned Guardian","Complete 20 rebirths across your gardens.","rebirths",20,"Mastery","bounty"],
 ]
 const CONDITIONS := ["solo","bolt","cannon","basic","idle","unhurt"]
 var values: Dictionary = {}
@@ -54,7 +54,7 @@ static func valid(data) -> bool:
 	if not data is Dictionary or data.get("version")!=1: return false
 	if not CatSkins.valid_choices(data.get("skin_choices",{})) or not CatSkins.valid_seen(data.get("seen_skins",[])): return false
 	if not data.get("values") is Dictionary or not data.get("earned") is Dictionary or not data.get("pending") is Array: return false
-	var keys := []
+	var keys := ["bonus"] # Accept historical Golden Garden progress without removing earned rewards.
 	for row in ITEMS:
 		if row[3] not in keys: keys.append(row[3])
 	for key in data.values:

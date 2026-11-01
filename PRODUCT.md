@@ -4,9 +4,9 @@
 
 ## Platform
 
-Native desktop: macOS and Windows, built from one Godot project.
+Native macOS and Windows plus browser play on phones, tablets, and desktop, built from one Godot project.
 
-Impeccable's platform vocabulary does not include desktop games. This product is neither a website nor an iOS/Android app; apply desktop game conventions rather than mobile platform guidance.
+Preserve desktop game conventions in native builds. Browser play adapts the same game to touch, portrait and landscape, with readable controls at 360 CSS pixels. See `docs/mobile-browser.md` for the confirmed scope and acceptance criteria.
 
 ## Users
 
@@ -16,11 +16,11 @@ Players build a defensive patrol of cats, shape enemy routes, and improve their 
 
 ## Product Purpose
 
-Provide a standalone, endless cat tower defence game that the family can play on their respective computers. Success means readable tactical decisions, understandable progression, reliable preservation of earned progress, and the same gameplay on both platforms.
+Provide a standalone, endless cat tower defence game that the family can play on their respective computers. Success means readable tactical decisions, understandable progression, reliable preservation of earned progress, and the same gameplay across native and browser platforms.
 
 ## Positioning
 
-The defining combination is cat-themed maze building, enemies that breach towers when blocked or driven into frenzy by repeated backtracking, and persistent growth through six tower tiers, unlimited Patrol Training, and rebirth coin bonuses. These are product mechanisms, not claims of market uniqueness.
+The defining combination is cat-themed maze building, enemies that breach towers when blocked or driven into frenzy by repeated backtracking, and persistent growth through six tower tiers, unlimited Patrol Training, and permanent rebirth draft rewards. These are product mechanisms, not claims of market uniqueness.
 
 ## Operating Context
 
@@ -33,11 +33,13 @@ The defining combination is cat-themed maze building, enemies that breach towers
 - Launch into a Single player / Multiplayer menu. Escape cancels placement or inspection first, then opens a pause menu with Export/Import and a confirmed return to the main menu. Both modes use the same personal garden; importing or starting a New Garden during multiplayer preserves membership and chat.
 - Check for game updates in the background at launch, with a manual check in the menu. Single player remains available while checking, after declining an update, or after a failure. New multiplayer admission requires the selected server to confirm the installed release is current; failed checks offer Retry. A server requiring an older release explains the mismatch without offering a downgrade.
 - Updates download inside the game without quitting. “Restart and play” saves the garden and settings, leaves multiplayer, installs the verified update, and returns to the main menu with the garden paused. Failures preserve a usable installation and player data, with Retry and a verified download plus manual installation instructions when automatic replacement is unavailable. Retain the previous application and pre-update data until the replacement passes its first startup check; later gameplay must not be rolled back automatically.
-- A game release includes both macOS and Windows packages and becomes current only when both are ready; website-only changes do not advance it. Accept only officially signed releases, including on custom servers. Existing multiplayer sessions and reconnects within their 60-second reservation may continue on the previous release; subsequent creates and joins require the current release. Unpublished development builds require explicit local/test-server permission. Existing clients without the updater need one manual download. See `docs/game-updates.md`.
+- A game release includes macOS, Windows, and browser packages and becomes current only when all three are ready; website-only changes do not advance it. Accept only officially signed releases, including on custom servers. Existing multiplayer sessions and reconnects within their 60-second reservation may continue on the previous release; subsequent creates and joins require the current release. Unpublished development builds require explicit local/test-server permission. Existing clients without the updater need one manual download. See `docs/game-updates.md`.
 - Multiplayer shows the local field on the left and one or two remote fields on the right. Remote fields support read-only inspection. View switches music and gameplay effects to the selected garden while preserving the local garden’s running or paused state; closing View restores local audio. Levels, rebirths, pause and speed are independent. Game names and optional passwords are set at creation; the browser lists games with free places. Shared chat, local muting, owner kicks, ownership transfer, and 60-second reconnect reservations are included. See `docs/multiplayer.md`.
 - The default relay endpoint is `wss://purrimeter.graham.pub/ws`, overridable in Connection settings. The server package targets a Linux VPS. DNS and live deployment remain the owner's setup work; local implementation does not publish the service.
 - Auto-start next level defaults off and is saved with the garden. Successful clears show a central shrinking, fading 3–2–1 countdown lasting three real seconds at either combat speed. Pause freezes it, manual Start skips it, and switching it off or rebirthing cancels it. Loading restores a pending countdown paused. Defeat, rebirth, and new gardens wait for a manual start. See `docs/auto-start-next-level.md`.
 - Distribution is currently for personal use: macOS signing is ad hoc and Windows is unsigned. Public release signing and notarization are not configured.
+
+Browser play uses local IndexedDB saves and compatible manual transfers, without accounts or cloud synchronization. Hidden pages pause the local garden and require explicit resume. Phone multiplayer shows one garden at a time with player tabs and a chat drawer. Browser builds share the native release identity and update by saving and reloading the same page. First loading requires internet; offline reopening and installation are outside the initial scope.
 
 ## Capabilities and Constraints
 
@@ -49,7 +51,7 @@ The defining combination is cat-themed maze building, enemies that breach towers
 - Thirty achievements cover introductory milestones, cumulative activity, tactical challenges, and mastery. Main and Escape menus expose requirements and progress with All / In Progress / Earned filters. Brief queued banners and chimes celebrate unlocks when the local garden is visible. Achievements and lifetime counters persist through New Garden, single player, multiplayer, and save transfers; imports merge earned badges and maximum counters rather than adding overlapping totals. Tactical restrictions last for the whole attempt and survive save/resume. See `docs/achievements.md`.
 - Each cat type has five cosmetic skins: its original appearance and four permanent achievement unlocks. Cat Skins in the main and Escape menus shows silhouettes for locked skins, exact requirements and progress, and animated previews of all six tiers once unlocked. Equip one skin per type across existing and future cats; multiplayer viewers see the owner's selections. Earned achievements grant skins retroactively. Selections survive New Garden and save transfers, with local selections taking precedence on import. See `docs/cat-skins.md`.
 - Patrol Training is unlimited and increases all cats' damage and maximum health by 25% per purchase, preserving health percentage. Its cost starts at 100 coins and grows by 1.5× per purchase. Training does not add visual tiers. Rank one is available from level one; subsequent ranks require increasing lifetime kills, so replaying challenges always provides a path to further growth.
-- Rebirth is available during combat and between attempts after clearing level five in the current run. It returns to level one, retains coins, surviving cats, tiers, training, and existing bonuses, and heals surviving cats. Each rebirth adds 10 percentage points of permanent coin bonus per highest level cleared that run. Bonuses add; eligibility must be earned again after rebirth.
+- Rebirth is available during combat and between attempts after clearing level five in the current run. It returns to level one, retains coins, surviving cats, tiers, training, and existing bonuses, and heals surviving cats. Rebirth replaces new automatic coin bonuses with a saved choice of one permanent draft improvement. Three unique eligible offers are weighted by current-run depth; smaller pools show fewer offers and an empty pool offers a +10 percentage-point income fallback. Existing bonuses remain. Draft ranks and prerequisites belong to the garden, reset with New Garden, and appear in a separate Draft Collection. Eligibility must be earned again after rebirth. See `docs/rebirth-draft.md`.
 - At level one, an empty patrol with fewer than 50 coins receives enough for one Scout. Other defeat consequences remain intact.
 - Save import must validate data before replacing progress. Preview and test runs must not modify the player's save. The legacy Swift save is not migrated.
 - Use `CONTEXT.md` for domain terminology: a level is an enemy challenge, a tower tier is an upgrade rank, and a run is progression between rebirths.
@@ -76,7 +78,7 @@ Preserve the name Purrimeter — The Garden Guard, the cat identities, garden-de
 
 1. Make tactical state understandable: routes, placement, range, damage, costs, and available actions should help the player decide what to do next.
 2. Preserve earned progress and make destructive actions explicit. Defeat has consequences without silently rolling back possessions.
-3. Keep gameplay and saves consistent across macOS and Windows through the shared implementation.
+3. Keep gameplay and saves consistent across macOS, Windows, and browser play through the shared implementation.
 4. Preserve the cats' distinct combat roles and identities as their visible power grows.
 5. Support deliberate play through tactical pause, explicit confirmations, and clear progression feedback.
 

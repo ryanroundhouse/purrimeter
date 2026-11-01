@@ -2,11 +2,11 @@
 
 ## Release identity and trust
 
-`game/network/build.cfg` defaults to `development`. An explicit release build temporarily embeds a shared version, unique release ID and increasing sequence into both clients, then restores the source development configuration. macOS/Windows package metadata is also updated for the release. Wire protocol version 1 remains separate.
+`game/network/build.cfg` defaults to `development`. An explicit release build temporarily embeds a shared version, unique release ID and increasing sequence into macOS, Windows, and browser builds, then restores the source development configuration. macOS/Windows package metadata is also updated for the release. Wire protocol version 1 remains separate.
 
 `server/internal/releases` verifies Ed25519 signatures over the exact payload bytes. The official public key is committed in `public.key` and compiled into the relay and native updater. The dedicated private key lives at `~/.config/purrimeter/release-signing.key` with owner-only permissions, outside the repository, and is never uploaded to the game server. `PURRIMETER_RELEASE_KEY` can select another protected location containing the same key. Back up this key securely; losing it requires a new trust bootstrap/manual installation. Do not generate a replacement key as part of an ordinary release.
 
-Signed metadata identifies both platform URLs, sizes and SHA-256 hashes. Production publication requires both complete, matching packages. The updater checks signatures, transport, sizes, hashes, safe archive paths and the macOS app signature before replacement. This release signing does not provide Apple notarization or Windows publisher certification.
+Signed metadata identifies all three platform URLs, sizes and SHA-256 hashes. Production publication requires all three complete, matching packages. The updater checks signatures, transport, sizes, hashes, safe archive paths and the macOS app signature before replacement. This release signing does not provide Apple notarization or Windows publisher certification.
 
 ## Build and publish
 
@@ -43,3 +43,7 @@ Automated coverage includes signature tampering, incomplete platform releases, u
 Windows helper and game exports are cross-compiled and package-checked on macOS. Windows runtime installation and Windows security prompts require a Windows machine; do not treat cross-compilation as runtime validation.
 
 Legacy clients without a game release receive the existing terminal `hello` error code with the public download URL, so their older error handling retains the manual-upgrade instruction instead of overwriting it with a generic connection failure.
+
+## Browser updates
+
+The browser reads the selected server's release designation for admission. Save and reload always reloads the existing page; metadata never supplies an executable update URL. Reload proceeds only after the garden's IndexedDB transaction commits. If saving fails, the player can export first. The browser package shares the signed release identity with native builds, and its unpacked runtime is retained under immutable release URLs. Historical native-only manifests remain valid to permit existing servers and updaters to migrate.

@@ -23,16 +23,21 @@ static func control(e: Dictionary, duration: float) -> bool:
 	return true
 
 static func attack(g, t: Dictionary, target: Dictionary) -> void:
+	var was_burning: bool = target.get("burn_left",0.0)>0
 	var center := Vector2(t.cell%16,t.cell/16)
 	var point: Vector2 = g.position(target)
 	var base: float = g.cat_stat(t,"damage_power")
 	if roll(g,0.04*g.powerup_rank("lucky")):
 		base+=log(2.0+0.25*g.powerup_rank("heavy"))/log(10.0)
+	var primary_power := base
 	if t.kind==0:
 		var stacks: int = mini(5,int(t.get("focus_hits",0))) if t.get("focus_target",-1)==target.id else 0
+		if t.get("focus_credit",0)>0:
+			stacks=int(t.focus_credit); t.erase("focus_credit")
 		t["focus_target"]=target.id; t["focus_hits"]=mini(5,stacks+1)
 		base+=log(1.0+stacks*0.04*g.powerup_rank("focus"))/log(10.0)
-		g.damage(target,hit_power(g,t,target,base))
+		primary_power=hit_power(g,t,target,base)
+		g.damage(target,primary_power)
 		var pierced: Array = []
 		var direction := (point-center).normalized()
 		for e in g.enemies:
@@ -56,23 +61,27 @@ static func attack(g, t: Dictionary, target: Dictionary) -> void:
 		for e in g.enemies:
 			if e.hp<=0 or g.position(e).distance_to(point)>radius: continue
 			var power := hit_power(g,t,e,base)
+			if e.id==target.id: primary_power=power
 			g.damage(e,power)
 			var burn: int = g.powerup_rank("embers")
 			if burn>0:
 				var burn_power := power+log(0.08*burn)/log(10.0)
 				if e.get("burn_left",0.0)<=0 or burn_power>=e.get("burn_power",Amount.ZERO):
-					e["burn_power"]=burn_power; e["burn_left"]=3.0
+					e["burn_power"]=burn_power; e["burn_left"]=3.0; e["burn_relayed"]=false
 			if roll(g,0.1*g.powerup_rank("concussion")): control(e,0.45)
 		if g.powerup_rank("aftershock")>0:
 			g.aftershocks.append({"x":point.x,"y":point.y,"radius":radius,"power":base+log(0.4)/log(10.0),"delay":0.45,"tier":t.tier})
 	else:
-		g.damage(target,hit_power(g,t,target,base))
+		primary_power=hit_power(g,t,target,base)
+		g.damage(target,primary_power)
 		target.slow=maxf(target.slow,1.8+0.4*g.powerup_rank("linger"))
 		target["frost_hits"]=int(target.get("frost_hits",0))+1
 		if g.powerup_rank("lock")>0 and target.frost_hits%4==0: control(target,0.3*g.powerup_rank("lock"))
+	DraftCombat.primary(g,t,target,primary_power,was_burning)
 
 static func tick(g, dt: float) -> void:
 	for e in g.enemies:
+		e["spotter_left"]=maxf(0,e.get("spotter_left",0.0)-dt)
 		e["stun"]=maxf(0,e.get("stun",0.0)-dt)
 		e["control_guard"]=maxf(0,e.get("control_guard",0.0)-dt)
 		var burn_time: float = minf(dt,e.get("burn_left",0.0))
@@ -94,6 +103,7 @@ static func reward_dead(g) -> void:
 	var any_kills := false
 	for e in g.enemies:
 		if e.hp>0: continue
+		DraftCombat.death(g,e)
 		var multiplier: float = (1.0+g.bonus_points/100.0)*(1.0+0.1*g.powerup_rank("bounty"))
 		if e.boss>=0: multiplier*=1.0+0.2*g.powerup_rank("purse")
 		g.coins=g.coins.plus(Amount.from_power(e.bounty_power).times(multiplier)); g.kills+=1

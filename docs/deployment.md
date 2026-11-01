@@ -87,3 +87,14 @@ Published website snapshot `20261031T153202Z-f95876e8aa70`, containing signed ga
 The one-time relay upgrade used `scripts/deploy_server.sh`, retaining the previous `releases/23e43a5` binary and preserving `/var/lib/purrimeter/signing.key`. Live verification confirmed signed metadata, successful current-client creation/joining, and rejection of legacy, development, older and newer mismatched releases. Both complete public downloads matched their signed sizes and SHA-256 hashes; the native Mac updater performed its own download verification.
 
 Verification logs are local build artifacts: `build/update-live-verification.log`, `build/update-relay-deployment.log`, `build/update-publication.log`, and `build/update-windows-public-verification.log`. See [game-update-operations.md](game-update-operations.md) for release signing, future publication, self-hosting and recovery. Windows runtime installation remains untested on this Mac.
+
+
+## Browser release — 2026-10-31
+
+Website release `20261101T022553Z-098a18ac04fa` publishes game release `4.0.0-1793499581` for macOS, Windows, and browser play. `/play/` loads one immutable runtime from `/game-releases/4.0.0-1793499581/web/`; gzip-compressed runtime assets are enabled. The preceding website release is `/var/www/purrimeter/releases/20261031T172139Z-04e18e6d3fb6`.
+
+Live checks passed for page loading, gameplay/save persistence, browser-origin WebSocket admission, a temporary password-protected multiplayer game, matching signed metadata, native/browser download sizes, and relay health. Activation reloaded nginx and preserved the running relay. Physical iPhone/Android acceptance remains outstanding as recorded in `mobile-browser.md`.
+
+## Mobile wave-control patch — 2026-10-31
+
+Website release `20261101T023728Z-98c9d5a878df` publishes synchronized game release `4.0.1-1793500601`. Start/Resume and Auto remain available while recruiting; Confirm/Cancel occupy their own row. Signed package checks, browser integration, and production packaging checks passed before activation. The preceding website release is `/var/www/purrimeter/releases/20261101T022553Z-098a18ac04fa`. Activation validated uploaded checksums, reloaded nginx, and returned healthy relay status without restarting it. Logs: `build/wave-release-build.log`, `build/wave-prepare.log`, and `build/wave-publication.log`.

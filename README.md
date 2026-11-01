@@ -1,8 +1,8 @@
 # Purrimeter — The Garden Guard
 
-An endless pixel-art cat tower defence game for native macOS and Windows, built from one Godot 4.7.2 project.
+An endless pixel-art cat tower defence game for browsers, native macOS and Windows, built from one Godot 4.7.2 project.
 
-Download the game at **[purrimeter.graham.pub](https://purrimeter.graham.pub/)**. The page highlights the download for your operating system and includes installation help for the unsigned builds. Website source is in `website/`; preview and publication instructions are in [docs/website.md](docs/website.md).
+Play in your browser at **[purrimeter.graham.pub/play/](https://purrimeter.graham.pub/play/)**, or download the game at **[purrimeter.graham.pub](https://purrimeter.graham.pub/)**. The page highlights the download for your operating system and includes installation help for the unsigned builds. Website source is in `website/`; preview and publication instructions are in [docs/website.md](docs/website.md).
 
 The launch menu offers **Single player** and **Multiplayer**. Both use your same saved garden. Multiplayer supports public, optionally password-protected games for up to three players, with live remote fields, independent progression, and shared chat.
 
@@ -30,6 +30,14 @@ Server hosting instructions are in [server/README.md](server/README.md). The sel
 
 These downloadable builds use ad hoc signing on Mac and are unsigned on Windows. Public distribution signing/notarization is not configured; the website includes the relevant installation notes.
 
+## Browser and phone play
+
+Phone play uses portrait or landscape layouts. Select a cat, tap a tile to preview it, then Confirm; pinch to zoom, drag to pan, and Fit to see the whole garden. Tap cats or enemies to inspect them. Powerups open in a scrollable panel. Pause remains available while building, and Menu pauses combat. In phone multiplayer, player tabs switch gardens and Chat opens the conversation and moderation controls.
+
+Browser progress autosaves locally in this browser profile. Export/Import transfers the same garden files as desktop. Clearing site data also clears the browser garden, so export a backup before doing so. Only one tab owns autosaving at a time; Play in this tab takes over safely. Storage failures pause play and offer Export or an explicit Continue without autosave choice.
+
+Switching apps or hiding the page pauses your garden; returning requires Resume. Single player continues if connectivity drops after loading. Reloading requires internet; installable/offline reopening is not part of this version. Browser updates save before reloading the same page. See [mobile design and verification](docs/mobile-browser.md) for test coverage and outstanding physical-device checks.
+
 ## Controls
 
 Click a cat card, then an empty tile to recruit. Click a placed cat to inspect, upgrade, repair or sell. **1 / 2 / 3** select cats, **Space** pauses, **Esc** cancels placement, and **N** starts the next attempt. Building, repairs and upgrades work while paused. Use the 1×/2× speed button as needed. Leaving the game window keeps combat and Auto countdowns running, while music and gameplay effects become silent until you return.
@@ -54,8 +62,8 @@ Click an enemy or boss to inspect its animated portrait, name, current/max healt
 - Boss levels play five original, more intense chiptune themes: levels 10–50 cycle through all five, then repeat. Music crossfades at the start and end of the whole level; the garden theme resumes afterward. Retries and saved boss levels restart their assigned theme.
 - **30 permanent powerups** cover patrol stats, economy, durability, and unique Bolt/Cannon/Frost abilities. Click a discovered icon to inspect its current effect, next benefit, and prerequisite. **Available / Owned** switches between unfinished powerups and your collection. Hidden icons appear when their discovery milestones are earned; discoveries persist through rebirth and defeat. Each rank needs its own milestone and coin price. Completed powers remain in Owned. Select a placed cat for its controls; **Back to powerups** restores the browser.
 - **Patrol Training** increases all cats' damage and maximum health by 25% per purchase, compounded, while preserving their health percentage. Initial cost: 100 coins; each purchase costs 1.5× the previous one. It has unlimited ranks: rank one is available immediately, and rank n requires 4 × n × (n − 1) lifetime kills. Replayed levels count.
-- **Rebirth** unlocks after clearing level 5 and can be used during combat or between attempts. Return to level 1, retain coins, surviving cats, tiers, training and existing bonuses, and fully heal cats. Remaining enemies disappear; the unfinished level adds no rebirth bonus. Level one waits for a manual Start, even with Auto enabled.
-- Each rebirth adds **10 percentage points per highest level cleared that run** to permanent coin rewards. Two level-five rebirths give +100% total, or 2× normal rewards. Clear level 5 again to qualify after each rebirth.
+- **Rebirth** unlocks after clearing level 5 and can be used during combat or between attempts. Return to level 1, retain coins, surviving cats, tiers, training and existing bonuses, and fully heal cats. Remaining enemies disappear; only cleared levels count toward draft quality. Level one waits for a manual Start, even with Auto enabled.
+- **Rebirth Draft** replaces automatic coin bonuses: confirm rebirth, then choose one permanent improvement from up to three eligible offers. The 12-improvement collection has capped ranks, prerequisites, and stronger-offer odds after deeper runs. Offers survive reopening without rerolls. Existing coin bonuses stay; if no normal improvement is eligible, the sole fallback adds 10 percentage points. **Draft Collection** shows every reward and requirement (inside Powerups on phones). Clear level 5 again to qualify. New Garden resets the draft collection. See [the complete rules](docs/rebirth-draft.md).
 
 ## Achievements
 
@@ -77,7 +85,8 @@ The original Swift game's save was deleted as requested. Existing Godot version-
 ```sh
 ./scripts/setup_godot.sh  # downloads official pinned Godot and export templates
 ./scripts/test.sh
-./scripts/build.sh       # creates BOTH Mac and Windows packages
+./scripts/build.sh       # creates macOS, Windows and browser packages
+./scripts/build_web.sh   # browser-only local export to dist/web
 ./scripts/test_multiplayer.sh # Go race tests + three isolated Godot clients
 ./scripts/build_server.sh     # Linux binaries + Docker deployment archive
 ```

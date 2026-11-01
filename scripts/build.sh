@@ -14,6 +14,7 @@ cp docs/PLAY.txt dist/macos/README.txt
 cp docs/GODOT-LICENSE.txt docs/GODOT-COPYRIGHT.txt dist/macos/
 cp build/PurrimeterUpdater dist/macos/Purrimeter.app/Contents/MacOS/
 cp build/PurrimeterUpdater.exe dist/windows/
+./scripts/build_web.sh
 python3 scripts/stamp_build.py
 codesign --force --deep --sign - dist/macos/Purrimeter.app
 codesign --verify --deep --strict dist/macos/Purrimeter.app
@@ -26,4 +27,4 @@ ditto -c -k --sequesterRsrc --keepParent dist/macos dist/Purrimeter-macOS.zip
 rm -rf build/Purrimeter.app
 ditto dist/macos/Purrimeter.app build/Purrimeter.app
 codesign --verify --deep --strict build/Purrimeter.app
-printf '\nBuilt dist/Purrimeter-macOS.zip and dist/Purrimeter-Windows.zip\n'
+printf '\nBuilt macOS, Windows and Web packages\n'

@@ -130,3 +130,22 @@ Implemented fifteen appearances across Scout, Gunner, and Sage, with twelve achi
 Native captures at the default and minimum window sizes are in `build/skin-review/` and `build/skin-review-min/`. Independent UI review returned `ship`, with no material fixes. Locked skins stay silhouetted, requirements fit, equipped status remains distinct from preview selection, and portraits exclude neighboring sprite fragments.
 
 Local macOS and Windows packages were rebuilt with all twelve new atlases. macOS code-signature verification and the exported application's built-in smoke test passed. Windows was cross-built, not run on Windows. These local builds have not been published as a game release. See `docs/cat-skins.md` for implementation and prompt provenance.
+
+
+## Mobile browser version
+
+Browser implementation and its reproducible checks are recorded in [mobile-browser.md](mobile-browser.md). The shared native regression suite, relay race/integration checks, touch/persistence tests, and production browser-package checks passed. Physical iPhone/Android behavior and the target phone frame rate are not yet certified; the available checks used Chromium touch emulation.
+
+The 4.0.1 wave-control regression reproduced missing Start/Auto controls with recruitment selected, then passed after separating wave and placement rows. Rendered checks cover zero coins, start/pause/resume, and control bounds at three phone sizes. The existing sixteen mobile checks, Chromium touch/persistence/multiplayer suite (now including wave start), and signed production-package browser checks passed. Logs: `build/mobile-wave-controls.log`, `build/wave-mobile-test.log`, `build/wave-browser-test.log`, and `build/wave-release-test.log`.
+
+## Rebirth Draft
+
+The confirmed [Rebirth Draft design](rebirth-draft.md) is implemented with twelve rewards, depth-weighted unique offers, capped next ranks and prerequisites, preserved legacy bonuses, and an income fallback. Version-4 saves preserve pending offers and effect state; legacy saves retain existing strength without retroactive picks.
+
+- The new core suite passes 64 checks covering eligibility, weighting, ranks, atomic save failures, JSON/disk restore, all twelve effects, combo continuation, achievement migration, and spectator ownership.
+- The full native suite passes, including campaign progression through level 10 after a draft, powerups, achievements, skins, boss music, window transitions, smoke interactions, and mobile controls. Local multiplayer integration and relay race tests pass.
+- Rendered review covers desktop offers/selection/collection, confirmation, the game sidebar, fallback, 390×844 and 360×740 portrait, and 844×390 landscape. Keyboard Enter selects a focused card; a separate action grants the reward. Narrow panels scroll while keeping the choice control available.
+- Chromium touch tests verify confirmation, durable fixed offers, reload without rerolling, exactly one reward, and an injected IndexedDB failure that leaves the original pending choice intact. The existing browser suite passes touch input, wave start, rotation, persistence, tab takeover, import/export, unavailable storage, multiplayer, and chat. Browser export builds successfully.
+- Initial tuning and the known short-run farming trade-off are documented in the design. Physical phone certification and extended human balance testing are not claimed.
+
+Evidence: `build/rebirth-draft/`, `build/draft-browser-*.png`, and the reproducible commands in the design document. The Godot fixtures report some existing shutdown resource-leak and sandbox certificate/log warnings; there are no script/parse failures or failed behavior assertions in the passing runs.

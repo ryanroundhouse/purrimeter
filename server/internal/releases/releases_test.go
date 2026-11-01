@@ -36,3 +36,18 @@ func TestTrustAndCompleteRelease(t *testing.T) {
 		}
 	}
 }
+
+func TestBrowserPackageValidation(t *testing.T) {
+	pub, key, _ := ed25519.GenerateKey(rand.Reader)
+	p := Package{URL: "https://example.com/game.zip", SHA256: strings.Repeat("a", 64), Size: 100}
+	r := Release{ID: "web", Sequence: 2, Version: "4.0", Packages: map[string]Package{"macos": p, "windows": p, "web": p}}
+	raw, _ := Sign(r, key)
+	if _, err := VerifyWithKey(raw, base64.StdEncoding.EncodeToString(pub)); err != nil {
+		t.Fatal(err)
+	}
+	r.Packages["web"] = Package{URL: "file:///tmp/untrusted", SHA256: p.SHA256, Size: 100}
+	raw, _ = Sign(r, key)
+	if _, err := VerifyWithKey(raw, base64.StdEncoding.EncodeToString(pub)); err == nil {
+		t.Fatal("unsafe browser package accepted")
+	}
+}

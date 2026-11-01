@@ -5,7 +5,7 @@ static func number(value, low: float, high: float, integral: bool = false) -> bo
 	return (value is int or value is float) and is_finite(float(value)) and value>=low and value<=high and (not integral or float(value)==floor(float(value)))
 
 static func valid(data: Dictionary) -> bool:
-	if data.get("version")==3:
+	if data.get("version",0)>=3:
 		if not data.get("powerups") is Dictionary or not data.get("discovered") is Dictionary: return false
 		for id in data.powerups:
 			var d := Powerups.definition(str(id))
@@ -40,7 +40,7 @@ static func valid(data: Dictionary) -> bool:
 static func apply(g, data: Dictionary) -> void:
 	g.powerup_ranks={}; g.discovered={"training":true}; g.cat_milestones=[0,0,0]
 	g.combat_seed=1234567; g.aftershocks=[]
-	if data.version==3:
+	if data.version>=3:
 		for id in data.powerups: g.powerup_ranks[id]=int(data.powerups[id])
 		for id in data.discovered:
 			if data.discovered[id]: g.discovered[id]=true

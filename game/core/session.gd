@@ -19,6 +19,11 @@ var best := 0
 var run_best := 0
 var rebirths := 0
 var bonus_points := 0.0
+var draft_ranks: Dictionary = {}
+var draft_seed := randi_range(1,2147483646)
+var pending_draft: Dictionary = {}
+var draft_streak := 0
+var draft_rescue_used := false
 var training := 0
 var kills := 0
 var powerup_ranks: Dictionary = {}
@@ -49,7 +54,7 @@ func cat_stat(t: Dictionary, key: String) -> float:
 	var c: Dictionary = Balance.CATS[t.kind]
 	match key:
 		"range": return c.range+0.3*(t.tier-1)+0.15*powerup_rank("eyes")
-		"interval": return c.interval/((1.0+0.12*(t.tier-1))*(1.0+0.08*powerup_rank("quick"))*(1.3 if powerup_rank("stand")>0 and t.hp<0.3 else 1.0))
+		"interval": return c.interval/((1.0+0.12*(t.tier-1))*(1.0+0.08*powerup_rank("quick"))*(1.3 if powerup_rank("stand")>0 and t.hp<0.3 else 1.0)*DraftCombat.speed_factor(self,t))
 		"hp_power": return log(c.hp)/log(10.0)+(t.tier-1)*log(1.65)/log(10.0)+training*log(1.25)/log(10.0)+log(1.0+0.15*powerup_rank("beds"))/log(10.0)
 		"damage_power": return log(c.damage)/log(10.0)+(t.tier-1)*log(2.0)/log(10.0)+training*log(1.25)/log(10.0)
 	return 0
@@ -66,6 +71,17 @@ func refund(t: Dictionary) -> Amount:
 func powerup_rank(id: String) -> int:
 	return training if id=="training" else int(powerup_ranks.get(id,0))
 
+func draft_rank(id: String) -> int:
+	return int(draft_ranks.get(id,0))
+
+func choose_draft(id: String) -> bool:
+	if pending_draft.is_empty() or id not in pending_draft.offers: return false
+	draft_ranks[id]=draft_rank(id)+1
+	if id==RebirthDraft.FALLBACK: bonus_points+=10.0
+	pending_draft.clear(); paused=true; invalidate_routes()
+	notice.emit("%s · rank %d. Start level 1 when ready."%[RebirthDraft.definition(id).name,draft_rank(id)])
+	sound.emit("upgrade",6); changed.emit(); return true
+
 func refresh_powerups() -> void:
 	for t in towers: cat_milestones[t.kind]=maxi(cat_milestones[t.kind],t.tier)
 	for row in Powerups.ITEMS:
@@ -77,6 +93,7 @@ func powerup_complete(id: String) -> bool:
 	return not d.is_empty() and d.cap>0 and powerup_rank(id)>=d.cap
 
 func can_buy_powerup(id: String) -> bool:
+	if not pending_draft.is_empty(): return false
 	if Powerups.definition(id).is_empty() or powerup_complete(id): return false
 	return Powerups.eligible(self,id,powerup_rank(id)+1) and coins.enough(Powerups.cost(id,powerup_rank(id)))
 
@@ -101,6 +118,7 @@ func tower_at(cell: int) -> Dictionary:
 	return {}
 
 func placement_error(cell: int, kind: int) -> String:
+	if not pending_draft.is_empty(): return "Choose your rebirth improvement first."
 	if cell < 0 or cell > 255: return "Choose a tile inside the garden."
 	if cell == Routes.ENTRANCE or cell == Routes.EXIT: return "Keep the entrance and exit clear."
 	if not tower_at(cell).is_empty(): return "A cat already guards this tile."
@@ -123,6 +141,7 @@ func build(kind: int, cell: int) -> bool:
 	refresh_powerups(); invalidate_routes(); sound.emit("build",1); changed.emit(); return true
 
 func upgrade(cell: int) -> bool:
+	if not pending_draft.is_empty(): return false
 	var t := tower_at(cell)
 	if t.is_empty() or t.tier>=6: return false
 	var cost := upgrade_cost(t)
@@ -132,6 +151,7 @@ func upgrade(cell: int) -> bool:
 	refresh_powerups(); invalidate_routes(); sound.emit("upgrade",t.tier); changed.emit(); return true
 
 func repair(cell: int) -> bool:
+	if not pending_draft.is_empty(): return false
 	var t := tower_at(cell)
 	if t.is_empty() or t.hp>=0.999999: return false
 	var cost := repair_cost(t)
@@ -141,6 +161,7 @@ func repair(cell: int) -> bool:
 	refresh_powerups(); invalidate_routes(); sound.emit("build",1); changed.emit(); return true
 
 func sell(cell: int) -> bool:
+	if not pending_draft.is_empty(): return false
 	var t := tower_at(cell)
 	if t.is_empty(): return false
 	coins=coins.plus(refund(t)); towers.erase(t)
@@ -151,9 +172,10 @@ func train() -> bool:
 	return buy_powerup("training")
 
 func can_rebirth() -> bool:
-	return run_best>=5
+	return run_best>=5 and pending_draft.is_empty()
 
 func set_auto_start(enabled: bool) -> void:
+	if not pending_draft.is_empty(): return
 	if auto_start==enabled: return
 	auto_start=enabled
 	auto_start_remaining=AUTO_START_DELAY if enabled and not active and last_defeat==0 and level>1 and run_best>=level-1 else 0.0
@@ -161,13 +183,16 @@ func set_auto_start(enabled: bool) -> void:
 
 func rebirth() -> bool:
 	if not can_rebirth(): return false
-	var gain := run_best*10.0
-	bonus_points+=gain; rebirths+=1; run_best=0; level=1; active=false; last_defeat=0
+	var depth := run_best
+	rebirths+=1
+	pending_draft={"depth":depth,"rebirth":rebirths,"offers":RebirthDraft.draw(self,depth)}
+	run_best=0; level=1; active=false; last_defeat=0; draft_streak=0
 	enemies.clear(); shots.clear(); aftershocks.clear(); wave_plan.clear(); spawned=0; spawn_clock=0
 	for t in towers: t.hp=1.0; t.cooldown=0.0; t.flash=0.0
-	paused=false; auto_start_remaining=0.0; refresh_powerups(); invalidate_routes(); sound.emit("rebirth",6)
+	DraftCombat.reset_attempt(self)
+	paused=true; auto_start_remaining=0.0; refresh_powerups(); invalidate_routes(); sound.emit("rebirth",6)
 	achievements.record(self,"rebirth")
-	notice.emit("REBIRTH · +%s%% coin bonus. Your patrol returns stronger." % Amount.of(gain).label())
+	notice.emit("REBIRTH DRAFT · Choose one permanent improvement.")
 	changed.emit(); return true
 
 func recover() -> void:
@@ -175,6 +200,8 @@ func recover() -> void:
 		coins=Amount.of(50)
 
 func defeat() -> void:
+	if not pending_draft.is_empty(): return
+	draft_streak=0
 	achievements.record(self,"defeat")
 	last_defeat=level; level=maxi(1,level-1); active=false; paused=true; auto_start_remaining=0.0
 	enemies.clear(); shots.clear(); aftershocks.clear(); wave_plan.clear(); spawned=0; spawn_clock=0
@@ -183,7 +210,8 @@ func defeat() -> void:
 	changed.emit()
 
 func start() -> bool:
-	if active: return false
+	if active or not pending_draft.is_empty(): return false
+	DraftCombat.reset_attempt(self)
 	wave_plan=Balance.plan(level); spawned=0; spawn_clock=0; active=true; paused=false; auto_start_remaining=0.0
 	achievements.record(self,"start")
 	last_defeat=0; sound.emit("wave",1); notice.emit("Level %d · %s" % [level,Balance.title(level)]); changed.emit(); return true
@@ -194,7 +222,8 @@ func foe_speed(e: Dictionary) -> float:
 
 func foe_dps(e: Dictionary) -> float:
 	var base: float = Balance.BOSSES[e.boss].dps if e.boss>=0 else Balance.FOES[e.kind].dps
-	return base*(1.0+0.04*(level-1))*(1.0-0.06*powerup_rank("fur"))
+	var reduction := 0.06*powerup_rank("fur")+(0.1*draft_rank("guard") if e.slow>0 else 0.0)
+	return base*(1.0+0.04*(level-1))*(1.0-minf(0.6,reduction))
 
 func field_for(e: Dictionary, cell: int) -> Dictionary:
 	var frenzied: bool = e.get("frenzied",false)
@@ -213,7 +242,8 @@ func field_for(e: Dictionary, cell: int) -> Dictionary:
 
 func destruction_time(e: Dictionary, t: Dictionary) -> float:
 	if t.is_empty(): return 0.0
-	return pow(10.0,clampf(cat_stat(t,"hp_power")+log(maxf(t.hp,1e-300))/log(10.0)-log(foe_dps(e))/log(10.0),-300,150))
+	var health: float = t.hp+(0.35 if draft_rank("lives")>0 and not draft_rescue_used else 0.0)
+	return pow(10.0,clampf(cat_stat(t,"hp_power")+log(maxf(health,1e-300))/log(10.0)-log(foe_dps(e))/log(10.0),-300,150))
 
 func position(e: Dictionary) -> Vector2:
 	var start := Vector2(e.cell%16,e.cell/16)
@@ -275,7 +305,7 @@ func damage(e: Dictionary, power: float) -> void:
 	e.hp-=pow(10.0,clampf(power-e.hp_power,-300,100))
 
 func step(dt: float, real_dt: float = -1.0) -> void:
-	if paused: return
+	if paused or not pending_draft.is_empty(): return
 	elapsed+=dt
 	for shot in shots: shot.life-=dt
 	shots=shots.filter(func(s): return s.life>0)
@@ -324,7 +354,8 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 					achievements.fail_condition(self,"unhurt","A cat took damage during the attempt.")
 					blocker.hp-=pow(10.0,clampf(log(foe_dps(e)*dt)/log(10.0)-cat_stat(blocker,"hp_power"),-300,100))
 					e.attack=0.15
-					if blocker.hp<=0:
+					if blocker.hp<=0 and not DraftCombat.rescue(self,blocker):
+						DraftCombat.destroyed(self,blocker)
 						towers.erase(blocker); achievements.record(self,"destroyed",{"cell":blocker.cell}); invalidate_routes(); sound.emit("break",1)
 				else:
 					e.next=next; e.progress=0.0; e.frenzy_target=-1
@@ -335,6 +366,7 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 				e.cell=e.next; e.next=-1; e.progress=0.0
 				if e.cell==Routes.EXIT: defeat(); return
 	if spawned>=wave_plan.size() and enemies.is_empty():
+		DraftCombat.clear_level(self)
 		achievements.record(self,"clear")
 		active=false; best=maxi(best,level); run_best=maxi(run_best,level); level+=1
 		wave_plan.clear(); aftershocks.clear(); spawned=0; spawn_clock=0.0
@@ -347,12 +379,12 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 
 func snapshot() -> Dictionary:
 	refresh_powerups()
-	return {"version":3,"achievements":achievements.snapshot(),"achievement_run":achievement_run.duplicate(true),"powerups":powerup_ranks.duplicate(true),"discovered":discovered.duplicate(true),"cat_milestones":cat_milestones.duplicate(),"combat_seed":combat_seed,"aftershocks":aftershocks.duplicate(true),"coins":coins.power,"towers":towers.duplicate(true),"enemies":enemies.duplicate(true),"level":level,"best":best,"run_best":run_best,"rebirths":rebirths,"bonus_points":bonus_points,"training":training,"kills":kills,"active":active,"spawned":spawned,"spawn_clock":spawn_clock,"next_id":next_id,"elapsed":elapsed,"last_defeat":last_defeat,"auto_start":auto_start,"auto_start_remaining":auto_start_remaining}
+	return {"version":4,"draft_ranks":draft_ranks.duplicate(),"draft_seed":draft_seed,"pending_draft":pending_draft.duplicate(true),"draft_streak":draft_streak,"draft_rescue_used":draft_rescue_used,"achievements":achievements.snapshot(),"achievement_run":achievement_run.duplicate(true),"powerups":powerup_ranks.duplicate(true),"discovered":discovered.duplicate(true),"cat_milestones":cat_milestones.duplicate(),"combat_seed":combat_seed,"aftershocks":aftershocks.duplicate(true),"coins":coins.power,"towers":towers.duplicate(true),"enemies":enemies.duplicate(true),"level":level,"best":best,"run_best":run_best,"rebirths":rebirths,"bonus_points":bonus_points,"training":training,"kills":kills,"active":active,"spawned":spawned,"spawn_clock":spawn_clock,"next_id":next_id,"elapsed":elapsed,"last_defeat":last_defeat,"auto_start":auto_start,"auto_start_remaining":auto_start_remaining}
 
 func restore(data: Dictionary) -> bool:
 	# Validate everything before replacing the live run.
 	var ints := ["level","best","run_best","rebirths","training","kills","spawned","next_id","last_defeat"]
-	if data.get("version",0)!=2 and data.get("version",0)!=3: return false
+	if data.get("version",0)!=2 and data.get("version",0)!=3 and data.get("version",0)!=4: return false
 	if not PowerupSave.valid(data): return false
 	if data.has("achievements") and not Achievements.valid(data.achievements): return false
 	if not Achievements.valid_run(data.get("achievement_run",{})): return false
@@ -389,6 +421,7 @@ func restore(data: Dictionary) -> bool:
 		ids[int(e.id)]=true
 	var plan := Balance.plan(int(data.level))
 	if data.spawned>plan.size() or (not data.active and not data.enemies.is_empty()): return false
+	if not DraftSave.valid(data): return false
 	for key in ints: set(key,int(data[key]))
 	auto_start=data.get("auto_start",false); auto_start_remaining=float(remaining_delay)
 	coins=Amount.from_power(float(data.coins)); bonus_points=float(data.bonus_points); spawn_clock=float(data.spawn_clock); elapsed=float(data.elapsed); active=data.active
@@ -399,8 +432,10 @@ func restore(data: Dictionary) -> bool:
 		for key in ["id","kind","boss","cell","next"]: e[key]=int(e[key])
 		Frenzy.restore(e)
 	PowerupSave.apply(self,data)
+	DraftSave.apply(self,data)
 	refresh_powerups()
 	achievement_run=data.get("achievement_run",{}).duplicate(true)
 	if data.has("achievements"): achievements.merge(data.achievements)
 	else: achievements.credit_saved(self)
+	if data.version<4: achievements.highest("rebirths",rebirths); achievements.evaluate(true)
 	wave_plan=plan if active else []; paused=true; shots.clear(); invalidate_routes(); return true

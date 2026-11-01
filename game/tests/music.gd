@@ -82,7 +82,7 @@ func run() -> void:
 	audio._process(.5)
 	audio.boss_music.seek(8.0)
 	var saved: Dictionary = scene.game.snapshot()
-	var path := "user://boss-music-test-save.json"
+	var path := "/tmp/purrimeter-boss-music-test-%d.json"%OS.get_process_id()
 	check(SaveStore.write(scene.game,path)==OK,"temporary boss save written")
 	scene.file_action="import"; scene.file_selected(path); scene.confirm.accept()
 	check(scene.game.active and scene.game.paused and audio.current_theme==1 and audio.boss_music.get_playback_position()<.1,"actual import restarts the theme even when importing the same boss level")
@@ -98,6 +98,7 @@ func run() -> void:
 	scene.game.spawned=scene.game.wave_plan.size(); scene.game.step(.01)
 	scene.game.rebirth(); audio._process(.5)
 	check(scene.game.level==1 and audio.current_theme==0,"rebirth keeps regular music")
+	scene.game.choose_draft(scene.game.pending_draft.offers[0]); scene.draft_panel.finish_choice()
 	# Freeze a transition and change the selected level while muted.
 	scene.game.level=20; scene.game.start(); audio._process(.2)
 	audio.set_mute(true)

@@ -1,5 +1,6 @@
 # Mid-level rebirth and Escape menu
 
+The [Rebirth Draft](rebirth-draft.md) supersedes the automatic coin-bonus reward and rebirth confirmation described below. Possession retention, healing, level-five qualification, and manual restart remain in force.
 Status: design confirmed through the user interview; implemented in the shared Godot game.
 
 ## Confirmed decisions

@@ -12,7 +12,7 @@ const LINE := Color("3d514e")
 
 var panel: PanelContainer
 var body: VBoxContainer
-var footer: HBoxContainer
+var footer: BoxContainer
 var scroll: ScrollContainer
 var accept_button: Button
 var cancel_button: Button
@@ -72,14 +72,14 @@ func begin_dialog(heading: String, subtitle: String, dimensions: Vector2) -> voi
 	panel=PanelContainer.new(); add_child(panel)
 	var frame := surface(PANEL,12)
 	frame.set_border_width_all(1); frame.border_color=LINE
-	frame.content_margin_left=32; frame.content_margin_right=32
-	frame.content_margin_top=28; frame.content_margin_bottom=28
+	frame.content_margin_left=16 if size.x<650 else 32; frame.content_margin_right=frame.content_margin_left
+	frame.content_margin_top=16 if size.y<650 else 28; frame.content_margin_bottom=frame.content_margin_top
 	panel.add_theme_stylebox_override("panel",frame)
 	var column := VBoxContainer.new(); panel.add_child(column)
-	column.add_theme_constant_override("separation",20)
+	column.add_theme_constant_override("separation",10 if size.y<650 else 20)
 	var header := VBoxContainer.new(); column.add_child(header)
 	header.add_theme_constant_override("separation",8)
-	label(header,heading,30,CREAM)
+	label(header,heading,24 if size.x<650 else 30,CREAM)
 	if not subtitle.is_empty(): label(header,subtitle,18)
 	separator(column)
 	scroll=ScrollContainer.new(); column.add_child(scroll)
@@ -90,7 +90,7 @@ func begin_dialog(heading: String, subtitle: String, dimensions: Vector2) -> voi
 	body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation",20)
 	separator(column)
-	footer=HBoxContainer.new(); column.add_child(footer)
+	footer=VBoxContainer.new() if size.x<650 else HBoxContainer.new(); column.add_child(footer)
 	footer.add_theme_constant_override("separation",12)
 	var spacer := Control.new(); spacer.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	footer.add_child(spacer)
@@ -98,7 +98,12 @@ func begin_dialog(heading: String, subtitle: String, dimensions: Vector2) -> voi
 
 func layout_panel() -> void:
 	if not is_instance_valid(panel): return
-	panel.size=desired_size.min(size-Vector2(64,64))
+	for row in panel.find_children("*","BoxContainer",true,false):
+		if row.has_meta("phone_stack"): row.vertical=size.x<650
+	for control in panel.find_children("*","Control",true,false):
+		if control.has_meta("wide_min"): control.custom_minimum_size.x=0 if size.x<650 else float(control.get_meta("wide_min"))
+		if control.has_meta("phone_grid"): control.columns=2 if size.x<650 else 5
+	panel.size=desired_size.min(size-Vector2(16,16) if size.x<650 or size.y<650 else size-Vector2(64,64))
 	panel.position=(size-panel.size)/2
 
 func make_button(value: String, primary: bool, callback: Callable) -> Button:
@@ -152,15 +157,14 @@ func show_confirmation(heading: String, message: String, callback: Callable, acc
 	label(body,message,19,CREAM)
 	finish_dialog(accept_text,callback,true)
 
-func show_rebirth(run_best: int, bonus: float, callback: Callable) -> void:
-	begin_dialog("Rebirth your patrol?","Start a new run with lasting rewards.",Vector2(640,570))
-	var gain := run_best*10.0
+func show_rebirth(run_best: int, _bonus: float, callback: Callable) -> void:
+	begin_dialog("Rebirth your patrol?","Confirm before seeing your offers. No cancellation or rerolls afterward.",Vector2(680,size.y-16 if size.x<650 else 650))
 	var reward := VBoxContainer.new(); body.add_child(reward)
 	reward.add_theme_constant_override("separation",6)
-	label(reward,"+%s%% permanent coin rewards" % Amount.of(gain).label(),25,MINT)
-	label(reward,"Total coin bonus: +%s%% → +%s%%" % [Amount.of(bonus).label(),Amount.of(bonus+gain).label()],17,GOLD)
+	label(reward,"Choose one permanent improvement",25,MINT)
+	label(reward,"Cleared level %d this run · deeper runs favor stronger offers" % run_best,17,GOLD)
 	section(body,"Keep your patrol","Keep all coins, surviving cats, their upgrades, powerups and discoveries. Surviving cats return at full health.")
-	section(body,"Start again at level 1","End this attempt and start level 1 manually. The unfinished level adds no bonus. Clear level 5 again to unlock rebirth.")
+	section(body,"Commit, then choose","Return to level 1 and reveal up to three offers. No cancellation or rerolls. Offers stay saved until you choose. Start level 1 manually afterward.")
 	finish_dialog("Rebirth patrol",callback,true)
 
 func show_help() -> void:

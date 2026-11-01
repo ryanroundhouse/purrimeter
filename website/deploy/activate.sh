@@ -46,7 +46,7 @@ if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+-[0-9]+', r['id']):
     raise SystemExit('Invalid game release identity')
 dest = store / r['id']
 dest.mkdir(parents=True, exist_ok=True)
-for platform, name in [('macos', 'Purrimeter-macOS.zip'), ('windows', 'Purrimeter-Windows.zip')]:
+for platform, name in [('macos', 'Purrimeter-macOS.zip'), ('windows', 'Purrimeter-Windows.zip'), ('web', 'Purrimeter-Web.zip')]:
     source = site / 'downloads' / name
     with source.open('rb') as stream:
         if hashlib.file_digest(stream, 'sha256').hexdigest() != r['packages'][platform]['sha256']:
@@ -58,6 +58,13 @@ for platform, name in [('macos', 'Purrimeter-macOS.zip'), ('windows', 'Purrimete
                 raise SystemExit('Cannot overwrite an immutable game release')
     else:
         shutil.copy2(source, target)
+web = dest / 'web'
+if not web.exists():
+    shutil.copytree(site / 'play', web)
+else:
+    for source in (site / 'play').rglob('*'):
+        if source.is_file() and (not (web / source.relative_to(site / 'play')).is_file() or (web / source.relative_to(site / 'play')).read_bytes() != source.read_bytes()):
+            raise SystemExit('Cannot overwrite immutable browser files')
 metadata = dest / 'release.json'
 if metadata.exists() and metadata.read_bytes() != signed:
     raise SystemExit('Cannot overwrite immutable release metadata')

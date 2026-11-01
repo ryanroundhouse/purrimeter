@@ -76,7 +76,7 @@ func _initialize() -> void:
 	g.achievements.values.repairs=24; g.tower_at(119).hp=0.5; g.repair(119)
 	g.achievements.values.upgrades=99; g.upgrade(119)
 	g.achievements.values.ranks=24; g.buy_powerup("training")
-	g.achievements.values.rebirths=9; g.run_best=100; g.rebirth()
+	g.achievements.values.rebirths=19; g.best=100; g.run_best=100; g.rebirth()
 	for id in ["recruits","repairs","upgrades","ranks","rebirths","gold"]: check(g.achievements.earned.has(id),"threshold action earns "+id)
 	for id in g.achievements.earned: earned[id]=true
 	g=garden(10)

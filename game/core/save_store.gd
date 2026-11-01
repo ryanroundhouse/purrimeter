@@ -6,7 +6,9 @@ static func write(session: Session, path: String = SAVE_PATH) -> Error:
 	var temp := path+".tmp"
 	var file := FileAccess.open(temp,FileAccess.WRITE)
 	if file==null: return FileAccess.get_open_error()
-	file.store_string(JSON.stringify(session.snapshot(),"\t",true,true)); file.close()
+	file.store_string(JSON.stringify(session.snapshot(),"\t",true,true)); file.flush()
+	var error := file.get_error(); file.close()
+	if error!=OK: return error
 	return DirAccess.rename_absolute(temp,path)
 
 static func read_into(session: Session, path: String = SAVE_PATH) -> bool:

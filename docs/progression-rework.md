@@ -1,5 +1,6 @@
 # Progression and rebirth rework
 
+The [Rebirth Draft](rebirth-draft.md) supersedes the automatic coin-bonus reward and rebirth confirmation described below. Possession retention, healing, level-five qualification, and manual restart remain in force.
 Status: confirmed by the user and implemented in the shared Godot game.
 
 The permanent-powerup expansion in `powerups.md` extends this progression with 30 powers, per-rank milestones, and compatible Godot save migration.

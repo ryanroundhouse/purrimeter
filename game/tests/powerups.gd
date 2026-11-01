@@ -25,7 +25,7 @@ func run() -> void:
 	g.best=2; g.refresh_powerups()
 	check(g.discovered.has("quick") and not g.discovered.has("eyes"),"discovery reveals only qualified icons")
 	check(g.buy_powerup("quick") and not g.buy_powerup("quick"),"each capped rank has a separate prerequisite")
-	g.best=9; g.run_best=9; g.refresh_powerups(); g.rebirth()
+	g.best=9; g.run_best=9; g.refresh_powerups(); g.rebirth(); g.choose_draft(g.pending_draft.offers[0])
 	check(g.discovered.has("eyes") and g.powerup_rank("quick")==1 and g.training==3,"rebirth retains discoveries and ranks")
 	g.build(0,100); g.best=4; g.refresh_powerups(); g.sell(100)
 	check(g.discovered.has("needle") and g.cat_milestones[0]==1 and g.can_buy_powerup("needle"),"sold qualifying cat does not remove discovery or achievement credit")

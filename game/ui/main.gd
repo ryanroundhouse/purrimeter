@@ -62,8 +62,17 @@ var sound_sequence := 0
 var recent_sounds: Array = []
 var fanfare: Control
 var achievement_save_valid := true
+var mobile: MobileGarden
+var browser_blocked := false
+var draft_panel: Control
+var draft_saving := false
+
+func compact() -> bool:
+	return (OS.has_feature("web") or "--mobile-test" in OS.get_cmdline_user_args()) and (size.x<1100 or size.y<720 or BrowserPlatform.touch())
+
 
 func _ready() -> void:
+	mobile=MobileGarden.new(self)
 	testing="--smoke-test" in OS.get_cmdline_user_args() or "--music-test" in OS.get_cmdline_user_args()
 	preview="--preview" in OS.get_cmdline_user_args()
 	preview_gallery="--gallery" in OS.get_cmdline_user_args()
@@ -77,11 +86,15 @@ func _ready() -> void:
 	add_child(audio); audio.setup(testing or preview or "--multiplayer-test" in OS.get_cmdline_user_args() or "--app-preview" in OS.get_cmdline_user_args() or DisplayServer.get_name()=="headless")
 	connect_game()
 	if not testing and not preview and not read_only:
-		achievement_save_valid=SaveStore.read_achievements(game.achievements)
-		if FileAccess.file_exists(SaveStore.SAVE_PATH):
+		achievement_save_valid=SaveStore.read_achievements(game.achievements) if not OS.has_feature("web") else true
+		if BrowserPlatform.enabled():
+			startup_save_valid=BrowserPlatform.load_garden(game)
+			if not startup_save_valid: browser_blocked=true; status="Saved garden could not be read. Export a backup before replacing it."
+		elif FileAccess.file_exists(SaveStore.SAVE_PATH):
 			startup_save_valid=SaveStore.read_into(game)
 			status="Welcome back. Your patrol is paused and ready." if startup_save_valid else "Save could not be read. A fresh garden is ready."
-		prefs.load("user://settings.cfg")
+		if BrowserPlatform.enabled(): BrowserPlatform.load_settings("audio",prefs)
+		else: prefs.load("user://settings.cfg")
 		audio.set_mute(prefs.get_value("audio","muted",false))
 	if not achievement_save_valid: status="Achievement record could not be read. Export your garden to keep a recovery copy."
 	if not testing and not preview and not read_only: save_achievements()
@@ -89,6 +102,8 @@ func _ready() -> void:
 	fanfare.book=game.achievements; fanfare.audio=audio; fanfare.persist=save_achievements
 	sync_music(true)
 	confirm=PatrolDialog.new(); add_child(confirm)
+	draft_panel=preload("res://ui/draft_panel.gd").new(); add_child(draft_panel)
+	draft_panel.chosen.connect(commit_draft)
 	file_dialog=FileDialog.new(); add_child(file_dialog)
 	file_dialog.access=FileDialog.ACCESS_FILESYSTEM
 	file_dialog.filters=PackedStringArray(["*.json ; Purrimeter save"])
@@ -128,11 +143,15 @@ func _notification(what: int) -> void:
 	if what==NOTIFICATION_WM_CLOSE_REQUEST:
 		if not hosted: save_game(); get_tree().quit()
 	if what==NOTIFICATION_APPLICATION_FOCUS_OUT and is_node_ready():
-		audio.focus(false); save_game()
+		audio.focus(false)
+		if OS.has_feature("web"): game.paused=true
+		save_game()
 	if what==NOTIFICATION_APPLICATION_FOCUS_IN and is_node_ready(): audio.focus(true)
 
 func _process(delta: float) -> void:
 	ui_clock+=minf(delta,0.1)
+	if mobile!=null: mobile.process(delta)
+	if browser_blocked or not BrowserPlatform.may_save(): game.paused=true
 	if read_only:
 		if remote_connected: remote_clock=minf(0.1,remote_clock+delta)
 	elif not preview and not testing:
@@ -142,18 +161,22 @@ func _process(delta: float) -> void:
 		save_clock+=delta
 		if save_clock>=4.0: save_game(); save_clock=0.0
 	validate_selection()
+	if not read_only and gameplay_enabled and not draft_saving and not game.pending_draft.is_empty() and not draft_panel.visible and not confirm.visible and not file_dialog.visible:
+		mobile.close_panel(); draft_panel.show_draft(game)
 	if fanfare!=null and not read_only:
-		fanfare.advance(delta,is_visible_in_tree() and gameplay_enabled and audio.focused and not confirm.visible and not file_dialog.visible)
+		fanfare.advance(delta,is_visible_in_tree() and gameplay_enabled and audio.focused and not confirm.visible and not file_dialog.visible and not draft_panel.visible and not draft_saving)
 	queue_redraw()
 
 func on_achievement(_id: String) -> void:
 	save_achievements()
 
 func save_achievements() -> void:
-	if read_only or testing or preview or not achievement_save_valid: return
+	if read_only or testing or preview or not achievement_save_valid or OS.has_feature("web"): return
 	if SaveStore.write_achievements(game.achievements)!=OK: status="Unable to save achievements. Export your garden to keep your progress."
 
 func new_garden() -> void:
+	draft_panel.finish_choice()
+	browser_blocked=false; startup_save_valid=true
 	var book := game.achievements
 	game=Session.new(); game.achievements=book; game.paused=true; connect_game()
 	selected=-1; selected_enemy=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0
@@ -161,9 +184,42 @@ func new_garden() -> void:
 	save_game(); garden_replaced.emit()
 
 func save_game() -> void:
-	if read_only or testing or preview: return
+	if read_only or testing or preview or browser_blocked or draft_saving: return
+	if BrowserPlatform.enabled():
+		BrowserPlatform.save_garden(game); return
 	save_achievements()
 	if SaveStore.write(game)!=OK: status="Unable to save. Use Export Save to keep your progress."
+
+func commit_draft(choice: String = "") -> void:
+	if draft_saving or read_only: return
+	game.paused=true
+	var next := DraftTransaction.prepare(game,choice)
+	if next==null: status="This draft is no longer available."; return
+	draft_saving=true
+	if not choice.is_empty():
+		for card in draft_panel.cards.values(): card.disabled=true
+	var saved := testing or preview
+	if not saved:
+		if BrowserPlatform.enabled(): saved=await BrowserPlatform.commit_garden(next)
+		else: saved=SaveStore.write(next)==OK
+	if saved:
+		DraftTransaction.publish(game,next)
+		draft_saving=false; save_achievements()
+		selected=-1; selected_enemy=-1; placing=-1; mobile.close_panel()
+		if choice.is_empty():
+			status="Offers stay fixed in this session. Export a backup to keep them." if BrowserPlatform.session_only() else "Choose one lasting improvement. Your offers are saved."
+			draft_panel.show_draft(game); play_game_sound("rebirth",6)
+		else:
+			draft_panel.finish_choice()
+			status="%s · rank %d. Start level 1 when ready."%[RebirthDraft.definition(choice).name,game.draft_rank(choice)]
+			play_game_sound("upgrade",6)
+	else:
+		draft_saving=false
+		status="Could not save the draft. Your garden is unchanged. Free storage and retry, or export a backup."
+		if choice.is_empty():
+			confirm.show_confirmation("Rebirth could not be saved",status,func(): commit_draft(),"Retry save")
+		else:
+			draft_panel.show_save_error(status,func(): action("export"))
 
 func cell_at(p: Vector2) -> int:
 	if not BOARD.has_point(p): return -1
@@ -207,7 +263,8 @@ func _input(event: InputEvent) -> void:
 	# Typing suppresses shortcuts, but a garden click must be able to leave chat.
 	if event is InputEventKey and (typing is LineEdit or typing is TextEdit): return
 	if typing!=null and not is_ancestor_of(typing) and event is InputEventKey: return
-	if confirm.visible or file_dialog.visible: return
+	if confirm.visible or file_dialog.visible or draft_panel.visible or draft_saving or not game.pending_draft.is_empty(): return
+	if compact() and mobile.handle(event): return
 	if event is InputEventMouseButton and not Rect2(Vector2.ZERO,size).has_point(get_local_mouse_position()): return
 	if event is InputEventMouseMotion:
 		focus_id=""; hover=cell_at(get_local_mouse_position())
@@ -225,7 +282,10 @@ func _input(event: InputEvent) -> void:
 				if focus_id=="board": interact_cell(keyboard_cell)
 				else:
 					for b in buttons:
-						if b.id==focus_id and b.enabled: action(b.id); break
+						if b.id==focus_id and b.enabled:
+							if compact(): mobile.act(b.id)
+							else: action(b.id)
+							break
 			KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN:
 				if focus_id=="board":
 					var column := keyboard_cell%16
@@ -304,7 +364,10 @@ func enemy_rect(e: Dictionary) -> Rect2:
 	return Rect2(p-Vector2(extent/2,extent/2+4),Vector2.ONE*extent)
 
 func action(id: String) -> void:
-	if read_only and not (id.begins_with("powerup:") or id in ["powerup_back","powerup_available","powerup_owned","powerup_prev","powerup_next"]): return
+	if draft_saving: return
+	if not game.pending_draft.is_empty() and id not in ["export","menu"]: return
+	if browser_blocked and id not in ["export","import","menu","help","new"]: return
+	if read_only and not (id.begins_with("powerup:") or id in ["powerup_back","powerup_available","powerup_owned","powerup_prev","powerup_next","draft_collection"]): return
 	if id.begins_with("powerup:"):
 		selected_powerup=id.trim_prefix("powerup:"); queue_redraw(); return
 	if id.begins_with("cat"):
@@ -312,6 +375,8 @@ func action(id: String) -> void:
 		if not focus_id.is_empty(): focus_id="board"; hover=keyboard_cell
 		return
 	match id:
+		"draft_collection":
+			game.paused=true; mobile.close_panel(); draft_panel.show_collection(game)
 		"menu": menu_requested.emit()
 		"pause": game.paused=not game.paused
 		"resume": game.paused=false
@@ -322,7 +387,7 @@ func action(id: String) -> void:
 			status="Auto-start on. Cleared levels continue after a 3-second countdown." if game.auto_start else "Auto-start off. Start each level when you are ready."
 		"sound":
 			audio.set_mute(not audio.muted)
-			if not testing and not preview: prefs.set_value("audio","muted",audio.muted); prefs.save("user://settings.cfg")
+			if not testing and not preview: prefs.set_value("audio","muted",audio.muted); BrowserPlatform.save_settings("audio",prefs) if BrowserPlatform.enabled() else prefs.save("user://settings.cfg")
 			audio_settings_changed.emit()
 		"start":
 			if game.start(): status="Level %d · %s" % [game.level,Balance.title(game.level)]
@@ -341,11 +406,15 @@ func action(id: String) -> void:
 		"rebirth":
 			if game.can_rebirth():
 				game.paused=true
-				confirm.show_rebirth(game.run_best,game.bonus_points,func(): game.rebirth(); selected=-1; placing=-1)
-		"new": ask("Start a completely new garden?","This resets coins, cats, powerups, discoveries, best level and rebirth bonuses. Your achievements and lifetime achievement progress remain.","New garden",new_garden)
+				confirm.show_rebirth(game.run_best,game.bonus_points,commit_draft)
+		"new": ask("Start a completely new garden?","This resets coins, cats, powerups, discoveries, draft improvements, best level and rebirth bonuses. Your achievements and lifetime achievement progress remain.","New garden",new_garden)
 		"export":
+			if BrowserPlatform.enabled():
+				game.paused=true; BrowserPlatform.current.bridge.exportSave(str(BrowserPlatform.current.bridge.initial()) if not startup_save_valid else JSON.stringify(game.snapshot(),"\t",true,true)); return
 			game.paused=true; file_action="export"; file_dialog.file_mode=FileDialog.FILE_MODE_SAVE_FILE; file_dialog.current_file="purrimeter-save.json"; file_dialog.title="Export your patrol"; file_dialog.popup_centered_ratio(0.65)
 		"import":
+			if BrowserPlatform.enabled():
+				game.paused=true; BrowserPlatform.current.bridge.importSave(); return
 			game.paused=true; file_action="import"; file_dialog.file_mode=FileDialog.FILE_MODE_OPEN_FILE; file_dialog.title="Import a patrol"; file_dialog.popup_centered_ratio(0.65)
 		"help":
 			game.paused=true; confirm.show_help()
@@ -420,18 +489,18 @@ func center(cell: int) -> Vector2:
 func cat_sprite(kind: int, tier: int, frame: int, rect: Rect2, alpha: float = 1.0) -> void:
 	CatSkinArt.draw(self,game.skin_id(kind),tier,frame,rect,Color(1,1,1,alpha))
 
-func enemy_sprite(kind: int, frame: int, rect: Rect2, tint: Color = Color.WHITE) -> void:
+func enemy_sprite(kind: int, frame: int, rect: Rect2, tint: Color = Color.WHITE, painter: CanvasItem = null) -> void:
 	var bands := [Vector2(802,940),Vector2(980,1138),Vector2(1150,1357),Vector2(1360,1607)]
 	var columns := [[0,237,474,718,948],[0,239,478,732,948],[0,240,478,730,948],[0,237,474,726,948]]
 	var bounds: Vector2=bands[kind]
 	var source := Rect2(columns[kind][frame],bounds.x,columns[kind][frame+1]-columns[kind][frame],bounds.y-bounds.x)
 	var scale := minf(rect.size.x/260.0,rect.size.y/250.0)
 	var target := Rect2(Vector2(rect.get_center().x-source.size.x*scale/2,rect.end.y-source.size.y*scale),source.size*scale)
-	draw_texture_rect_region(enemy_texture,target,source,tint,false,true)
+	(self if painter==null else painter).draw_texture_rect_region(enemy_texture,target,source,tint,false,true)
 
-func boss_sprite(kind: int, frame: int, rect: Rect2, tint: Color = Color.WHITE) -> void:
+func boss_sprite(kind: int, frame: int, rect: Rect2, tint: Color = Color.WHITE, painter: CanvasItem = null) -> void:
 	var cell := bosses.get_size()/4.0
-	draw_texture_rect_region(bosses,rect,Rect2(Vector2(frame,kind)*cell,cell),tint,false,true)
+	(self if painter==null else painter).draw_texture_rect_region(bosses,rect,Rect2(Vector2(frame,kind)*cell,cell),tint,false,true)
 
 func frenzy_sweat(e: Dictionary, p: Vector2) -> void:
 	var large: bool = e.boss>=0
@@ -451,6 +520,9 @@ func bar(rect: Rect2, fraction: float, color: Color, track: Color = INK) -> void
 	box(rect,track,2); box(Rect2(rect.position,Vector2(rect.size.x*clampf(fraction,0,1),rect.size.y)),color,2)
 
 func _draw() -> void:
+	if compact() and not remote_compact:
+		if mobile!=null: mobile.draw()
+		return
 	if read_only and remote_compact:
 		buttons.clear(); draw_board(); return
 	box(Rect2(Vector2.ZERO,size),INK)
@@ -631,11 +703,12 @@ func draw_sidebar() -> void:
 		draw_enemy_inspector(inspected_enemy())
 	else:
 		draw_powerups()
-	var rebirth_label := "Rebirth · +%s%% coins" % Amount.of(game.run_best*10.0).label() if game.can_rebirth() else "Rebirth · clear level 5"
-	button(rebirth_label,Rect2(772,647,284,38),"rebirth",game.can_rebirth())
-	right_text("Coin bonus +%s%%" % Amount.of(game.bonus_points).label(),Vector2(1252,643),15,GOLD)
-	right_text("%d rebirths" % game.rebirths,Vector2(1252,666),14,MUTED)
-	draw_line(Vector2(772,699),Vector2(1252,699),LINE,1)
+	var rebirth_label := "Rebirth · choose a reward" if game.can_rebirth() else "Rebirth · clear level 5"
+	button(rebirth_label,Rect2(772,647,272,38),"rebirth",game.can_rebirth())
+	button("Draft Collection",Rect2(1052,647,200,38),"draft_collection")
+	# Keep progression metadata with the rebirth controls, above the wave separator.
+	right_text("%d rebirths · coins +%s%%" % [game.rebirths,Amount.of(game.bonus_points).label()],Vector2(1252,687),11,MUTED)
+	draw_line(Vector2(772,705),Vector2(1252,705),LINE,1)
 	text_fit(Balance.title(game.level),Vector2(772,711),480,20,GOLD if game.level%10==0 else CREAM)
 	if game.active:
 		text("%d on the field · %d / %d arrived" % [game.enemies.size(),game.spawned,game.wave_plan.size()],Vector2(772,741),15,MUTED)
@@ -925,7 +998,7 @@ func smoke_test() -> void:
 	results["help copy fits without scrolling"]=confirm.body.size.y<=confirm.scroll.size.y+1
 	confirm.accept_button.pressed.emit()
 	results["help dismissal keeps combat paused"]=not confirm.visible and game.paused
-	game.active=false; game.level=23; game.run_best=22; game.bonus_points=150; game.start()
+	game.active=false; game.level=23; game.best=22; game.run_best=22; game.bonus_points=150; game.start()
 	game.tower_at(120).hp=0.27
 	action("rebirth")
 	await get_tree().process_frame; await get_tree().process_frame
@@ -946,9 +1019,10 @@ func smoke_test() -> void:
 	results["escape dismisses without rebirth"]=not confirm.visible and game.level==23
 	action("rebirth")
 	confirm.accept_button.pressed.emit()
-	results["confirm applies rebirth once"]=not confirm.visible and not game.active and game.level==1 and game.bonus_points==370 and game.rebirths==1 and game.tower_at(120).hp==1.0 and game.coins.label()==coins_before
+	results["confirm applies rebirth once"]=not confirm.visible and not game.active and game.level==1 and game.bonus_points==150 and game.rebirths==1 and game.tower_at(120).hp==1.0 and game.coins.label()==coins_before
 	confirm.accept()
-	results["closed dialog cannot repeat action"]=game.rebirths==1 and game.bonus_points==370
+	results["closed dialog cannot repeat action"]=game.rebirths==1 and game.bonus_points==150
+	game.choose_draft(game.pending_draft.offers[0]); draft_panel.finish_choice()
 	action("help"); confirm.accept_button.pressed.emit()
 	results["help does not reuse confirmation callback"]=game.rebirths==1
 	await powerup_smoke(results)
@@ -1055,3 +1129,21 @@ func powerup_smoke(results: Dictionary) -> void:
 	game=Session.new(); connect_game(); powerup_tab="owned"; powerup_page=0
 	queue_redraw(); await get_tree().process_frame; await get_tree().process_frame
 	results["empty Owned collection has no purchase target"]=powerup_list().is_empty() and not buttons.any(func(b): return b.id=="powerup_buy")
+
+func browser_event(kind: String, value: String) -> void:
+	match kind:
+		"hidden": game.paused=true; audio.focus(false); save_game()
+		"visible": audio.focus(true)
+		"save_error": browser_blocked=true; game.paused=true; status="Autosave unavailable. Export your garden or choose Continue without autosave."
+		"session": browser_blocked=false; game.paused=true
+		"lost": browser_blocked=true; game.paused=true; gameplay_enabled=false
+		"export": action("export")
+		"import_error", "reload_failed": status=value if not value.is_empty() else "Save failed. Export your garden before reloading."
+		"import":
+			var data = JSON.parse_string(value)
+			var candidate := Session.new()
+			if not data is Dictionary or not candidate.restore(data): status="Invalid save. Your garden has not changed."; return
+			ask("Replace this garden?","Importing replaces this garden. Earned achievements are preserved.","Replace garden",func():
+				if game.restore(data):
+					browser_blocked=false; startup_save_valid=true; selected=-1; selected_enemy=-1; placing=-1; mobile.close_panel(); sync_music(true)
+					status="Garden imported and paused."; save_game(); garden_replaced.emit())

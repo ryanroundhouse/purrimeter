@@ -7,6 +7,8 @@ godot_bin="${GODOT:-$PWD/.tools/Godot.app/Contents/MacOS/Godot}"
 "$godot_bin" --headless --path game --script res://tests/level_health.gd
 "$godot_bin" --headless --path game --script res://tests/frenzy.gd
 "$godot_bin" --headless --path game --script res://tests/powerups.gd
+"$godot_bin" --headless --path game --script res://tests/rebirth_draft.gd
+"$godot_bin" --headless --path game --script res://tests/draft_ui.gd -- --multiplayer-test --mobile-test
 "$godot_bin" --headless --path game --script res://tests/achievements.gd
 "$godot_bin" --headless --path game --script res://tests/achievement_ui.gd -- --multiplayer-test
 "$godot_bin" --headless --path game --script res://tests/cat_skins.gd
@@ -15,3 +17,5 @@ godot_bin="${GODOT:-$PWD/.tools/Godot.app/Contents/MacOS/Godot}"
 "$godot_bin" --headless --audio-driver Dummy --path game --script res://tests/music.gd -- --music-test
 "$godot_bin" --headless --path game -- --smoke-test
 "$godot_bin" --headless --path game --script res://tests/window_transition.gd -- --multiplayer-test
+
+"$godot_bin" --headless --path game --script res://tests/mobile.gd -- --multiplayer-test --mobile-test

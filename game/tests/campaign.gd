@@ -22,6 +22,7 @@ func run():
 			if not g.active: break
 		print("Attempt ",attempts," level ",attempt_level," -> ",g.level," best ",g.best," coins ",g.coins.label()," training ",g.training)
 		if g.best>=5 and g.rebirths==0 and g.can_rebirth():
-			g.rebirth(); print("Rebirth earned: +",g.bonus_points,"%")
+			g.rebirth(); var pick: String = "supply" if "supply" in g.pending_draft.offers else g.pending_draft.offers[0]
+			g.choose_draft(pick); print("Rebirth reward: ",pick)
 	print("Campaign best=",g.best," rebirths=",g.rebirths," attempts=",attempts)
 	quit(0 if g.best>=10 and g.rebirths>=1 else 1)

@@ -16,14 +16,15 @@ func open(session: Session) -> void:
 	tabs.add_theme_constant_override("separation",12)
 	filters.clear()
 	for name in ["All","In Progress","Earned"]:
-		var tab := Button.new(); tab.text=name; tab.custom_minimum_size=Vector2(150,44)
+		var tab := Button.new(); tab.text=name; tab.custom_minimum_size=Vector2(0 if size.x<650 else 150,44); tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL; tab.add_theme_font_size_override("font_size",16)
 		tab.toggle_mode=true; tab.button_pressed=name==filter_name
 		tab.pressed.connect(func(): filter_name=name; refresh_list())
-		tabs.add_child(tab); filters[name]=tab
-	var columns := HBoxContainer.new(); body.add_child(columns)
-	columns.add_theme_constant_override("separation",28)
+		tab.set_meta("wide_min",150); tabs.add_child(tab); filters[name]=tab
+	var columns := BoxContainer.new(); columns.vertical=size.x<650; body.add_child(columns)
+	columns.add_theme_constant_override("separation",28); columns.set_meta("phone_stack",true)
 	var list_scroll := ScrollContainer.new(); columns.add_child(list_scroll)
-	list_scroll.custom_minimum_size=Vector2(350,380)
+	list_scroll.custom_minimum_size=Vector2(0,180) if size.x<650 else Vector2(350,380)
+	list_scroll.set_meta("wide_min",350)
 	list_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; list_scroll.follow_focus=true
 	list=VBoxContainer.new(); list_scroll.add_child(list)
 	list.size_flags_horizontal=Control.SIZE_EXPAND_FILL; list.add_theme_constant_override("separation",6)

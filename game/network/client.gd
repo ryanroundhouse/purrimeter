@@ -34,7 +34,9 @@ var _connected_at := 0.0
 var _pending_leave := ""
 
 func _ready() -> void:
-	if not isolated: settings.load(SETTINGS)
+	if not isolated:
+		if BrowserPlatform.enabled(): BrowserPlatform.load_settings("network",settings)
+		else: settings.load(SETTINGS)
 	var defaults := ConfigFile.new()
 	defaults.load("res://network/server.cfg")
 	address=settings.get_value("connection","address",defaults.get_value("server","url",""))
@@ -46,7 +48,8 @@ func save_settings() -> void:
 	settings.set_value("connection","address",address)
 	settings.set_value("player","name",display_name)
 	settings.set_value("chat","sound",chat_sound)
-	settings.save(SETTINGS)
+	if BrowserPlatform.enabled(): BrowserPlatform.save_settings("network",settings)
+	else: settings.save(SETTINGS)
 
 func reset_identity() -> void:
 	settings.set_value("identities",address.sha256_text(),""); token=""; save_settings()

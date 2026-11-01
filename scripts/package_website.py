@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Snapshot the site and existing client ZIPs; this never builds or publishes."""
+"""Snapshot the site and matching native/browser release ZIPs; this never builds or publishes."""
+import gzip
 import hashlib
 import json
 import shutil
@@ -22,12 +23,13 @@ def package():
     clients = {
         "Purrimeter-macOS.zip": "macos/Purrimeter.app/Contents/MacOS/Purrimeter",
         "Purrimeter-Windows.zip": "Purrimeter.exe",
+        "Purrimeter-Web.zip": "index.html",
     }
     # The signed game manifest identifies these exact archives, independently of the website.
     signed = ROOT / "dist" / "game-release.json"
     release_tool = ROOT / "build" / "purrimeter-release"
     game_release = json.loads(subprocess.check_output([str(release_tool), "verify", str(signed)], text=True))
-    for platform, name in (("macos", "Purrimeter-macOS.zip"), ("windows", "Purrimeter-Windows.zip")):
+    for platform, name in (("macos", "Purrimeter-macOS.zip"), ("windows", "Purrimeter-Windows.zip"), ("web", "Purrimeter-Web.zip")):
         package = game_release["packages"][platform]
         archive_path = ROOT / "dist" / name
         if sha256(archive_path) != package["sha256"] or archive_path.stat().st_size != package["size"]:
@@ -44,6 +46,8 @@ def package():
                 raise ValueError(f"{name}: missing {executable}")
             if name.endswith("Windows.zip") and "Purrimeter.pck" not in names:
                 raise ValueError("Windows ZIP must include Purrimeter.pck")
+            if name == "Purrimeter-Web.zip" and not {"index.js", "index.wasm", "index.pck", "config.js", "browser.js", "browser.css", "game-build.json"}.issubset(names):
+                raise ValueError("Browser ZIP is missing runtime files")
             if archive.testzip() is not None:
                 raise ValueError(f"{name}: ZIP integrity check failed")
 
@@ -54,6 +58,25 @@ def package():
     for name in ("index.html", "style.css", "download.js"):
         shutil.copy2(ROOT / "website" / name, site / name)
     shutil.copytree(ROOT / "website" / "assets", site / "assets")
+    # Extract the signed browser archive, not mutable loose export files.
+    with zipfile.ZipFile(ROOT / "dist" / "Purrimeter-Web.zip") as archive:
+        for entry in archive.infolist():
+            if entry.filename.startswith("/") or ".." in Path(entry.filename).parts:
+                raise ValueError("Unsafe browser archive path")
+        archive.extractall(site / "play")
+    # Each page references one immutable browser build, avoiding mixed .pck/.wasm
+    # during publication. The shell stays at /play/ so saved gardens keep origin.
+    play = site / "play"
+    base = f"/game-releases/{game_release['id']}/web/"
+    html = (play / "index.html").read_text()
+    for name in ("index.js", "config.js", "browser.js", "browser.css"):
+        html = html.replace(f'"{name}"', f'"{base}{name}"')
+    (play / "index.html").write_text(html)
+    config = (play / "config.js").read_text()
+    # Engine config fileSizes use the same executable prefix as the fetched files.
+    config = config.replace('"index', '"' + base + 'index')
+    (play / "config.js").write_text(config)
+    (play / "config.js.gz").write_bytes(gzip.compress(config.encode(),mtime=0))
     shutil.copy2(signed, site / "game-release.json")
     (site / "downloads").mkdir()
     checksums = []

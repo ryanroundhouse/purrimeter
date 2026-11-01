@@ -45,7 +45,7 @@ A clear means successfully completing the entire level, including any boss and e
 | 27 | Dream Team | Have a tier-six Bolt, tier-six Cannon, and tier-six Frost placed together. | Checklist of the three types currently at tier six. |
 | 28 | Full Toy Box | Own at least one rank of each of the 30 powerups. | Distinct powerups owned / 30. |
 | 29 | Finishing School | Reach maximum rank on five different capped powerups. Patrol Training has no maximum and does not count. | Capped powerups completed / 5. |
-| 30 | Golden Garden | Accumulate a rebirth coin bonus of at least +1,000%. | Rebirth coin bonus / +1,000%. |
+| 30 | Seasoned Guardian | Complete 20 rebirths across your gardens. | Rebirths / 20. |
 
 Progress displays follow the table above. Counters should display at most the goal in completion summaries while retaining underlying progress where useful. Tactical eligibility must explain the condition that failed; it must not imply that part of a failed attempt carries into a retry. The roster does not require a final victory, multiple maps, difficulty modes, or cooperative combat, none of which exists in the current game.
 
@@ -90,3 +90,5 @@ The non-blocking fanfare uses an authored geometric medal, a short entrance and 
 Dedicated gameplay tests exercise all 30 achievements, threshold events, failed-condition persistence, same-tile cat replacement, streak resets, legacy credit, atomic rejection of invalid imports, repeat-import idempotency, and profile persistence. Native UI tests cover filters, pause restoration, Escape, every detail layout, New Garden, sequential fanfares, hidden-banner timing, and retrospective summaries. Rendered menu, empty, earned, challenge, fanfare, and summary states are recorded under `build/achievement-review/`.
 
 Released as **3.1.0** (`3.1.0-1793467239`) at https://purrimeter.graham.pub/ on 2026-10-31. Live release metadata, relay health, and both public package hashes were verified after publication.
+
+The Rebirth Draft update preserves the internal `gold` achievement identity and all previously earned Golden Garden rewards. Its new Seasoned Guardian requirement credits saved rebirth history; legacy bonus progress remains readable without granting the renamed achievement solely from income.

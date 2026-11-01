@@ -21,7 +21,7 @@ The game release designated by a multiplayer server as required for new multipla
 _Avoid_: Latest version (without identifying the multiplayer server)
 
 **New Garden**:
-A fresh garden that replaces the player's current garden, resetting coins, cats, powerups, discoveries, best level, and rebirth bonuses.
+A fresh garden that replaces the player's current garden, resetting coins, cats, powerups, discoveries, best level, rebirth bonuses, and draft improvements.
 
 **Game owner**:
 The player responsible for moderating a multiplayer game, initially its creator. Ownership passes to the longest-connected remaining player when the owner leaves.
@@ -58,13 +58,31 @@ A player-controlled option for starting the next level automatically after succe
 A tower's upgrade rank, from its purchased base form through five progressively stronger forms.
 
 **Rebirth**:
-A voluntary return to level one that retains coins and surviving towers, fully heals those towers, and adds a permanent coin-reward bonus based on the highest level cleared in the run. Available after clearing level five in that run, including during an unfinished level.
+A voluntary return to level one that retains coins and surviving towers, fully heals those towers, and awards a Rebirth Draft. It becomes available after clearing level five in the current run.
 
 **Run**:
 The progression between rebirths, including retries after defeat.
 
+**Rebirth Draft**:
+A choice of one permanent draft improvement from randomly offered eligible improvements, earned through rebirth.
+
+**Draft improvement**:
+A permanent rebirth reward belonging to a collection separate from coin-bought powerups. It remains owned across rebirths within a garden and is removed by New Garden.
+
+**Draft rank**:
+An owned step of a draft improvement, earned one at a time through draft choices. Each next rank can have its own requirements, up to that improvement's maximum rank.
+
+**Draft strength band**:
+An improvement's Basic, Advanced, or Keystone classification, used to favor stronger eligible offers after deeper runs.
+
+**Pending draft**:
+A committed rebirth's revealed offers awaiting the player's choice. The same offers remain pending when the player leaves and returns, and play resumes only after choosing a reward.
+
+**Draft Collection**:
+The garden's catalog of draft improvements, showing owned ranks and requirements for unowned improvements.
+
 **Coin bonus**:
-The permanent percentage increase to enemy coin rewards accumulated through rebirths.
+The permanent percentage increase to enemy coin rewards.
 
 **Patrol Training**:
 A permanent improvement to every cat's damage and durability, purchased independently of individual tower tiers.

@@ -18,6 +18,9 @@ func _ready() -> void:
 	hide()
 
 func advance(delta: float, can_show: bool) -> void:
+	if get_parent().has_method("compact") and get_parent().compact():
+		position=Vector2(8,104); size=Vector2(get_parent().size.x-16,110)
+	else: position=Vector2(104,88); size=Vector2(552,110)
 	allowed=can_show
 	if not can_show or book==null:
 		hide(); return
@@ -76,5 +79,5 @@ func _draw() -> void:
 			var dir := Vector2.from_angle(i*PI/4)
 			draw_line(center+dir*(27+clock*10),center+dir*(31+clock*14),Color(gold,1-clock/0.7),2,true)
 	var font := ThemeDB.fallback_font
-	draw_string(font,Vector2(88,47)+offset,heading,HORIZONTAL_ALIGNMENT_LEFT,440,24,Color("f4edd7"))
-	draw_string(font,Vector2(88,76)+offset,caption,HORIZONTAL_ALIGNMENT_LEFT,440,16,Color("89dfb5"))
+	draw_string(font,Vector2(88,47)+offset,heading,HORIZONTAL_ALIGNMENT_LEFT,size.x-96,18 if size.x<500 else 24,Color("f4edd7"))
+	draw_string(font,Vector2(88,76)+offset,caption,HORIZONTAL_ALIGNMENT_LEFT,size.x-96,16,Color("89dfb5"))

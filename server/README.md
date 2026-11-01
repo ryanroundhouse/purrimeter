@@ -1,6 +1,6 @@
 # Purrimeter multiplayer server
 
-A Go relay for public games of up to three players. It handles admission, chat, moderation and live field updates. Each desktop client runs and saves its own garden. Game membership is temporary; restarting the relay clears games without deleting anyone's progress.
+A Go relay for public games of up to three players. It handles admission, chat, moderation and live field updates. Each native or browser client runs and saves its own garden. Game membership is temporary; restarting the relay clears games without deleting anyone's progress.
 
 ## Deploy on a Linux VPS with Docker Compose
 
@@ -43,7 +43,7 @@ purrimeter.graham.pub {
 }
 ```
 
-`TRUST_PROXY=true` makes the relay apply its per-IP limits using the proxy's `X-Forwarded-For` header. Enable it only when the relay cannot be reached directly and the proxy sanitizes that header. The supplied Compose setup meets that condition. Native Godot clients need no browser-origin configuration. Browser clients are not part of this release; cross-origin browser connections are rejected unless their origins are explicitly allowed with space-separated `ALLOWED_ORIGINS`.
+`TRUST_PROXY=true` makes the relay apply its per-IP limits using the proxy's `X-Forwarded-For` header. Enable it only when the relay cannot be reached directly and the proxy sanitizes that header. The supplied Compose setup meets that condition. Native Godot clients need no browser-origin configuration. Browser play at the same origin needs no extra origin configuration. Cross-origin browser connections require space-separated `ALLOWED_ORIGINS` entries matching the origin host (including a nonstandard port). A custom server must also permit its browser origin to fetch `/updates` through an appropriate CORS configuration.
 
 ## Local development and checks
 

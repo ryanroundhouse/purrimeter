@@ -1,6 +1,6 @@
 # Mobile browser play
 
-All three interview rounds were accepted on 2026-10-31. The consolidated design is ready for final confirmation before implementation. These decisions describe the intended browser version, not capabilities already shipped.
+All three interview rounds and the consolidated design were confirmed on 2026-10-31. Implementation was authorized with “make it so.” The acceptance criteria below remain the reference for implementation and verification.
 
 ## Accepted scope
 
@@ -53,16 +53,46 @@ Extend the existing Godot project, sharing its simulation, save format, and artw
 
 ## Existing constraints
 
-The current Godot project exports only macOS and Windows builds. Its playing field has 16 by 16 tiles, and its interface uses desktop-sized fixed layouts. Multiplayer currently places other gardens and chat beside the local garden. The accepted touch and phone layouts require corresponding implementation work.
+The shared Godot project exports macOS, Windows, and single-threaded browser builds. The 16 by 16 playing field and simulation are shared. Native builds keep their desktop layout; browser play uses the touch layout on touch-capable or small viewports, including tablet landscape.
 
-Desktop combat currently continues when the window loses focus. The browser pause-on-hidden policy deliberately differs. Native save dialogs and the native updater also need browser-specific behavior.
+Desktop combat currently continues when the window loses focus. The browser pause-on-hidden policy deliberately differs. Browser file selection/downloads replace native dialogs. Browser updates save to IndexedDB and reload the existing page.
 
-The glossary's game release definition now includes browser play, reflecting the accepted design. Browser builds and three-platform publication have not yet been implemented.
+The glossary's game release definition includes browser play. Release building and publication require matching macOS, Windows, and browser archives under one signed identity.
 
 Official [Godot Web export documentation](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html) supports a single-threaded Web export using the project's existing Compatibility renderer. It also identifies mobile/Safari limitations, suspended background processing, and browser storage restrictions. A real export and device checks are required to establish this game's performance and reliability. [FileDialog](https://docs.godotengine.org/en/stable/classes/class_filedialog.html#class-filedialog-property-access) cannot access the host filesystem on Web; browser import/export needs an adapted path.
 
 ## Design status and remaining evidence
 
-The product decisions raised in the interview are settled. Final confirmation of this consolidated design is pending; no browser implementation or deployment has been performed as part of the interview.
+The product decisions raised in the interview are settled and implementation is authorized. See the verification record below for implemented behavior and remaining device checks.
 
 Implementation must establish export feasibility, device performance, audio behavior, durable browser saves, file transfer usability, and release loading behavior. If that evidence requires changing an accepted decision, bring the specific trade-off back to the user.
+
+## Implementation and verification — 2026-10-31
+
+Release prepared: `4.0.0-1793499581`. Browser rendering and input use the same Godot project and simulation. The browser adapter owns IndexedDB persistence, confirms writes on transaction completion, and fences every write against the active tab identity. Web Locks and a broadcast channel coordinate takeover; the transaction fence also rejects a suspended stale writer. Browser settings and garden snapshots are separate entries in the same origin's database.
+
+Checks completed:
+
+- Full Godot regression suite, including existing combat, progression, saves, achievements, skins, audio, and native window-transition tests.
+- Sixteen targeted mobile checks covering preview/confirmation, occupied-tile revalidation, zoomed selection, pause/return behavior, compact keyboard actions, orientation, remote views, unread chat, chat bounds, and narrow achievement/skin dialogs.
+- Go race tests and the existing three-native-client multiplayer integration suite.
+- Chromium with synthesized touch input: actual recruitment and persistence, two-finger zoom/pan, 360-pixel portrait and landscape rendering, reload, takeover and stale-write rejection, invalid and valid imports, export without persistent storage, browser chat through the real relay, and three-player room rendering with two lightweight relay peers. An earlier three-browser run also verified joining and field delivery; the repeatable suite uses lightweight peers to keep software-rendering memory bounded.
+- Production-package browser check with immutable runtime URLs, precompressed assets, the deployed content-security policy, and the homepage Play link. This caught and corrected the policy for Godot-generated blob image URLs.
+- Fourteen website platform-detection checks; native/browser archive identity, signature, checksums, and ZIP validation.
+
+Commands: `scripts/test.sh`, `scripts/test_multiplayer.sh`, `scripts/build_web.sh`, `PLAYWRIGHT_MODULE=<installed-playwright-module> node scripts/test_browser.cjs`. After preparing a signed publication, use the same Playwright setting with `node scripts/test_browser_release.cjs`. Browser gameplay tests expect a development Web export; the publication check uses the signed prepared archive.
+
+Physical iPhone and Android tests are still outstanding. Only simulated Apple devices were available; Chromium viewport/touch checks are not Safari or physical-device evidence. The 30 FPS target on representative phones, mobile Safari audio/keyboard behavior, long background suspension, and OS-driven storage eviction remain manual acceptance checks. Tests also report some Godot object/resource cleanup warnings at process exit; no behavioral assertions or script-compilation checks failed in the passing runs.
+
+
+## Publication
+
+Published at `https://purrimeter.graham.pub/play/` on 2026-10-31 (Toronto), website release `20261101T022553Z-098a18ac04fa`, game release `4.0.0-1793499581`. The live Chromium smoke test verified game loading under the actual nginx policy, recruitment, persistent saving across reload, same-origin WebSocket admission, creation of a temporary password-protected multiplayer game, the signed current-release designation, and all three downloadable archives. The test left its temporary game afterward. Relay health stayed `ok`; publication reloaded nginx without restarting the relay.
+
+## Wave controls while recruiting
+
+The initial mobile layout replaced Start/Resume and Auto with Confirm/Cancel whenever a cat was selected. Recruitment intentionally stays selected after a purchase, so this hid wave controls even after spending all starting coins. Wave controls now have a permanent row, with placement confirmation below it. Small portrait viewports reserve space for both rows without moving the field when selection changes.
+
+The rendered regression test `game/tests/mobile_wave_controls.gd` reproduced six failures before the fix and passes afterward. It spends all 200 starting coins on four Scouts, leaves recruitment selected, starts combat, pauses, and resumes through the visible controls at 844×450, 390×844, and 360×640. It also checks viewport bounds and separation of wave/placement controls. Run with `.tools/Godot.app/Contents/MacOS/Godot --path game --audio-driver Dummy --script res://tests/mobile_wave_controls.gd -- --multiplayer-test --mobile-test`; it requires a rendering display rather than headless mode. The browser suite also checks actual touch wave start while recruitment is selected.
+
+Published as game `4.0.1-1793500601`, website `20261101T023728Z-98c9d5a878df`. The live Chromium check purchased four Scouts, started the wave while recruitment remained selected, and verified persistence across reload, landscape rendering, matching immutable assets and signed release metadata, healthy relay status, and no browser runtime/CSP errors. Evidence: `build/wave-live-test.log`, `build/wave-live-ready.png`, and `build/wave-live-landscape.png`.
