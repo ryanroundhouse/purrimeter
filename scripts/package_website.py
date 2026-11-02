@@ -68,6 +68,7 @@ def package(source_commit=None):
     for name in ("index.html", "style.css", "download.js"):
         shutil.copy2(ROOT / "website" / name, site / name)
     shutil.copytree(ROOT / "website" / "assets", site / "assets")
+    shutil.copytree(ROOT / "website" / "privacy", site / "privacy")
     # Extract the signed browser archive, not mutable loose export files.
     with zipfile.ZipFile(ROOT / "dist" / "Purrimeter-Web.zip") as archive:
         for entry in archive.infolist():

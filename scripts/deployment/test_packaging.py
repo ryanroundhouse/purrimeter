@@ -24,6 +24,8 @@ class PackagingTests(unittest.TestCase):
         (self.root / 'build/website').mkdir(parents=True)
         self.website = self.root / 'website'
         (self.website / 'assets').mkdir(parents=True)
+        (self.website / 'privacy').mkdir()
+        (self.website / 'privacy/index.html').write_text('privacy')
         (self.website / 'deploy').mkdir()
         for name in ('index.html', 'style.css', 'download.js'):
             (self.website / name).write_text(name)

@@ -55,6 +55,10 @@ func run() -> void:
 	app.mobile_chat=true; app.phone_layout(); await process_frame; await process_frame
 	var chat=app.page.get_node("Chat")
 	check(chat.get_rect().end.y<=app.size.y,"phone chat stays inside the viewport")
+	var members=chat.find_child("Members",true,false)
+	check(members!=null and members.find_children("*","Button",true,false).any(func(b): return b.text=="Report"),"phone chat offers Report beside Mute")
+	app.go_back()
+	check(not app.mobile_chat,"back closes phone chat before anything else")
 	app.mobile_chat=false
 	root.size=Vector2i(360,740); await process_frame; await process_frame
 	app.layout_game(); app.open_pause(); await process_frame

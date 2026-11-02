@@ -23,6 +23,7 @@ SITE_ID = r"\d{8}T\d{6}Z-[a-f0-9]{12}"
 GAME_ID = r"\d+\.\d+\.\d+-\d+"
 RELAY_ID = r"(?:updates-)?[a-f0-9]{7,64}"
 DEPLOY_ID = r"\d+\.\d+\.\d+-[a-f0-9]{40}"
+PLAY_LISTING = 'https://play.google.com/store/apps/details?id=com.roundhouselabsinc.purrimeter'
 CONFIG = b"[Service]\nEnvironment=GAME_RELEASE_FILE=/var/www/purrimeter/current/game-release.json\n"
 
 
@@ -244,6 +245,11 @@ class Host:
         if game['version'] != meta['version'] or not re.fullmatch(GAME_ID, game['id']):
             raise ValueError('Unexpected game release identity')
         for platform, package in game['packages'].items():
+            if platform == 'android':
+                # Google Play hosts the Android package; the manifest records its digest only.
+                if not package['url'].startswith(PLAY_LISTING) or not re.fullmatch(r'[a-f0-9]{64}', package['sha256']):
+                    raise ValueError('Unexpected Android package metadata')
+                continue
             names = {'macos': 'Purrimeter-macOS.zip', 'windows': 'Purrimeter-Windows.zip', 'web': 'Purrimeter-Web.zip'}
             name = names[platform]
             file = site / 'downloads' / name
@@ -251,8 +257,8 @@ class Host:
                 raise ValueError('Unexpected immutable package URL')
             if digest(file) != package['sha256'] or file.stat().st_size != package['size']:
                 raise ValueError('Signed package checksum mismatch')
-        if set(game['packages']) != {'macos', 'windows', 'web'}:
-            raise ValueError('All three game platforms are required')
+        if set(game['packages']) != {'macos', 'windows', 'web', 'android'}:
+            raise ValueError('All four game platforms are required')
         if 'downloads/Purrimeter-Server.tar.gz' not in manifest['files']:
             raise ValueError('Self-hosting server download is required')
         return game
@@ -337,7 +343,7 @@ class Host:
         immutable.mkdir(parents=True, exist_ok=True)
         # Validate every existing immutable file before any copy.
         sources = {name: file for name, file in [
-            *[(Path(p['url']).name, site / 'downloads' / Path(p['url']).name) for p in game['packages'].values()],
+            *[(Path(p['url']).name, site / 'downloads' / Path(p['url']).name) for k, p in game['packages'].items() if k != 'android'],
             ('release.json', site / 'game-release.json')]}
         for name, source in sources.items():
             target = immutable / name
@@ -402,7 +408,9 @@ class Host:
                 path = f"/game-releases/{game['id']}/web/{name[5:]}"
                 if self.public_hash(path) != expected:
                     raise RuntimeError(f'Immutable browser asset differs: {name}')
-        for package in game['packages'].values():
+        for platform, package in game['packages'].items():
+            if platform == 'android':
+                continue
             prefix = self.origin + '/'
             if not package['url'].startswith(prefix):
                 raise ValueError('Unexpected package origin')

@@ -1,4 +1,4 @@
-"""Build, verify, deploy and clean up a complete Purrimeter release."""
+"""Build, verify, deploy and clean up a complete Purrimeter release, including Google Play."""
 import argparse
 import base64
 import fcntl
@@ -15,9 +15,13 @@ import sys
 import tarfile
 import time
 
-from remote import DEPLOY_ID, RETENTION, digest, extract, read_json, retain, safe_remove, semver, write_json
+import play
+from remote import DEPLOY_ID, RETENTION, digest, extract, read_json, retain, safe_remove, semver, signed_release, write_json
 
 ROOT = Path(__file__).resolve().parents[2]
+PLAY_PACKAGE = 'com.roundhouselabsinc.purrimeter'
+STORE = ROOT / 'store/android'
+PLAY_TRACKS = ('production', 'beta', 'alpha', 'internal')
 TARGET = 'ryan@146.190.246.30'
 HISTORY = ROOT / 'build/deployments'
 SSH = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15',
@@ -34,7 +38,43 @@ def source_commit():
     return output('git', 'rev-parse', 'HEAD')
 
 
-def prerequisites():
+def private_file(path, description):
+    path = Path(path).expanduser().resolve()
+    if not path.is_file() or stat.S_IMODE(path.stat().st_mode) & 0o077:
+        raise ValueError(f'{description} must exist with owner-only permissions: {path}')
+    return path
+
+
+def android_prerequisites(skip_play):
+    """Upload keystore, JDK/SDK registration and Play credentials; see docs/android.md."""
+    for name in ('android_source.zip', 'android_release.apk', 'version.txt'):
+        if not (ROOT / '.tools/templates' / name).is_file():
+            raise ValueError(f'Missing Android export template: {name}; run scripts/setup_godot.sh')
+    props = private_file(os.environ.get('PURRIMETER_ANDROID_UPLOAD_PROPERTIES', '~/.config/purrimeter/android-upload.properties'),
+                         'Android upload keystore properties')
+    values = dict(line.split('=', 1) for line in props.read_text().splitlines() if '=' in line)
+    if not {'storeFile', 'keyAlias', 'storePassword'} <= set(values):
+        raise ValueError('Android upload keystore properties need storeFile, keyAlias and storePassword')
+    private_file(values['storeFile'], 'Android upload keystore')
+    if not shutil.which('jarsigner'):
+        raise ValueError('Missing prerequisite: jarsigner (JDK 17)')
+    configure = ROOT / 'scripts/configure_godot_android.py'
+    namespace = {}
+    exec(compile(configure.read_text(), str(configure), 'exec'), namespace)
+    java, _ = namespace['configure']()
+    env = {'PURRIMETER_ANDROID_UPLOAD_PROPERTIES': str(props), 'JAVA_HOME': java}
+    if not skip_play:
+        account = private_file(os.environ.get('PURRIMETER_PLAY_SERVICE_ACCOUNT', '~/.config/purrimeter/play-service-account.json'),
+                               'Play service account JSON')
+        data = json.loads(account.read_text())
+        if data.get('type') != 'service_account' or not data.get('client_email') or not data.get('private_key'):
+            raise ValueError('Play service account JSON is not a Google service account key')
+        play.Listing(STORE).images()
+        env['PURRIMETER_PLAY_SERVICE_ACCOUNT'] = str(account)
+    return env
+
+
+def prerequisites(skip_play=False):
     if platform.system() != 'Darwin' or sys.version_info < (3, 11):
         raise ValueError('Run on macOS with Python 3.11 or newer')
     if not hasattr(tarfile, 'data_filter'):
@@ -72,7 +112,7 @@ def prerequisites():
     executable = output('node', '-e', "process.stdout.write(require(process.argv[1]).chromium.executablePath())", playwright)
     if not Path(executable).is_file():
         raise ValueError('Install the Playwright Chromium browser before deploying')
-    return {**os.environ, 'GODOT': str(godot), 'GO_BIN': str(Path(go).resolve()),
+    return {**os.environ, **android_prerequisites(skip_play), 'GODOT': str(godot), 'GO_BIN': str(Path(go).resolve()),
             'PURRIMETER_RELEASE_KEY': str(key), 'PLAYWRIGHT_MODULE': playwright,
             # Commit provenance belongs in the publication manifest. Embedding
             # unrelated repository commits would restart an unchanged relay.
@@ -156,6 +196,12 @@ def prepare(record, state, env):
     site = source / 'build/website'
     website_id = (source / 'build/website-release.txt').read_text().strip()
     relay = source / 'dist/server/purrimeter-relay-linux-amd64'
+    # The Android bundle travels to Google Play, not the VM; keep it with the frozen record.
+    game = signed_release(source / 'dist/game-release.json')
+    bundle_source = source / 'dist/android/Purrimeter.aab'
+    if digest(bundle_source) != game['packages']['android']['sha256']:
+        raise ValueError('Android bundle does not match the signed game release')
+    shutil.copy2(bundle_source, record / 'Purrimeter.aab')
     # freeze source/tool outputs into a single retryable transport artifact
     with tarfile.open(archive, 'w:gz') as bundle:
         bundle.add(site, arcname='public')
@@ -163,9 +209,26 @@ def prepare(record, state, env):
         bundle.add(source / 'website/deploy/nginx.conf', arcname='nginx.conf')
     expanded = sum(p.stat().st_size for p in site.rglob('*') if p.is_file())
     state.update(prepared=True, site=website_id, relay_sha256=digest(relay),
+                 android_sha256=game['packages']['android']['sha256'], version_code=game['packages']['android']['version_code'],
+                 game_release=game['id'],
                  bundle_sha256=digest(archive), bundle_bytes=archive.stat().st_size,
                  # uploaded tar + extraction + site + immutable game tree + margin
                  required_bytes=archive.stat().st_size + 3 * expanded + 256 * 1024 * 1024)
+    write_json(record / 'state.json', state)
+    return state
+
+
+def publish_play(record, state, track, account, listing, publisher=play.Publisher):
+    """Upload the prepared bundle to Google Play exactly once per prepared release."""
+    done = state.get('play', {})
+    if done.get('committed_at'):
+        print(f"Play: version code {done['version_code']} already committed to {done['track']}; not uploading again.", flush=True)
+        return state
+    bundle = record / 'Purrimeter.aab'
+    if not bundle.is_file() or digest(bundle) != state['android_sha256']:
+        raise ValueError('Prepared Android bundle is missing or changed; refusing to upload altered bytes')
+    result = publisher(account, PLAY_PACKAGE).publish(bundle, state['version_code'], state['version'], listing, track=track)
+    state['play'] = {**result, 'committed_at': time.time()}
     write_json(record / 'state.json', state)
     return state
 
@@ -185,10 +248,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('version', help='Explicit MAJOR.MINOR.PATCH release version')
     parser.add_argument('--preview', action='store_true', help='Read-only preflight and deployment plan')
+    parser.add_argument('--play-track', choices=PLAY_TRACKS, default='production', help='Google Play track for the Android release (default production)')
+    parser.add_argument('--skip-play', action='store_true', help='Build the Android bundle but do not upload it to Google Play')
     args = parser.parse_args()
     semver(args.version)
     commit = source_commit()
-    env = prerequisites()
+    env = prerequisites(args.skip_play)
     record = HISTORY / f'{args.version}-{commit}'
     state = read_json(record / 'state.json') if (record / 'state.json').exists() else {
         'id': record.name, 'commit': commit, 'version': args.version, 'created_at': time.time()}
@@ -201,7 +266,13 @@ def main():
                        or state['relay_sha256'] != live['running_relay_sha256'] or not live['config_matches'])
             print(f"Prepared artifacts available; relay restart: {'yes' if restart else 'no'}")
         else:
-            print('Build/test/sign all clients, updaters, server and website. Restart relay only if built bytes or service configuration differ.')
+            print('Build/test/sign all clients, updaters, server, Android bundle and website. Restart relay only if built bytes or service configuration differ.')
+        if args.skip_play:
+            print('Google Play: skipped by --skip-play (bundle is still built and recorded).')
+        elif state.get('play', {}).get('committed_at'):
+            print(f"Google Play: version code {state['play']['version_code']} already committed to {state['play']['track']}.")
+        else:
+            print(f"Google Play: upload version code {play.version_code(args.version)} to the {args.play_track} track before the VM transaction.")
         print(f"VM free space: {live['free_bytes'] / 1024**3:.2f} GiB. Exact required space is calculated after packaging.")
         print('Upload, verify relay, activate site/clients, verify public hashes, clean up. No changes made.')
         print('Eligible remote cleanup:\n' + ('\n'.join(live['cleanup']) or '(none)'))
@@ -215,6 +286,12 @@ def main():
         write_json(record / 'state.json', state)
         local_cleanup(record)
         state = prepare(record, state, env)
+        if args.skip_play:
+            print('Google Play upload skipped; rerun without --skip-play to publish this exact bundle.', flush=True)
+        else:
+            # Play cannot be rolled back, so it must accept the bundle before anything public changes.
+            account = json.loads(Path(env['PURRIMETER_PLAY_SERVICE_ACCOUNT']).read_text())
+            state = publish_play(record, state, args.play_track, account, play.Listing(STORE))
         with (record / 'bundle.tar.gz').open('rb') as stream:
             status = subprocess.run(remote_command('deploy', state), stdin=stream).returncode
         if status:

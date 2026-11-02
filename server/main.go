@@ -24,6 +24,8 @@ func main() {
 		log.Fatal(err)
 	}
 	h := newHub(key)
+	// Reports live beside the signing key unless REPORTS_DIR says otherwise.
+	h.report = newReportLog(env("REPORTS_DIR", filepath.Join(filepath.Dir(env("SIGNING_KEY_FILE", "data/signing.key")), "reports"))).record
 	h.allowDevelopment = os.Getenv("ALLOW_DEVELOPMENT_BUILDS") == "true"
 	releasePath := os.Getenv("GAME_RELEASE_FILE")
 	if releasePath != "" {

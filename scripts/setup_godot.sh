@@ -8,8 +8,8 @@ if [ ! -x .tools/Godot.app/Contents/MacOS/Godot ]; then
   curl -fL --retry 3 "$base/Godot_v${version}-stable_macos.universal.zip" -o .tools/godot.zip
   unzip -qo .tools/godot.zip -d .tools
 fi
-if [ ! -f .tools/templates/macos.zip ] || [ ! -f .tools/templates/windows_release_x86_64.exe ] || [ ! -f .tools/templates/web_nothreads_release.zip ]; then
+if [ ! -f .tools/templates/macos.zip ] || [ ! -f .tools/templates/windows_release_x86_64.exe ] || [ ! -f .tools/templates/web_nothreads_release.zip ] || [ ! -f .tools/templates/android_source.zip ]; then
   if [ ! -f .tools/templates.tpz ]; then curl -fL --retry 3 "$base/Godot_v${version}-stable_export_templates.tpz" -o .tools/templates.tpz; fi
-  unzip -qo .tools/templates.tpz 'templates/macos.zip' 'templates/windows_release_x86_64.exe' 'templates/windows_debug_x86_64.exe' 'templates/version.txt' 'templates/web_nothreads_release.zip' 'templates/web_nothreads_debug.zip' -d .tools
+  unzip -qo .tools/templates.tpz 'templates/macos.zip' 'templates/windows_release_x86_64.exe' 'templates/windows_debug_x86_64.exe' 'templates/version.txt' 'templates/web_nothreads_release.zip' 'templates/web_nothreads_debug.zip' 'templates/android_release.apk' 'templates/android_debug.apk' 'templates/android_source.zip' -d .tools
 fi
 .tools/Godot.app/Contents/MacOS/Godot --headless --version

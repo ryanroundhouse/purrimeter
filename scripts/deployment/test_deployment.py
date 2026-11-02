@@ -73,6 +73,8 @@ def make_site(path, version, commit, sequence):
         file.write_bytes((version + name).encode())
         game['packages'][platform] = {'url': f"https://purrimeter.graham.pub/game-releases/{game['id']}/{name}",
                                       'sha256': digest(file), 'size': file.stat().st_size}
+    game['packages']['android'] = {'url': 'https://play.google.com/store/apps/details?id=com.roundhouselabsinc.purrimeter',
+                                   'sha256': 'ab' * 32, 'size': 5, 'version_code': 2000000}
     (path / 'downloads/Purrimeter-Server.tar.gz').write_bytes(b'server archive')
     (path / 'downloads/SHA256SUMS.txt').write_text('checksums')
     write_json(path / 'game-release.json', {'payload': base64.b64encode(json.dumps(game).encode()).decode()})
@@ -292,6 +294,32 @@ class DeploymentTests(unittest.TestCase):
         state = {'prepared': True, 'bundle_sha256': 'a' * 64}
         with self.assertRaisesRegex(ValueError, 'refusing to rebuild'):
             local.prepare(record, state, {})
+
+    def test_play_publication_runs_once_per_prepared_release(self):
+        record = self.build / 'release'
+        record.mkdir()
+        (record / 'Purrimeter.aab').write_bytes(b'bundle')
+        state = {'version': '2.0.0', 'android_sha256': digest(record / 'Purrimeter.aab'), 'version_code': 2000000}
+        calls = []
+
+        class FakePublisher:
+            def __init__(self, account, package):
+                calls.append(('init', account, package))
+
+            def publish(self, bundle, code, version, listing, track):
+                calls.append(('publish', bundle.name, code, version, listing, track))
+                return {'version_code': code, 'track': track, 'edit': 'e1'}
+
+        state = local.publish_play(record, state, 'internal', {'client_email': 'svc'}, 'listing', publisher=FakePublisher)
+        self.assertEqual(calls[1], ('publish', 'Purrimeter.aab', 2000000, '2.0.0', 'listing', 'internal'))
+        self.assertEqual(calls[0][2], local.PLAY_PACKAGE)
+        self.assertIn('committed_at', read_json(record / 'state.json')['play'])
+        local.publish_play(record, state, 'production', {}, 'listing', publisher=FakePublisher)
+        self.assertEqual(len(calls), 2, 'a committed release is never uploaded twice')
+        (record / 'Purrimeter.aab').write_bytes(b'tampered')
+        with self.assertRaisesRegex(ValueError, 'changed'):
+            local.publish_play(record, {'version': '2.0.1', 'android_sha256': 'a' * 64, 'version_code': 2000100}, 'production', {}, 'listing', publisher=FakePublisher)
+        self.assertEqual(len(calls), 2)
 
     def test_clean_source_gate_includes_untracked_files(self):
         with patch.object(local, 'output', return_value='?? untracked'):

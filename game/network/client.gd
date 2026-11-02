@@ -105,6 +105,8 @@ func say(message: String) -> bool:
 
 func kick(player: String) -> void: send({"type":"kick","player":player})
 
+func report(player: String) -> void: send({"type":"report","player":player})
+
 func leave_game() -> void:
 	if not room.is_empty():
 		if authenticated: send({"type":"leave","game":room.id})
@@ -179,6 +181,7 @@ func _receive(data: Dictionary) -> void:
 				var player := str(data.get("player",""))
 				if player!=id and room.get("players",[]).any(func(p): return p.get("id")==player): field_received.emit(player,data.state)
 		"chat": chat_received.emit(str(data.get("player","")),str(data.get("name","Player")),str(data.get("text","")))
+		"reported": status_changed.emit("Report sent. This player is muted for you.")
 		"kicked":
 			room={}; reconnecting=false; departed.emit(str(data.get("message","You were removed from the game.")))
 		"error":

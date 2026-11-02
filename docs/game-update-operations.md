@@ -6,7 +6,7 @@
 
 `server/internal/releases` verifies Ed25519 signatures over the exact payload bytes. The official public key is committed in `public.key` and compiled into the relay and native updater. The dedicated private key lives at `~/.config/purrimeter/release-signing.key` with owner-only permissions, outside the repository, and is never uploaded to the game server. `PURRIMETER_RELEASE_KEY` can select another protected location containing the same key. Back up this key securely; losing it requires a new trust bootstrap/manual installation. Do not generate a replacement key as part of an ordinary release.
 
-Signed metadata identifies all three platform URLs, sizes and SHA-256 hashes. Production publication requires all three complete, matching packages. The updater checks signatures, transport, sizes, hashes, safe archive paths and the macOS app signature before replacement. This release signing does not provide Apple notarization or Windows publisher certification.
+Signed metadata identifies the macOS, Windows and browser package URLs, sizes and SHA-256 hashes, plus an `android` entry with the Google Play listing URL, the uploaded bundle's digest, size and version code. Production publication requires all four complete packages; the relay and native updater validate the three hosted ones and ignore the Android entry. The updater checks signatures, transport, sizes, hashes, safe archive paths and the macOS app signature before replacement. This release signing does not provide Apple notarization or Windows publisher certification.
 
 ## Build and publish
 
@@ -46,6 +46,10 @@ Automated coverage includes signature tampering, incomplete platform releases, u
 Windows helper and game exports are cross-compiled and package-checked on macOS. Windows runtime installation and Windows security prompts require a Windows machine; do not treat cross-compilation as runtime validation.
 
 Legacy clients without a game release receive the existing terminal `hello` error code with the public download URL, so their older error handling retains the manual-upgrade instruction instead of overwriting it with a generic connection failure.
+
+## Android updates
+
+Android builds never download packages. The game reads the server designation like the browser does; when a newer release is required, Game updates offers **Update in Google Play**, which opens the listing. Google Play delivers the new bundle after its review, so Android players may be unable to join multiplayer for a while after each release ([ADR 0016](adr/0016-android-joins-the-game-release.md)). Server operators who pin an older manifest produce the same "server requires an older release" message as on desktop.
 
 ## Browser updates
 

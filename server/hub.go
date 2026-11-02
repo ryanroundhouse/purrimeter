@@ -64,6 +64,7 @@ type peer struct {
 	mu                           sync.Mutex
 	states                       map[string][]byte
 	general, chat, joins, frames limiter
+	reports                      limiter
 }
 
 func newPeer(c *websocket.Conn, cancel context.CancelFunc) *peer {
@@ -133,6 +134,7 @@ type member struct {
 	expires            time.Time
 	state              json.RawMessage
 	revision, sequence int64
+	recent             []chatLine
 }
 type room struct {
 	id, name, owner string
@@ -158,6 +160,7 @@ type hub struct {
 	connections      int
 	order            uint64
 	now              func() time.Time
+	report           func(report)
 }
 
 func newHub(key []byte) *hub {
@@ -368,11 +371,37 @@ func (h *hub) handle(p *peer, raw []byte) bool {
 			h.fail(p, "rate", "Please slow down before sending another message.")
 			break
 		}
-		for _, m := range r.members {
-			if m.peer != nil {
-				m.peer.send(message{"type": "chat", "player": p.id, "name": h.label(r, p.id), "text": strings.TrimSpace(q.Text)})
+		text := strings.TrimSpace(q.Text)
+		if m := h.find(r, p.id); m != nil {
+			m.recent = append(m.recent, chatLine{At: h.now().UTC(), Text: text})
+			if len(m.recent) > recentMessages {
+				m.recent = m.recent[len(m.recent)-recentMessages:]
 			}
 		}
+		for _, m := range r.members {
+			if m.peer != nil {
+				m.peer.send(message{"type": "chat", "player": p.id, "name": h.label(r, p.id), "text": text})
+			}
+		}
+	case "report":
+		r := h.rooms[p.game]
+		var m *member
+		if r != nil && q.Player != p.id {
+			m = h.find(r, q.Player)
+		}
+		if m == nil {
+			h.fail(p, "report", "Choose another player in this game to report.")
+			break
+		}
+		if !p.reports.allow(h.now(), 1.0/30, 3) {
+			h.fail(p, "rate", "Please wait before sending another report.")
+			break
+		}
+		if h.report != nil {
+			h.report(report{At: h.now().UTC(), Game: r.id, GameName: r.name, Reporter: p.id, ReporterName: p.name,
+				Player: m.id, PlayerName: m.name, Messages: append([]chatLine(nil), m.recent...)})
+		}
+		p.send(message{"type": "reported", "player": m.id})
 	case "state":
 		r := h.rooms[p.game]
 		if r == nil || !p.frames.allow(h.now(), 12, 20) {

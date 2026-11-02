@@ -43,6 +43,8 @@ purrimeter.graham.pub {
 }
 ```
 
+Player reports (the Report button beside Mute) are the only chat content the relay writes down. Each report is appended as one JSON line to `reports-YYYY-MM-DD.jsonl` under `REPORTS_DIR`, which defaults to a `reports/` directory beside `SIGNING_KEY_FILE`; files older than 90 days are deleted automatically. A report holds the time, game, both players' names and installation identities, and the reported player's last ten messages. Review them with any JSON tool and act with the owner's Kick or by other means; the relay has no ban list.
+
 `TRUST_PROXY=true` makes the relay apply its per-IP limits using the proxy's `X-Forwarded-For` header. Enable it only when the relay cannot be reached directly and the proxy sanitizes that header. The supplied Compose setup meets that condition. Native Godot clients need no browser-origin configuration. Browser play at the same origin needs no extra origin configuration. Cross-origin browser connections require space-separated `ALLOWED_ORIGINS` entries matching the origin host (including a nonstandard port). A custom server must also permit its browser origin to fetch `/updates` through an appropriate CORS configuration.
 
 ## Local development and checks

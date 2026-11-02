@@ -1,8 +1,8 @@
 # Purrimeter — The Garden Guard
 
-An endless pixel-art cat tower defence game for browsers, native macOS and Windows, built from one Godot 4.7.2 project.
+An endless pixel-art cat tower defence game for browsers, Android, native macOS and Windows, built from one Godot 4.7.2 project.
 
-Play in your browser at **[purrimeter.graham.pub/play/](https://purrimeter.graham.pub/play/)**, or download the game at **[purrimeter.graham.pub](https://purrimeter.graham.pub/)**. The page highlights the download for your operating system and includes installation help for the unsigned builds. Website source is in `website/`; preview and publication instructions are in [docs/website.md](docs/website.md).
+Play in your browser at **[purrimeter.graham.pub/play/](https://purrimeter.graham.pub/play/)**, download the game at **[purrimeter.graham.pub](https://purrimeter.graham.pub/)**, or install it from Google Play once the listing is published (see [docs/android.md](docs/android.md)). The page highlights the download for your operating system and includes installation help for the unsigned builds. Website source is in `website/`; preview and publication instructions are in [docs/website.md](docs/website.md).
 
 The launch menu offers **Single player** and **Multiplayer**. Both use your same saved garden. Multiplayer supports public, optionally password-protected games for up to three players, with live remote fields, independent progression, and shared chat.
 
@@ -18,7 +18,7 @@ Choose a player name in **Connection settings**, then open Multiplayer to create
 
 Your garden stays on the left. One other field fills the right-hand field area; with three players, the other two share it vertically. **View** enlarges a field for read-only cat, enemy, and powerup inspection and switches music and gameplay effects to that garden. Your own garden keeps its running or paused state while viewing. Closing View restores your audio; small previews stay silent. Each player controls their own levels, rebirths, pause, and speed. Opening a menu pauses only your combat.
 
-Press **T** to focus chat, **Enter** to send, and **Esc** to leave the text box. **Mute** hides one player's messages; chat notification sound is separately switchable. The owner can kick a player; ownership transfers when they leave. Dropped connections reserve a place for 60 seconds and reconnect automatically, leaving your garden paused. **Continue offline** in the Escape menu keeps your personal game going without the other players.
+Press **T** to focus chat, **Enter** to send, and **Esc** to leave the text box. **Mute** hides one player's messages; **Report** sends that player's recent messages to the server operator and mutes them for you. Chat notification sound is separately switchable. The owner can kick a player; ownership transfers when they leave. Dropped connections reserve a place for 60 seconds and reconnect automatically, leaving your garden paused. **Continue offline** in the Escape menu keeps your personal game going without the other players.
 
 Server hosting instructions are in [server/README.md](server/README.md). The self-hosting release is `dist/Purrimeter-Server.tar.gz`, including Linux amd64/arm64 binaries and Docker Compose/Caddy configuration. No VPS changes or DNS updates are performed by the build scripts.
 
@@ -29,6 +29,10 @@ Server hosting instructions are in [server/README.md](server/README.md). The sel
 - `dist/Purrimeter-macOS.zip` contains the universal Intel/Apple Silicon Mac app.
 
 These downloadable builds use ad hoc signing on Mac and are unsigned on Windows. Public distribution signing/notarization is not configured; the website includes the relevant installation notes.
+
+## Android
+
+The Android app (`com.roundhouselabsinc.purrimeter`) is the same game with the phone layouts, published to Google Play by `scripts/deploy_all.sh` as part of every release. Updates arrive through Play; Game updates opens the listing when the server requires a newer release. The back button steps out of panels and menus, and backgrounding the app pauses and saves. Store listing text and images live in `store/android/`.
 
 ## Browser and phone play
 

@@ -18,13 +18,17 @@ var isolated := false
 var progress_second := -1
 var browser_request: HTTPRequest
 
+## Desktop builds replace their own executable; browser and Android builds only read the server designation.
+static func native() -> bool:
+	return not OS.has_feature("web") and not OS.has_feature("android")
+
 static func build() -> Dictionary:
 	var config := ConfigFile.new()
 	config.load("res://network/build.cfg")
 	return {"id":config.get_value("release","id","development"),"sequence":config.get_value("release","sequence",0),"version":config.get_value("release","version","Development")}
 
 func _ready() -> void:
-	if OS.has_feature("web"): return
+	if not native(): return
 	work=ProjectSettings.globalize_path("res://../build/update-test-%d"%OS.get_process_id() if isolated else "user://updates")
 	DirAccess.make_dir_recursive_absolute(work)
 	var suffix := ".exe" if OS.get_name()=="Windows" else ""
@@ -38,7 +42,7 @@ func check(address: String) -> void:
 	if not endpoint.ends_with("/ws"):
 		fail("Use a multiplayer server address ending in /ws to check for updates."); return
 	state="checking"; message="Checking for updates… Single player is ready."
-	if OS.has_feature("web"):
+	if not native():
 		check_browser(endpoint.trim_suffix("/ws")+"/updates"); return
 	run_helper("check",["--url",endpoint.trim_suffix("/ws")+"/updates"])
 
@@ -65,7 +69,7 @@ func run_helper(mode: String, extra: Array) -> void:
 	changed.emit()
 
 func _process(delta: float) -> void:
-	if OS.has_feature("web"): return
+	if not native(): return
 	if installer_pid>0:
 		if FileAccess.file_exists(work.path_join("ready")):
 			installer_pid=-1; ready_to_exit.emit()
@@ -131,7 +135,11 @@ func check_browser(endpoint: String) -> void:
 		var release = JSON.parse_string(Marshalls.base64_to_utf8(envelope.payload))
 		if not release is Dictionary or not release.get("id") is String or not release.get("version") is String: fail("The server returned invalid release information."); return
 		latest=release
-		if release.id==build().id: state="current"; message="You're up to date. Multiplayer is ready."
+		var installed := build()
+		if release.id==installed.id: state="current"; message="You're up to date. Multiplayer is ready."
+		elif OS.has_feature("android"):
+			if int(release.get("sequence",0))>int(installed.sequence): state="available"; message="Purrimeter %s is rolling out on Google Play. Update there to join multiplayer; single player is always ready."%release.version
+			else: state="newer"; message="This server requires an older release (%s). Downgrades aren’t supported. You can keep playing single player."%release.version
 		else: state="available"; message="The server requires %s. Save and reload to load the current browser game. If this server uses a different release, choose the official server or keep playing single player."%release.version
 		changed.emit())
 	operation="browser_check"; changed.emit()

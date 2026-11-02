@@ -56,6 +56,11 @@ h1 span { color: var(--mint); }
 .download.recommended:hover { background: #a2ebc7; border-color: #a2ebc7; }
 .recommended .download-detail { color: var(--ink); }
 .recommendation { display: block; margin-top: 6px; font-size: 11px; font-weight: 650; }
+.store-status { display: inline-block; margin-top: 8px; padding: 2px 8px; border-radius: 999px; background: var(--line); color: var(--cream); font-size: 11px; font-weight: 650; letter-spacing: .02em; }
+.download[data-store-status="live"] .store-status { display: none; }
+.download[data-store-status="coming-soon"] { border-style: dashed; }
+.download[data-store-status="coming-soon"]:not([href]) { cursor: default; }
+.download[data-store-status="coming-soon"]:not([href]):hover { background: var(--panel); color: inherit; border-color: var(--muted); }
 .download-note { color: var(--muted); font-size: 12px; line-height: 1.7; margin-top: 14px; }
 .download-note a { color: var(--cream); }
 .gameplay img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 5px; }
@@ -126,3 +131,12 @@ details[open] summary svg { transform: rotate(180deg); }
 .play-browser span { display: block; margin-top: 6px; font-size: 16px; font-weight: 400; }
 .play-browser:hover { background: #b3edce; }
 .play-browser:focus-visible { outline: 3px solid #ffc46b; outline-offset: 4px; }
+
+/* Privacy policy page */
+.policy { max-width: 760px; padding: 48px 0 80px; }
+.policy h1 { font: 500 44px/1.05 var(--display); margin-bottom: 8px; }
+.policy-meta { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+.policy h2 { font: 600 26px/1.1 var(--display); margin: 32px 0 10px; }
+.policy p, .policy li { color: var(--cream); font-size: 16px; line-height: 1.7; }
+.policy ul { padding-left: 22px; margin: 8px 0 16px; }
+.policy code { font-size: 14px; color: var(--mint); }

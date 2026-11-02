@@ -204,6 +204,9 @@ func run() -> void:
 	check(await until(func(): return "1 N Space should stay in chat" in incoming),"chat reaches the other players")
 	app.toggle_mute(b.id); b.say("muted message"); await create_timer(0.15).timeout
 	check(not app.transcript.any(func(line): return "muted message" in line),"muted player's messages are hidden")
+	app.network.report(b.id)
+	check(await until(func(): return "Report sent" in app.notice),"reporting a player is acknowledged by the relay")
+	check(app.remote_cards[b.id].report.visible and app.remote_cards[b.id].mute.text=="Unmute","desktop cards offer Report beside Mute")
 	app.chat_input.release_focus(); app.expand_field(b.id); await process_frame
 	var viewer: Control=app.remote_cards[b.id].view
 	viewer.interact_cell(119); var before: Dictionary=viewer.game.snapshot(); viewer.action("sell"); viewer.action("new")

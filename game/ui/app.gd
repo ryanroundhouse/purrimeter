@@ -45,12 +45,12 @@ var browser_platform: BrowserPlatform
 var departed_room := {}
 
 func compact() -> bool:
-	return (OS.has_feature("web") or "--mobile-test" in OS.get_cmdline_user_args()) and (size.x<1100 or size.y<720 or BrowserPlatform.touch())
+	return GamePlatform.responsive() and (size.x<1100 or size.y<720 or GamePlatform.touch())
 
 
 func _ready() -> void:
 	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
-	if OS.has_feature("web") or "--mobile-test" in OS.get_cmdline_user_args():
+	if GamePlatform.responsive():
 		get_window().content_scale_size=Vector2i.ZERO
 		get_window().min_size=Vector2i.ZERO
 	browser_platform=BrowserPlatform.new(); add_child(browser_platform)
@@ -123,7 +123,7 @@ func make_theme() -> Theme:
 
 func label(value: String, font_size: int = 18, color: Color = CREAM) -> Label:
 	var l := Label.new(); l.text=value;
-	if OS.has_feature("web"): l.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	if GamePlatform.responsive(): l.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	l.add_theme_font_size_override("font_size",font_size); l.add_theme_color_override("font_color",color); return l
 
 func button(value: String, callback: Callable, primary: bool = false) -> Button:
@@ -155,7 +155,7 @@ func clear_page(next: String) -> void:
 	queue_redraw()
 
 func configure_window(wide: bool) -> void:
-	if OS.has_feature("web") or "--mobile-test" in OS.get_cmdline_user_args(): return
+	if GamePlatform.responsive(): return
 	var window := get_window()
 	var desired := Vector2i(1920,1080) if wide else Vector2i(1280,900)
 	if window.content_scale_size==desired: return
@@ -169,7 +169,7 @@ func title_page(title: String, subtitle: String) -> VBoxContainer:
 	for side in ["left","right"]: margin.add_theme_constant_override("margin_"+side,100)
 	for side in ["top","bottom"]: margin.add_theme_constant_override("margin_"+side,64)
 	var holder: Node=margin
-	if OS.has_feature("web") or compact():
+	if GamePlatform.responsive() or compact():
 		for side in ["left","right","top","bottom"]: margin.add_theme_constant_override("margin_"+side,20)
 		var scroller := ScrollContainer.new(); margin.add_child(scroller); scroller.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
 		holder=scroller
@@ -182,7 +182,7 @@ func show_menu() -> void:
 	if network!=null: network.disconnect_server()
 	clear_remotes(); transcript.clear(); muted.clear(); configure_window(false); clear_page("menu")
 	var box: VBoxContainer
-	if OS.has_feature("web") or compact(): box=title_page("Purrimeter","The Garden Guard")
+	if GamePlatform.responsive() or compact(): box=title_page("Purrimeter","The Garden Guard")
 	else:
 		box=column(page,14); box.position=Vector2(100,130); box.size=Vector2(450,650)
 		box.add_child(label("PURRIMETER",48)); box.add_child(label("The Garden Guard",24,MINT))
@@ -195,9 +195,9 @@ func show_menu() -> void:
 	box.add_child(button("Achievements",open_achievements))
 	box.add_child(button("Cat Skins",open_skins))
 	box.add_child(button("Connection settings",func(): show_settings("menu")))
-	if not OS.has_feature("web"): box.add_child(button("Quit",quit_game))
-	var updates := column(box if OS.has_feature("web") or compact() else page,10)
-	if not OS.has_feature("web") and not compact(): updates.position=Vector2(650,670); updates.size=Vector2(500,180)
+	if not GamePlatform.responsive(): box.add_child(button("Quit",quit_game))
+	var updates := column(box if GamePlatform.responsive() or compact() else page,10)
+	if not GamePlatform.responsive() and not compact(): updates.position=Vector2(650,670); updates.size=Vector2(500,180)
 	updates.add_child(label("Game version · "+str(GameUpdater.build().version),16,MUTED))
 	update_note=label(updater.message if updater!=null else "Check for game updates.",17,GOLD); update_note.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; updates.add_child(update_note)
 	updates.add_child(button("Check for updates",func(): show_updates(); if updater.state in ["idle","error","current","newer"]: updater.check(network.address)))
@@ -239,7 +239,7 @@ func show_browser() -> void:
 	toolbar.add_child(button("Main menu",show_menu))
 	box.add_child(state_label)
 	var scroll := ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; box.add_child(scroll)
-	if OS.has_feature("web") or compact(): scroll.custom_minimum_size.y=300
+	if GamePlatform.responsive() or compact(): scroll.custom_minimum_size.y=300
 	room_list=column(scroll,12); room_list.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	populate_games(); network.refresh()
 
@@ -328,12 +328,13 @@ func update_room(room: Dictionary) -> void:
 			var kick := button("Kick",func():
 				local_view.ask("Remove this player?","They cannot rejoin this game with their current multiplayer identity.","Remove player",func(): network.kick(player)))
 			kick.custom_minimum_size.y=36; card.add_child(kick)
-			for small in [inspect,mute,kick]:
+			var report := button("Report",func(): confirm_report(player)); report.custom_minimum_size.y=36; card.add_child(report)
+			for small in [inspect,mute,report,kick]:
 				small.add_theme_font_size_override("font_size",16)
 				for state in ["normal","hover","pressed"]:
 					var compact := theme.get_stylebox(state,"Button").duplicate() as StyleBoxFlat
 					compact.content_margin_top=6; compact.content_margin_bottom=6; small.add_theme_stylebox_override(state,compact)
-			remote_cards[player]={"card":card,"name":name_label,"details":details,"view":view,"inspect":inspect,"mute":mute,"kick":kick,"member":member}
+			remote_cards[player]={"card":card,"name":name_label,"details":details,"view":view,"inspect":inspect,"mute":mute,"report":report,"kick":kick,"member":member}
 		var item: Dictionary=remote_cards[player]; item.member=member; item.name.text=str(member.name)
 		item.view.remote_connected=member.get("connected",false)
 		item.kick.visible=room.get("owner","")==network.id
@@ -372,6 +373,32 @@ func toggle_mute(player: String) -> void:
 	muted[player]=not muted.get(player,false)
 	if remote_cards.has(player): remote_cards[player].mute.text="Unmute" if muted[player] else "Mute"
 
+func confirm_report(player: String) -> void:
+	local_view.ask("Report this player’s chat?","Their recent messages go to the server operator for review, and they are muted for you. Nobody else is notified.","Report and mute",func():
+		network.report(player)
+		if not muted.get(player,false): toggle_mute(player)
+		if compact(): phone_layout())
+
+func leave_updates() -> void:
+	if update_back in ["single","multiplayer"]: show_game(update_back=="multiplayer" and not network.room.is_empty())
+	elif update_back=="browser": show_browser()
+	else: show_menu()
+
+## Android back button: step out of the innermost layer, never quit from the menu.
+func go_back() -> void:
+	if not is_instance_valid(local_view) or local_view.draft_saving or (is_instance_valid(local_view.draft_panel) and local_view.draft_panel.visible) or local_view.confirm.visible: return
+	if not local_view.mobile.panel.is_empty(): local_view.mobile.close_panel(); return
+	if is_instance_valid(achievement_panel) and achievement_panel.visible: achievement_panel.close(); return
+	if is_instance_valid(skins_panel) and skins_panel.visible: skins_panel.close(); return
+	if mobile_chat: mobile_chat=false; phone_layout(); return
+	if pause_open: close_pause()
+	elif not expanded.is_empty(): close_expanded()
+	elif screen in ["single","multiplayer"]:
+		if local_view.placing>=0 or local_view.selected>=0 or local_view.selected_enemy>=0: local_view.placing=-1; local_view.selected=-1; local_view.selected_enemy=-1
+		else: open_pause()
+	elif screen=="updates": leave_updates()
+	elif screen!="menu": show_menu()
+
 func receive_chat(player: String, author: String, message: String) -> void:
 	if screen!="multiplayer" or muted.get(player,false): return
 	var entry := author+": "+message
@@ -397,7 +424,7 @@ func on_departed(reason: String) -> void:
 	clear_remotes(); transcript.clear(); muted.clear()
 	if not reason.is_empty():
 		local_view.game.paused=true; show_game(false); local_view.status=reason; notice=reason
-		if OS.has_feature("web") and not departed_room.is_empty():
+		if GamePlatform.responsive() and not departed_room.is_empty():
 			local_view.ask("Your garden is paused",reason+" Continue offline, or try to rejoin the same garden.","Rejoin",func():
 				var target: Dictionary=departed_room.duplicate(true)
 				show_browser(); network.connect_server()
@@ -410,7 +437,7 @@ func layout_game() -> void:
 		phone_layout(); return
 	if screen=="single":
 		local_view.position=Vector2.ZERO; local_view.scale=Vector2.ONE; local_view.size=Vector2(1280,900)
-		if OS.has_feature("web"):
+		if GamePlatform.responsive():
 			local_view.scale=Vector2.ONE*minf(size.x/1280,size.y/900)
 			local_view.position=(size-Vector2(1280,900)*local_view.scale)/2
 		return
@@ -430,7 +457,7 @@ func layout_game() -> void:
 			var fit := minf(card.size.x/1280.0,(card.size.y-56)/900.0)
 			view.remote_compact=false; view.gameplay_enabled=true; view.position=Vector2((card.size.x-1280*fit)/2,56); view.scale=Vector2.ONE*fit; view.size=Vector2(1280,900)
 			item.inspect.text="Close"; item.inspect.position=Vector2(card.size.x-96,4); item.inspect.size=Vector2(84,36)
-			item.mute.hide(); item.kick.hide()
+			item.mute.hide(); item.report.hide(); item.kick.hide()
 		else:
 			card.position=Vector2(right_x,94+index*(card_height+16)); card.size=Vector2(width,card_height)
 			var square := minf(width-(132 if count==2 else 24),card_height-(68 if count==2 else 104)); var fit := square/704.0
@@ -439,11 +466,13 @@ func layout_game() -> void:
 			view.remote_compact=true; view.gameplay_enabled=false; view.position=Vector2(field_x-28*fit,field_y-134*fit); view.scale=Vector2.ONE*fit; view.size=Vector2(760,850)
 			item.inspect.text="View"; item.inspect.position=Vector2(12,57); item.inspect.size=Vector2(76,34)
 			item.mute.show(); item.mute.position=Vector2(96,57); item.mute.size=Vector2(92,34)
-			item.kick.visible=network.room.get("owner","")==network.id; item.kick.position=Vector2(196,57); item.kick.size=Vector2(76,34)
+			item.report.show(); item.report.position=Vector2(196,57); item.report.size=Vector2(84,34)
+			item.kick.visible=network.room.get("owner","")==network.id; item.kick.position=Vector2(288,57); item.kick.size=Vector2(76,34)
 			if count==2:
 				item.inspect.position=Vector2(width-104,60); item.inspect.size.x=92
 				item.mute.position=Vector2(width-104,102)
-				item.kick.position=Vector2(width-104,144); item.kick.size.x=92
+				item.report.position=Vector2(width-104,144); item.report.size.x=92
+				item.kick.position=Vector2(width-104,186); item.kick.size.x=92
 		item.name.size=Vector2(card.size.x-120,28); item.name.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 		index+=1
 	if chat!=null: chat.visible=expanded.is_empty()
@@ -467,7 +496,7 @@ func open_achievements() -> void:
 	move_child(achievement_panel,get_child_count()-1)
 	achievement_panel.open(local_view.game)
 	achievement_panel.dismissed.connect(func():
-		local_view.game.paused=was_paused if not OS.has_feature("web") else true
+		local_view.game.paused=was_paused if not GamePlatform.responsive() else true
 		local_view.gameplay_enabled=was_enabled and not pause_open
 		local_view.save_game(),CONNECT_ONE_SHOT)
 
@@ -482,7 +511,7 @@ func open_skins() -> void:
 	move_child(skins_panel,get_child_count()-1)
 	skins_panel.open(local_view.game)
 	skins_panel.dismissed.connect(func():
-		local_view.game.paused=was_paused if not OS.has_feature("web") else true
+		local_view.game.paused=was_paused if not GamePlatform.responsive() else true
 		local_view.gameplay_enabled=was_enabled and not pause_open
 		local_view.save_game(),CONNECT_ONE_SHOT)
 
@@ -496,7 +525,7 @@ func open_pause() -> void:
 	var shade := ColorRect.new(); shade.color=Color(INK,0.93); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); overlay.add_child(shade)
 	var center := CenterContainer.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); overlay.add_child(center)
 	var holder: Node=center
-	if OS.has_feature("web") or compact():
+	if GamePlatform.responsive() or compact():
 		center.queue_free()
 		var margin := MarginContainer.new(); overlay.add_child(margin); margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		for side in ["left","right","top","bottom"]: margin.add_theme_constant_override("margin_"+side,16)
@@ -570,6 +599,12 @@ func _process(delta: float) -> void:
 func _notification(what: int) -> void:
 	if what==NOTIFICATION_WM_CLOSE_REQUEST and not passthrough: quit_game()
 	if not is_node_ready() or passthrough: return
+	if what==NOTIFICATION_WM_GO_BACK_REQUEST: go_back()
+	# Android backgrounds the whole activity: pause and save like a hidden browser tab.
+	if what==NOTIFICATION_APPLICATION_PAUSED or what==NOTIFICATION_APPLICATION_RESUMED:
+		app_focused=what==NOTIFICATION_APPLICATION_RESUMED
+		if is_instance_valid(local_view): local_view.browser_event("visible" if app_focused else "hidden","")
+		sync_audio_selection()
 	if what==NOTIFICATION_APPLICATION_FOCUS_OUT or what==NOTIFICATION_APPLICATION_FOCUS_IN:
 		app_focused=what==NOTIFICATION_APPLICATION_FOCUS_IN
 		sync_audio_selection()
@@ -582,7 +617,7 @@ func quit_game() -> void:
 func _draw() -> void:
 	if passthrough: return
 	draw_rect(Rect2(Vector2.ZERO,size),INK)
-	if not OS.has_feature("web") and not compact() and screen=="menu" and is_instance_valid(local_view) and not local_view.cat_textures.is_empty():
+	if not GamePlatform.responsive() and not compact() and screen=="menu" and is_instance_valid(local_view) and not local_view.cat_textures.is_empty():
 		for i in range(3):
 			var at := Vector2(690+i*155,520-i*62)
 			CatSkinArt.draw(self,local_view.game.skin_id(i),4,0,Rect2(at-Vector2(110,220),Vector2(220,220)))
@@ -592,7 +627,39 @@ func _draw() -> void:
 		draw_string(ThemeDB.fallback_font,Vector2(size.x*0.69+20,180),"Room for good company",HORIZONTAL_ALIGNMENT_LEFT,-1,24,MINT)
 		draw_string(ThemeDB.fallback_font,Vector2(size.x*0.69+20,218),"Keep playing while others join.",HORIZONTAL_ALIGNMENT_LEFT,-1,18,MUTED)
 
+func silence_fanfare() -> void:
+	if local_view.fanfare!=null: local_view.fanfare.queue_free(); local_view.fanfare=null
+
+## Store screenshot scenes: staged with the demonstration garden, never a player's save.
+func preview_scene(scene: String) -> void:
+	match scene:
+		"garden", "placement", "inspect", "powerups", "achievements", "rebirth":
+			show_game(false); local_view.make_preview(); local_view.game.paused=true; silence_fanfare()
+			if scene=="placement": local_view.selected=-1; local_view.mobile.act("cat2"); local_view.mobile.pending=9*16+12
+			if scene=="inspect": local_view.mobile.open_panel("inspect")
+			if scene=="powerups": local_view.mobile.act("mobile_powerups")
+			if scene=="achievements": open_achievements()
+			if scene=="rebirth": local_view.game.active=false; local_view.game.enemies.clear(); local_view.game.run_best=22; local_view.action("rebirth")
+		"multiplayer", "chat":
+			network.id="mine"; network.display_name="You"
+			network.room={"id":"room","name":"Sunny corner","owner":"mine","players":[{"id":"mine","name":"You","connected":true},{"id":"maple","name":"Maple","connected":true},{"id":"pepper","name":"Pepper","connected":true}]}
+			show_game(true); local_view.make_preview(); local_view.game.paused=true; silence_fanfare()
+			for player in ["maple","pepper"]: receive_field(player,LiveField.capture(local_view.game,1,1,[]))
+			receive_chat("maple","Maple","The Thorn Crawler is back on level 10!")
+			receive_chat("mine","You","Holding the corner. Rerouting with the Siamese.")
+			receive_chat("pepper","Pepper","My rebirth draft offered Winter Coat. Took it.")
+			if scene=="chat": mobile_chat=true
+			layout_game()
+
 func preview_app() -> void:
+	var scale_index := OS.get_cmdline_user_args().find("--preview-scale")
+	if scale_index>=0 and scale_index+1<OS.get_cmdline_user_args().size():
+		get_window().content_scale_factor=float(OS.get_cmdline_user_args()[scale_index+1])
+		await get_tree().process_frame; await get_tree().process_frame
+	var scene_index := OS.get_cmdline_user_args().find("--preview-scene")
+	if scene_index>=0 and scene_index+1<OS.get_cmdline_user_args().size():
+		preview_scene(OS.get_cmdline_user_args()[scene_index+1])
+		for _i in range(4): await get_tree().process_frame
 	if "--update-preview" in OS.get_cmdline_user_args():
 		var args := OS.get_cmdline_user_args(); var which := args.find("--update-preview")
 		var mode := args[which+1] if which+1<args.size() else "available"
@@ -634,6 +701,7 @@ func render_updates() -> void:
 	var actions := row(box)
 	if updater.state=="available":
 		if OS.has_feature("web"): actions.add_child(button("Save and reload",func(): BrowserPlatform.current.bridge.reload(JSON.stringify(local_view.game.snapshot(),"",true,true)),true))
+		elif GamePlatform.android(): actions.add_child(button("Update in Google Play",GamePlatform.open_store,true))
 		else: actions.add_child(button("Download update",updater.download,true))
 	if updater.state=="downloaded": actions.add_child(button("Restart and play",updater.install,true))
 	if updater.state=="error": actions.add_child(button("Retry",updater.retry,true))
@@ -642,10 +710,7 @@ func render_updates() -> void:
 		box.add_child(button("Show downloaded package",func(): OS.shell_show_in_file_manager(updater.work.path_join("package.zip"))))
 		var manual := label("To install manually: quit Purrimeter, extract the downloaded ZIP, then replace Purrimeter.app on Mac. On Windows replace Purrimeter.exe, Purrimeter.pck and PurrimeterUpdater.exe together. Your saved garden lives separately.",18,MUTED); manual.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; box.add_child(manual)
 	var spacer := Control.new(); spacer.size_flags_vertical=Control.SIZE_EXPAND_FILL; box.add_child(spacer)
-	box.add_child(button("Back · keep playing",func():
-		if update_back in ["single","multiplayer"]: show_game(update_back=="multiplayer" and not network.room.is_empty())
-		elif update_back=="browser": show_browser()
-		else: show_menu()))
+	box.add_child(button("Back · keep playing",leave_updates))
 	var candidates := page.find_children("*","Button",true,false)
 	for candidate in candidates:
 		if candidate.text==focus_text: candidate.grab_focus(); return
@@ -659,7 +724,7 @@ func finish_update() -> void:
 	get_tree().quit()
 
 func acknowledge_update() -> void:
-	if OS.has_feature("web"): return
+	if not GameUpdater.native(): return
 	if "--update-recovered" in OS.get_cmdline_user_args():
 		updater.message="The update could not start. Your previous game and garden were restored. Check for updates to retry."; updater.state="error"; update_controls()
 	var args := OS.get_cmdline_user_args(); var index := args.find("--update-ack")
@@ -692,7 +757,7 @@ func phone_layout() -> void:
 		var tab := button(str(item.member.name),func(): expand_field(player)); tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL; tab.clip_text=true; tab.custom_minimum_size.x=48; mobile_tabs.add_child(tab)
 		item.card.visible=expanded==player
 		item.card.position=Vector2(0,top); item.card.size=Vector2(size.x,size.y-top)
-		for control in [item.name,item.details,item.inspect,item.mute,item.kick]: control.hide()
+		for control in [item.name,item.details,item.inspect,item.mute,item.report,item.kick]: control.hide()
 		item.view.position=Vector2.ZERO; item.view.scale=Vector2.ONE; item.view.size=item.card.size
 		item.view.remote_compact=false; item.view.gameplay_enabled=expanded==player and not mobile_chat and not pause_open
 	chat_toggle=button("Chat",func():
@@ -721,5 +786,6 @@ func phone_layout() -> void:
 			var line := HBoxContainer.new(); members.add_child(line)
 			var name_label := label(str(item.member.name),16); name_label.size_flags_horizontal=Control.SIZE_EXPAND_FILL; line.add_child(name_label)
 			line.add_child(button("Unmute" if muted.get(player,false) else "Mute",func(): toggle_mute(player); phone_layout()))
+			line.add_child(button("Report",func(): mobile_chat=false; close_expanded(); confirm_report(player)))
 			if network.room.get("owner","")==network.id: line.add_child(button("Kick",func(): mobile_chat=false; close_expanded(); local_view.ask("Remove player?","Remove this player from the multiplayer game?","Remove",func(): network.kick(player))))
 	sync_audio_selection()

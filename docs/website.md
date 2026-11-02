@@ -11,7 +11,7 @@
 
 The domain already serves the multiplayer relay. Preserve `/ws`, `/healthz`, HTTPS, and certificate renewal when adding the website. See [deployment.md](deployment.md).
 
-Available client packages are universal macOS (Intel and Apple Silicon, macOS 11 or later) and Windows x64. Phone and tablet play uses the browser build; there is no native mobile app or Linux download. macOS builds currently use ad hoc signing and are not notarized; Windows builds are unsigned. Signed game releases now use the repository build/publication scripts; GitHub releases are not used.
+Available client packages are universal macOS (Intel and Apple Silicon, macOS 11 or later), Windows x64, and an Android app on Google Play (`com.roundhouselabsinc.purrimeter`, see [android.md](android.md)). Phone and tablet play also works in the browser; there is no iOS or Linux download. macOS builds currently use ad hoc signing and are not notarized; Windows builds are unsigned. Signed game releases now use the repository build/publication scripts; GitHub releases are not used.
 
 Multiplayer supports up to three players with independent gardens and progression, plus chat. Marketing copy must reflect this rather than imply shared combat.
 
@@ -23,6 +23,8 @@ Multiplayer supports up to three players with independent gardens and progressio
 - Always show both macOS and Windows download links, highlighting the detected platform.
 - Offer Play in browser on all devices; retain both native download links and detect their matching desktop OS as a convenience.
 - Start downloads only after the visitor clicks a download link.
+- Show a Google Play entry beside the desktop downloads. One flag in `website/index.html`, `data-store-status` on `#download-android`, is `coming-soon` until Google publishes the listing and `live` afterwards; `download.js` disables the link while coming soon and recommends it on Android once live. No other markup changes when flipping it.
+- Serve the privacy policy at `/privacy/`; Google Play requires it and it documents the multiplayer relay and report retention.
 
 ## Implementation scope
 

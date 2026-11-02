@@ -7,3 +7,4 @@ game/.godot/
 server/data/
 server/relay
 server/.env
+game/android/

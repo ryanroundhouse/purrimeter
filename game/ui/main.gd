@@ -68,7 +68,7 @@ var draft_panel: Control
 var draft_saving := false
 
 func compact() -> bool:
-	return (OS.has_feature("web") or "--mobile-test" in OS.get_cmdline_user_args()) and (size.x<1100 or size.y<720 or BrowserPlatform.touch())
+	return GamePlatform.responsive() and (size.x<1100 or size.y<720 or GamePlatform.touch())
 
 
 func _ready() -> void:
@@ -144,7 +144,7 @@ func _notification(what: int) -> void:
 		if not hosted: save_game(); get_tree().quit()
 	if what==NOTIFICATION_APPLICATION_FOCUS_OUT and is_node_ready():
 		audio.focus(false)
-		if OS.has_feature("web"): game.paused=true
+		if GamePlatform.responsive(): game.paused=true
 		save_game()
 	if what==NOTIFICATION_APPLICATION_FOCUS_IN and is_node_ready(): audio.focus(true)
 

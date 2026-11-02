@@ -24,6 +24,8 @@ type Package struct {
 	URL    string `json:"url"`
 	SHA256 string `json:"sha256"`
 	Size   int64  `json:"size"`
+	// Google Play version code of the Android bundle; absent for hosted packages.
+	VersionCode int64 `json:"version_code,omitempty"`
 }
 type Release struct {
 	ID       string             `json:"id"`

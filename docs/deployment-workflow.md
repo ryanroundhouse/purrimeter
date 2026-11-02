@@ -9,9 +9,11 @@ Commit the intended changes first; the command rejects tracked modifications and
 ```sh
 ./scripts/deploy_all.sh 4.0.2 --preview
 ./scripts/deploy_all.sh 4.0.2
+./scripts/deploy_all.sh 4.0.2 --play-track internal   # first Play upload or a cautious release
+./scripts/deploy_all.sh 4.0.2 --skip-play             # Play outage; rerun without the flag later
 ```
 
-Choose an explicit version newer than production. The command builds, tests, signs, uploads and activates without another prompt. “Latest” here means the selected committed source; the glossary's **current game release** still means the server-designated admission release.
+Choose an explicit version newer than production. The command builds, tests, signs, uploads to Google Play, uploads to the VM and activates without another prompt. The Android bundle goes to Play first because Play cannot be rolled back; a Play rejection stops the release before anything public changes. Google's review then publishes the Android build hours or days later; see [android.md](android.md). “Latest” here means the selected committed source; the glossary's **current game release** still means the server-designated admission release.
 
 Rerun the same command after an interruption: completed preparation is reused byte-for-byte, and a verified deployment only rechecks production and retries cleanup. Do not delete or modify `build/deployments/<version>-<commit>/` when retrying. A failure before preparation completes may rebuild, because none of its artifacts have been uploaded yet. A different source commit requires a newer version.
 
@@ -19,7 +21,7 @@ The target is the existing `ryan@146.190.246.30` VM for `purrimeter.graham.pub`.
 
 ## Prerequisites
 
-Run on macOS with Python 3.11+, Git, Node, Go, `rg`, `zip`, `lipo`, `codesign`, and `ditto`. Install Godot/templates using `scripts/setup_godot.sh`. Go may come from `.tools/go/bin/go`, `GO_BIN`, or PATH. `GODOT` can select the matching Godot 4.7.2 executable.
+Run on macOS with Python 3.11+, Git, Node, Go, `rg`, `zip`, `lipo`, `codesign`, `ditto`, JDK 17 (`jarsigner`) and the Android SDK. Install Godot/templates using `scripts/setup_godot.sh`, which now includes the Android templates. Go may come from `.tools/go/bin/go`, `GO_BIN`, or PATH. `GODOT` can select the matching Godot 4.7.2 executable.
 
 Install the browser test dependency once:
 
@@ -30,13 +32,13 @@ npm install --prefix .tools/deploy playwright@1.63.0
 
 Alternatively set `PLAYWRIGHT_MODULE` to an existing Playwright module with its matching Chromium installed. The script resolves it before entering the isolated build workspace.
 
-The official owner-only release key must already exist at `~/.config/purrimeter/release-signing.key`, or the path in `PURRIMETER_RELEASE_KEY`. Preflight checks that its public key matches the repository; it never generates or uploads a key. The VM requires noninteractive SSH/passwordless sudo, Python 3.11 with tar extraction filters, and its existing nginx/systemd setup. The script updates Purrimeter's release configuration and nginx snippet, not operating-system packages or unrelated services.
+The Android upload keystore, its properties file and the Play service account JSON must exist with owner-only permissions in `~/.config/purrimeter/` ([android.md](android.md)); `--skip-play` waives only the service account. The official owner-only release key must already exist at `~/.config/purrimeter/release-signing.key`, or the path in `PURRIMETER_RELEASE_KEY`. Preflight checks that its public key matches the repository; it never generates or uploads a key. The VM requires noninteractive SSH/passwordless sudo, Python 3.11 with tar extraction filters, and its existing nginx/systemd setup. The script updates Purrimeter's release configuration and nginx snippet, not operating-system packages or unrelated services.
 
 ## Build, activation and recovery
 
-The local workflow runs gameplay tests, Go race tests and three-client multiplayer integration; builds signed macOS, Windows and browser packages with bundled updaters; builds both Linux relay architectures and the self-hosting archive; validates website packaging; and runs the production browser packaging test. All three game platforms share one signed release identity. The website includes the self-hosting server download and its checksum.
+The local workflow runs gameplay tests, Go race tests and three-client multiplayer integration; builds signed macOS, Windows and browser packages with bundled updaters and the signed Android App Bundle; builds both Linux relay architectures and the self-hosting archive; validates website packaging; and runs the production browser packaging test. All four game platforms share one signed release identity; the manifest's `android` entry records the Play URL and bundle digest rather than a hosted file. The website includes the self-hosting server download and its checksum.
 
-The complete upload and build log are stored under `build/deployments/<version>-<commit>/`. Git provenance is recorded in the publication manifest; Go VCS stamping is disabled so an unrelated repository commit alone does not change the relay binary and interrupt players.
+The complete upload and build log, the Android bundle, and the Play edit record are stored under `build/deployments/<version>-<commit>/`. A rerun never uploads the bundle twice. Git provenance is recorded in the publication manifest; Go VCS stamping is disabled so an unrelated repository commit alone does not change the relay binary and interrupt players.
 
 The VM holds one deployment lock through upload, activation, verification and cleanup, also acquiring the existing relay and website locks. It validates the upload and files, conditionally restarts the relay, validates/reloads nginx, and switches the website pointer. Only a changed binary/configuration or a mismatch with the running executable requires a relay restart. Maintenance restarts end active multiplayer games; gardens remain local. Website and client changes alone do not restart multiplayer.
 
