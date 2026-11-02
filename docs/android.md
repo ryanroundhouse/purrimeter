@@ -53,6 +53,7 @@ Violence: cartoon or fantasy violence against fantasy creatures, no blood, no re
 - `--play-track production|beta|alpha|internal` (default production, status completed).
 - `--skip-play` builds and records the bundle without uploading; rerun without the flag to publish that exact bundle.
 - `--skip-listing` uploads the bundle and track without the store listing. Listing edits need the service account's "Manage store presence" permission, which Play can take up to a day to honour after an invitation; a 403 on the final validate with everything else accepted is that delay. Publish the listing afterwards with `scripts/publish_play_listing.py`, which also serves copy or image changes between releases.
+- `scripts/play_status.py` prints the production track state and whether the public store page answers 200 (exit 0 once it does). The track status only mirrors the requested rollout; the store page is the approval signal. When it goes live, set `data-store-status="live"` in `website/index.html`, commit, and run the next release.
 - `--preview` prints the Play plan with everything else.
 
 A prepared release keeps its bundle at `build/deployments/<version>-<commit>/Purrimeter.aab`; the Play step records `play.version_code`, `play.edit` and `play.committed_at` in `state.json` and is skipped on reruns. If Play already holds the same version code with different bytes, the release stops: publish a newer version. The signed game manifest contains an `android` entry with the Play URL, bundle digest, size and version code; the relay and desktop updater ignore it.
