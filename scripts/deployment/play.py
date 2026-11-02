@@ -179,13 +179,42 @@ class Publisher:
         return f'{UPLOAD}{self.package}/edits/{edit}{path}?uploadType=media'
 
     # --- publication -------------------------------------------------------
-    def publish(self, bundle, code, version, listing, track='production', status='completed', dry_run=False):
-        """Upload the bundle once, assign it to the track, refresh the listing, validate and commit."""
+    def apply_listing(self, edit, listing):
+        """Replace the store listing text, contact details and every image inside an open edit."""
+        images = listing.images()
+        self.call('PUT', self.api(edit, '/details'), payload={'defaultLanguage': LANGUAGE, 'contactEmail': listing.text['contactEmail'],
+                                                              'contactWebsite': listing.text['contactWebsite']})
+        self.call('PUT', self.api(edit, f'/listings/{LANGUAGE}'), payload={'language': LANGUAGE, 'title': listing.text['title'],
+                                                                         'shortDescription': listing.text['shortDescription'],
+                                                                         'fullDescription': listing.text['fullDescription']})
+        for image_type, files in images.items():
+            self.call('DELETE', self.api(edit, f'/listings/{LANGUAGE}/{image_type}'))
+            for file in files:
+                mime = mimetypes.guess_type(file.name)[0] or 'image/png'
+                self.call('POST', self.upload(edit, f'/listings/{LANGUAGE}/{image_type}'), body=file.read_bytes(), content_type=mime)
+
+    def publish_listing(self, listing):
+        """Push only the store listing from the repository, without touching releases."""
+        self.log(f'Play: {self.package} store listing update')
+        edit = self.call('POST', f'{API}{self.package}/edits', payload={})['id']
+        self.apply_listing(edit, listing)
+        self.call('POST', self.api(edit, ':validate'), payload={})
+        committed = self.call('POST', self.api(edit, ':commit'), payload={})
+        self.log(f'Play: committed listing edit {committed.get("id", edit)}')
+        return {'edit': committed.get('id', edit)}
+
+    def publish(self, bundle, code, version, listing, track='production', status='completed', dry_run=False, include_listing=True):
+        """Upload the bundle once, assign it to the track, refresh the listing, validate and commit.
+
+        include_listing=False publishes the release alone; use publish_listing() later. Store listing
+        edits need the 'Manage store presence' permission, which Play can take a day to propagate.
+        """
         bundle = Path(bundle)
         digest = hashlib.sha256(bundle.read_bytes()).hexdigest()
-        images = listing.images()
+        if include_listing:
+            listing.images()
         notes = listing.release_notes(version)
-        self.log(f'Play: {self.package} version code {code} ({version}) -> {track}/{status}')
+        self.log(f'Play: {self.package} version code {code} ({version}) -> {track}/{status}' + ('' if include_listing else ' (listing skipped)'))
         if dry_run:
             return {'version_code': code, 'track': track, 'dry_run': True}
         edit = self.call('POST', f'{API}{self.package}/edits', payload={})['id']
@@ -203,17 +232,9 @@ class Publisher:
         release = {'name': version, 'versionCodes': [str(code)], 'status': status,
                    'releaseNotes': [{'language': LANGUAGE, 'text': notes}]}
         self.call('PUT', self.api(edit, f'/tracks/{track}'), payload={'track': track, 'releases': [release]})
-        self.call('PUT', self.api(edit, '/details'), payload={'defaultLanguage': LANGUAGE, 'contactEmail': listing.text['contactEmail'],
-                                                              'contactWebsite': listing.text['contactWebsite']})
-        self.call('PUT', self.api(edit, f'/listings/{LANGUAGE}'), payload={'language': LANGUAGE, 'title': listing.text['title'],
-                                                                         'shortDescription': listing.text['shortDescription'],
-                                                                         'fullDescription': listing.text['fullDescription']})
-        for image_type, files in images.items():
-            self.call('DELETE', self.api(edit, f'/listings/{LANGUAGE}/{image_type}'))
-            for file in files:
-                mime = mimetypes.guess_type(file.name)[0] or 'image/png'
-                self.call('POST', self.upload(edit, f'/listings/{LANGUAGE}/{image_type}'), body=file.read_bytes(), content_type=mime)
+        if include_listing:
+            self.apply_listing(edit, listing)
         self.call('POST', self.api(edit, ':validate'), payload={})
         committed = self.call('POST', self.api(edit, ':commit'), payload={})
         self.log(f'Play: committed edit {committed.get("id", edit)}')
-        return {'version_code': code, 'track': track, 'status': status, 'edit': committed.get('id', edit), 'sha256': digest}
+        return {'version_code': code, 'track': track, 'status': status, 'edit': committed.get('id', edit), 'sha256': digest, 'listing': include_listing}

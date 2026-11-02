@@ -218,7 +218,7 @@ def prepare(record, state, env):
     return state
 
 
-def publish_play(record, state, track, account, listing, publisher=play.Publisher):
+def publish_play(record, state, track, account, listing, publisher=play.Publisher, include_listing=True):
     """Upload the prepared bundle to Google Play exactly once per prepared release."""
     done = state.get('play', {})
     if done.get('committed_at'):
@@ -227,7 +227,7 @@ def publish_play(record, state, track, account, listing, publisher=play.Publishe
     bundle = record / 'Purrimeter.aab'
     if not bundle.is_file() or digest(bundle) != state['android_sha256']:
         raise ValueError('Prepared Android bundle is missing or changed; refusing to upload altered bytes')
-    result = publisher(account, PLAY_PACKAGE).publish(bundle, state['version_code'], state['version'], listing, track=track)
+    result = publisher(account, PLAY_PACKAGE).publish(bundle, state['version_code'], state['version'], listing, track=track, include_listing=include_listing)
     state['play'] = {**result, 'committed_at': time.time()}
     write_json(record / 'state.json', state)
     return state
@@ -250,6 +250,7 @@ def main():
     parser.add_argument('--preview', action='store_true', help='Read-only preflight and deployment plan')
     parser.add_argument('--play-track', choices=PLAY_TRACKS, default='production', help='Google Play track for the Android release (default production)')
     parser.add_argument('--skip-play', action='store_true', help='Build the Android bundle but do not upload it to Google Play')
+    parser.add_argument('--skip-listing', action='store_true', help='Upload the bundle without the store listing (publish it later with scripts/publish_play_listing.py)')
     args = parser.parse_args()
     semver(args.version)
     commit = source_commit()
@@ -291,7 +292,7 @@ def main():
         else:
             # Play cannot be rolled back, so it must accept the bundle before anything public changes.
             account = json.loads(Path(env['PURRIMETER_PLAY_SERVICE_ACCOUNT']).read_text())
-            state = publish_play(record, state, args.play_track, account, play.Listing(STORE))
+            state = publish_play(record, state, args.play_track, account, play.Listing(STORE), include_listing=not args.skip_listing)
         with (record / 'bundle.tar.gz').open('rb') as stream:
             status = subprocess.run(remote_command('deploy', state), stdin=stream).returncode
         if status:

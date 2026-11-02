@@ -306,7 +306,7 @@ class DeploymentTests(unittest.TestCase):
             def __init__(self, account, package):
                 calls.append(('init', account, package))
 
-            def publish(self, bundle, code, version, listing, track):
+            def publish(self, bundle, code, version, listing, track, include_listing=True):
                 calls.append(('publish', bundle.name, code, version, listing, track))
                 return {'version_code': code, 'track': track, 'edit': 'e1'}
 

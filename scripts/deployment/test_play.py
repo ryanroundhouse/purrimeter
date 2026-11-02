@@ -148,6 +148,20 @@ class PlayTests(unittest.TestCase):
         with self.assertRaisesRegex(play.PlayError, 'token exchange'):
             self.publisher(FakeTransport(fail={('POST', 'token'): (401, b'denied')})).publish(self.bundle, 4000200, '4.0.2', self.listing)
 
+    def test_listing_can_be_skipped_and_published_alone(self):
+        transport = FakeTransport()
+        result = self.publisher(transport).publish(self.bundle, 4000200, '4.0.2', self.listing, track='internal', include_listing=False)
+        self.assertFalse(result['listing'])
+        urls = [u for _, u, _, _ in transport.calls]
+        self.assertFalse(any('/listings/' in u or u.endswith('/details') for u in urls))
+        self.assertTrue(any(u.endswith(':commit') for u in urls))
+        alone = FakeTransport()
+        self.publisher(alone).publish_listing(self.listing)
+        urls = [u for _, u, _, _ in alone.calls]
+        self.assertFalse(any('/bundles' in u or '/tracks/' in u for u in urls))
+        self.assertTrue(any(u.endswith('/listings/en-US') for u in urls))
+        self.assertEqual(urls[-2:][0].endswith(':validate') and urls[-1].endswith(':commit'), True)
+
     def test_dry_run_touches_nothing(self):
         transport = FakeTransport()
         result = self.publisher(transport).publish(self.bundle, 4000200, '4.0.2', self.listing, dry_run=True)

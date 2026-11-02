@@ -11,6 +11,7 @@ Commit the intended changes first; the command rejects tracked modifications and
 ./scripts/deploy_all.sh 4.0.2
 ./scripts/deploy_all.sh 4.0.2 --play-track internal   # first Play upload or a cautious release
 ./scripts/deploy_all.sh 4.0.2 --skip-play             # Play outage; rerun without the flag later
+./scripts/deploy_all.sh 4.0.2 --skip-listing          # bundle only; scripts/publish_play_listing.py later
 ```
 
 Choose an explicit version newer than production. The command builds, tests, signs, uploads to Google Play, uploads to the VM and activates without another prompt. The Android bundle goes to Play first because Play cannot be rolled back; a Play rejection stops the release before anything public changes. Google's review then publishes the Android build hours or days later; see [android.md](android.md). “Latest” here means the selected committed source; the glossary's **current game release** still means the server-designated admission release.
