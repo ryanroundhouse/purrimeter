@@ -14,3 +14,8 @@ progress { accent-color: #89dfb5; width: min(320px, 90%); }
 body:has(#save-warning:not([hidden])) #stage { height: calc(var(--visible-height, 100dvh) - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
 [hidden] { display: none !important; }
 ::selection { background: #416957; color: #f4edd7; }
+
+#rotate { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: max(24px, env(safe-area-inset-top)) 24px; background: #131c26; text-align: center; }
+#rotate svg { color: #89dfb5; }
+#rotate h1 { font-size: 26px; }
+#rotate-help { font-size: 14px; }

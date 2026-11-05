@@ -21,7 +21,7 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 window/stretch/mode.web="disabled"
 window/stretch/mode.android="disabled"
-window/handheld/orientation=6
+window/handheld/orientation=4
 window/size/min_width.web=0
 window/size/min_height.web=0
 

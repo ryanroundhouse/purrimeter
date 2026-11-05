@@ -1,6 +1,14 @@
 class_name MobileGarden
 extends RefCounted
 ## Phone layout and gestures; combat and purchases stay in the shared Session.
+const ICONS = {
+	"pause": preload("res://assets/controls/pause.svg"),
+	"play": preload("res://assets/controls/play.svg"),
+	"menu": preload("res://assets/controls/menu.svg"),
+	"auto": preload("res://assets/controls/auto.svg"),
+	"close": preload("res://assets/controls/close.svg"),
+	"fit": preload("res://assets/controls/fit.svg"),
+}
 var v: Control
 var field := Rect2()
 var transform := Transform2D.IDENTITY
@@ -9,6 +17,7 @@ var pan := Vector2.ZERO
 var touches := {}
 var gesture := false
 var origin := Vector2.ZERO
+var board_gesture := false
 var pending := -1
 var panel := ""
 var sheet: PanelContainer
@@ -22,11 +31,11 @@ func _init(view: Control) -> void:
 	v=view
 
 func layout() -> void:
-	var landscape := v.size.x>v.size.y*1.25
+	var landscape := v.size.x>v.size.y
 	# Reserve both wave and placement rows so selecting a cat never shifts the field.
-	var edge := minf(v.size.y-80,v.size.x*0.48-18) if landscape else minf(v.size.x-24,v.size.y-390)
+	var edge := minf(v.size.y-48,v.size.x-244) if landscape else minf(v.size.x-24,v.size.y-390)
 	edge=maxf(100,edge)
-	field=Rect2(Vector2(12,68) if landscape else Vector2((v.size.x-edge)/2,108),Vector2.ONE*edge)
+	field=Rect2(Vector2(8,40) if landscape else Vector2((v.size.x-edge)/2,108),Vector2.ONE*edge)
 	var scale_factor := edge/704.0*zoom
 	pan=pan.clamp(Vector2.ONE*(-edge*(zoom-1)/2),Vector2.ONE*(edge*(zoom-1)/2))
 	transform=Transform2D(0,Vector2.ONE*scale_factor,0,field.get_center()+pan-v.BOARD.get_center()*scale_factor)
@@ -49,40 +58,39 @@ func draw() -> void:
 	v.box(Rect2(field.end.x,field.position.y,v.size.x-field.end.x,field.size.y),v.INK)
 	v.text("Level %d"%v.game.level,Vector2(12,8),22,v.MINT)
 	v.right_text(v.game.coins.label()+" coins",Vector2(v.size.x-12,10),20,v.GOLD)
-	var landscape := v.size.x>v.size.y*1.25
+	var landscape := v.size.x>v.size.y
 	var header_y := 56.0 if not landscape else 8.0
-	var header_x := 12.0 if not landscape else v.size.x*0.48
+	var header_x := 12.0 if not landscape else field.end.x+16
 	var header_w := v.size.x-24 if not landscape else v.size.x-header_x-12
 	if landscape:
 		v.box(Rect2(header_x,0,header_w+12,58),v.INK)
 		v.right_text(v.game.coins.label()+"c",Vector2(field.end.x,12),20,v.GOLD)
 	var w := (header_w-16)/3
-	v.button("Resume" if v.game.paused else "Pause",Rect2(header_x,header_y,w,44),"pause",not v.read_only)
+	icon_button("play" if v.game.paused else "pause",Rect2(header_x,header_y,w,44),"pause",not v.read_only)
 	v.button("%d×"%v.game.speed,Rect2(header_x+w+8,header_y,w,44),"speed",not v.read_only)
-	v.button("Menu",Rect2(header_x+2*(w+8),header_y,w,44),"menu",not v.read_only)
+	icon_button("menu",Rect2(header_x+2*(w+8),header_y,w,44),"menu",not v.read_only)
 	var x := field.end.x+16 if landscape else 12.0
-	var y := 68.0 if landscape else field.end.y+8
+	var y := 60.0 if landscape else field.end.y+8
 	var width := v.size.x-x-12 if landscape else v.size.x-24
 	w=(width-16)/3
 	for kind in range(3):
-		var r := Rect2(x+kind*(w+8),y,w,64)
+		var r := Rect2(x+kind*(w+8),y,w,60)
 		v.box(r,v.PANEL if v.placing!=kind else Color("304b40"),6)
-		v.cat_sprite(kind,1,0,Rect2(r.position+Vector2(0,2),Vector2(44,42)))
-		v.text_fit(["Scout","Gunner","Sage"][kind],r.position+Vector2(43,8),w-45,16)
-		v.text_fit(v.game.recruit_cost(kind).label()+"c",r.position+Vector2(10,42),w-14,16,v.GOLD)
+		v.cat_sprite(kind,1,0,Rect2(r.position+Vector2((w-36)/2,0),Vector2(36,34)))
+		v.text_fit(v.game.recruit_cost(kind).label()+"c",r.position+Vector2(10,36),w-14,16,v.GOLD)
 		if v.placing==kind: v.draw_rect(r,v.MINT,false,2)
 		v.buttons.append({"rect":r,"id":"cat%d"%kind,"enabled":not v.read_only})
-	y+=72
-	v.button("Resume level" if v.game.active and v.game.paused else ("Wave in progress" if v.game.active else "Start level %d"%v.game.level),Rect2(x,y,width-112,44),"resume" if v.game.active and v.game.paused else "start",not v.read_only and (not v.game.active or v.game.paused),true)
-	v.button("Auto"+(" on" if v.game.auto_start else " off"),Rect2(x+width-104,y,104,44),"auto_start",not v.read_only,v.game.auto_start)
+	y+=68
+	v.button("Resume level" if v.game.active and v.game.paused else ("Wave in progress" if v.game.active else "Start level %d"%v.game.level),Rect2(x,y,width-52,44),"resume" if v.game.active and v.game.paused else "start",not v.read_only and (not v.game.active or v.game.paused),true)
+	icon_button("auto",Rect2(x+width-44,y,44,44),"auto_start",not v.read_only,v.game.auto_start)
 	y+=52
 	if v.placing>=0:
-		v.button("Confirm · %sc"%v.game.recruit_cost(v.placing).label(),Rect2(x,y,width-112,44),"mobile_confirm",pending>=0,true)
-		v.button("Cancel",Rect2(x+width-104,y,104,44),"mobile_cancel")
+		v.button("Confirm · %sc"%v.game.recruit_cost(v.placing).label(),Rect2(x,y,width-52,44),"mobile_confirm",pending>=0,true)
+		icon_button("close",Rect2(x+width-44,y,44,44),"mobile_cancel")
 		y+=52
-	v.button("Powerups",Rect2(x,y,width*0.44,44),"mobile_powerups")
-	v.button("Rebirth",Rect2(x+width*0.44+8,y,width*0.31-8,44),"rebirth",not v.read_only and v.game.can_rebirth())
-	v.button("Fit",Rect2(x+width*0.75+8,y,width*0.25-8,44),"mobile_fit")
+	v.button("Powerups",Rect2(x,y,(width-52)*0.52,44),"mobile_powerups")
+	v.button("Rebirth",Rect2(x+(width-52)*0.52+8,y,(width-52)*0.48-8,44),"rebirth",not v.read_only and v.game.can_rebirth())
+	icon_button("fit",Rect2(x+width-44,y,44,44),"mobile_fit")
 	y+=50
 	if v.game.active:
 		v.bar(Rect2(x,y,width,5),v.game.level_health_fraction(),v.PINK,v.LINE)
@@ -92,17 +100,24 @@ func draw() -> void:
 		var rect := transform*Rect2(v.center(pending)-Vector2.ONE*22,Vector2.ONE*44)
 		if field.encloses(rect): v.draw_rect(rect,v.GOLD,false,3)
 
+func icon_button(icon: String, rect: Rect2, id: String, enabled: bool = true, lit: bool = false) -> void:
+	v.button("",rect,id,enabled,lit)
+	var color = v.INK if lit and enabled else (v.CREAM if enabled else v.DISABLED)
+	v.draw_texture_rect(ICONS[icon],Rect2(rect.get_center()-Vector2(12,12),Vector2(24,24)),false,color)
+
 func handle(event: InputEvent) -> bool:
 	if is_instance_valid(sheet) and sheet.visible: return true
 	if event is InputEventScreenTouch:
 		var p: Vector2=v.get_global_transform_with_canvas().affine_inverse()*event.position
 		if event.pressed:
 			touches[event.index]=p
-			if touches.size()==1: origin=p; gesture=false
-			else: gesture=true
+			if touches.size()==1:
+				origin=p; gesture=false; board_gesture=field.has_point(p)
+			board_gesture=board_gesture and field.has_point(p)
+			if touches.size()>1: gesture=true
 		else:
 			touches.erase(event.index)
-			if touches.is_empty() and not gesture: tap(p)
+			if touches.is_empty() and not gesture and not event.canceled and p.distance_to(origin)<=8: tap(p)
 		return true
 	if event is InputEventScreenDrag:
 		var p: Vector2=v.get_global_transform_with_canvas().affine_inverse()*event.position
@@ -110,7 +125,7 @@ func handle(event: InputEvent) -> bool:
 		var old: Vector2=touches[event.index]
 		if touches.size()==2:
 			var other: Vector2=touches[touches.keys()[0] if touches.keys()[1]==event.index else touches.keys()[1]]
-			if field.has_point(origin):
+			if board_gesture:
 				var before := zoom
 				zoom=clampf(zoom*p.distance_to(other)/maxf(1,old.distance_to(other)),1,3)
 				var midpoint := (old+other)/2
@@ -118,7 +133,7 @@ func handle(event: InputEvent) -> bool:
 			gesture=true
 		elif p.distance_to(origin)>8 or gesture:
 			gesture=true
-			if field.has_point(origin): pan+=p-old
+			if board_gesture: pan+=p-old
 		touches[event.index]=p; layout(); return true
 	if event is InputEventMouseButton:
 		if event.device==InputEvent.DEVICE_ID_EMULATION: return true

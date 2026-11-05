@@ -45,6 +45,19 @@ func run() -> void:
 	root.size=Vector2i(844,390); await process_frame; await process_frame
 	app.layout_game(); mobile.layout()
 	check(mobile.field.end.y<=view.size.y and view.game.towers.size()==2,"rotation preserves the garden and fits the board")
+	mobile.act("cat0"); mobile.pending=-1; mobile.zoom=1; mobile.pan=Vector2.ZERO; mobile.layout()
+	var middle: Vector2=mobile.field.get_center()
+	for index in range(2):
+		var down := InputEventScreenTouch.new(); down.index=index; down.pressed=true
+		down.position=middle+Vector2(-40 if index==0 else 40,0); mobile.handle(down)
+	var drag := InputEventScreenDrag.new(); drag.index=1; drag.position=middle+Vector2(120,0); mobile.handle(drag)
+	check(mobile.zoom>1,"two fingers zoom the play area")
+	for index in range(2):
+		var up := InputEventScreenTouch.new(); up.index=index; up.position=middle; mobile.handle(up)
+	check(mobile.pending==-1,"pinch release never selects a placement")
+	mobile.act("mobile_fit"); mobile.layout()
+	check(mobile.zoom==1 and mobile.pan==Vector2.ZERO,"fit restores the whole garden")
+	mobile.act("mobile_cancel")
 	app.network.id="mine"; app.network.room={"id":"room","name":"Phone test","owner":"mine","players":[{"id":"mine","name":"Mine","connected":true},{"id":"friend","name":"Friend","connected":true}]}
 	app.show_game(true); await process_frame
 	view.game.paused=false; app.expand_field("friend")

@@ -72,6 +72,24 @@
     $('canvas').height = Math.max(1, Math.round(rect.height));
     emit('resize', JSON.stringify([rect.width, rect.height]));
   }
+  const portrait = matchMedia('(pointer: coarse) and (orientation: portrait)');
+  function orient() {
+    $('rotate').hidden = !portrait.matches;
+    $('stage').inert = portrait.matches;
+    if (portrait.matches) { emit('hidden'); if (active) persist(); }
+    fit();
+  }
+  portrait.addEventListener('change', orient);
+  $('landscape').onclick = async () => {
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen)
+        await document.documentElement.requestFullscreen();
+      if (screen.orientation?.lock) await screen.orientation.lock('landscape');
+    } catch (_) { /* Safari and other unsupported browsers retain the rotate prompt. */ }
+    $('rotate-help').textContent = 'If the screen stays upright, turn off rotation lock and rotate your phone sideways.';
+    orient();
+  };
+  orient();
   new ResizeObserver(fit).observe($('stage'));
   if (window.visualViewport) {
     const keyboardFit = () => {
@@ -115,7 +133,7 @@
     active: () => active,
     settings: name => settings[name] || '',
     setSettings: (name, value) => { if (active) { settings[name] = value; persist(); } },
-    subscribe: cb => { callback = cb; if (document.hidden) emit('hidden'); },
+    subscribe: cb => { callback = cb; if (document.hidden || portrait.matches) emit('hidden'); },
     save: snapshot => { persist(snapshot); },
     commitSave: async snapshot => {
       if (active && volatile && sessionAccepted) { current = snapshot; emit('draft_saved', 'session'); return; }

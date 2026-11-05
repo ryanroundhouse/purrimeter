@@ -6,7 +6,7 @@
 
 Native macOS and Windows plus browser play on phones, tablets, and desktop, built from one Godot project.
 
-Preserve desktop game conventions in native builds. Browser play adapts the same game to touch, portrait and landscape, with readable controls at 360 CSS pixels. See `docs/mobile-browser.md` for the confirmed scope and acceptance criteria.
+Preserve desktop game conventions in native builds. Mobile play uses landscape with compact touch controls and a pinch-to-zoom playing field. Android locks to sensor landscape; mobile browsers show a rotate-device prompt in portrait and offer an orientation lock where supported. See `docs/mobile-browser.md` for the confirmed scope and acceptance criteria.
 
 ## Users
 
