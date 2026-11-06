@@ -80,3 +80,23 @@ Screenshots use `--app-preview` with `--preview-scene` (garden, placement, inspe
 ## Verification boundaries
 
 Automated: Gradle export and `jarsigner` verification of the bundle on every release, relay report handling, Play API sequencing against a fake transport with real RSA signing, deployment idempotency, website badge behaviour, and the Godot mobile suite including Report and back handling. Not automated: installation on physical Android hardware, Play's own review, the Play Console checklist, and real-device performance; keep the manual checks from [mobile-browser.md](mobile-browser.md) for each release.
+
+## Floating gameplay controls
+
+The Android-only `game/ui/android_game.gd` extends the shared mobile controller. It uses the real Session purchase/placement rules, with full-viewport camera geometry, floating controls, a recruitment palette, an overview and compact native panels. Desktop and browser rendering stay on their existing paths. Density scaling converts the window to logical units; display-safe bounds are converted with `CanvasItem.get_screen_transform()` before positioning controls. See the [Godot coordinate documentation](https://docs.godotengine.org/en/stable/classes/class_canvasitem.html#class-canvasitem-method-get-screen-transform).
+
+Android text uses `TypedValue.applyDimension(COMPLEX_UNIT_SP, ...)` through Godot's Android runtime bridge, so system text-size preferences (including nonlinear Android scaling) apply without shrinking the playing field. Font sizes are cached and refreshed when the activity resumes. See [Android's TypedValue reference](https://developer.android.com/reference/android/util/TypedValue#applyDimension(int,%20float,%20android.util.DisplayMetrics)).
+
+Powerups' top selector switches Available powers, Owned powers, and Patrol & rebirth. Purchase buttons stay outside the scrolling details. Cat inspection keeps Upgrade/Repair visible with an animated portrait and a separate Sell action. Panel browsing preserves combat; Menu pauses it. Android Back unwinds panels, recruitment and placement, including inspection of another player's field.
+
+Run the native interaction checks from a desktop GUI session (they use an isolated garden):
+
+```sh
+.tools/Godot.app/Contents/MacOS/Godot --path game --script res://tests/android_controls.gd -- --multiplayer-test --android-ui-test
+# Or include native UI checks with the full suite:
+PURRIMETER_NATIVE_UI_TESTS=1 ./scripts/test.sh
+```
+
+Native emulator captures in `.impeccable/review/android-gameplay/` cover a 914×411 logical phone, 640×320 small phone, 1280×800 tablet, and 1.3× system text with dark mode. These verify layout and interaction; physical-device performance remains a release check. The Android design system is documented in [the scoped design guide](../game/ui/android/DESIGN.md).
+
+The selected browser prototype is archived on `prototype/android-controls` (`1a0419e`). It is intentionally absent from the implementation branch and Android exports.

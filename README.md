@@ -34,6 +34,8 @@ These downloadable builds use ad hoc signing on Mac and are unsigned on Windows.
 
 The Android app (`com.roundhouselabsinc.purrimeter`) is the same game with the phone layouts, published to Google Play by `scripts/deploy_all.sh` as part of every release. Updates arrive through Play; Game updates opens the listing when the server requires a newer release. The back button steps out of panels and menus, and backgrounding the app pauses and saves. Store listing text and images live in `store/android/`.
 
+Android gameplay uses a full-screen, zoomable field with floating forest-green controls. **Recruit** opens the three cats; select one, tap a tile, then **Confirm**. **Fit / Focus** switches between the whole garden and the enlarged view; pinch, drag, or tap the overview to navigate. Start/Resume, speed, Auto and Menu stay at the top. Inspection and Powerups use compact panels with actions kept visible; the Powerups filter also opens **Patrol & rebirth** for Rebirth and Draft Collection. Android Back closes the innermost panel or placement first. macOS and browser layouts retain their existing controls.
+
 ## Browser and phone play
 
 Phone play uses portrait or landscape layouts. Select a cat, tap a tile to preview it, then Confirm; pinch to zoom, drag to pan, and Fit to see the whole garden. Tap cats or enemies to inspect them. Powerups open in a scrollable panel. Pause remains available while building, and Menu pauses combat. In phone multiplayer, player tabs switch gardens and Chat opens the conversation and moderation controls.

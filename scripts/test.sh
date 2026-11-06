@@ -19,3 +19,7 @@ godot_bin="${GODOT:-$PWD/.tools/Godot.app/Contents/MacOS/Godot}"
 "$godot_bin" --headless --path game --script res://tests/window_transition.gd -- --multiplayer-test
 
 "$godot_bin" --headless --path game --script res://tests/mobile.gd -- --multiplayer-test --mobile-test
+
+if [ "${PURRIMETER_NATIVE_UI_TESTS:-0}" = 1 ]; then
+  "$godot_bin" --path game --script res://tests/android_controls.gd -- --multiplayer-test --android-ui-test
+fi

@@ -68,11 +68,12 @@ var draft_panel: Control
 var draft_saving := false
 
 func compact() -> bool:
-	return GamePlatform.responsive() and (size.x<1100 or size.y<720 or GamePlatform.touch())
+	return GamePlatform.android_controls() or GamePlatform.responsive() and (size.x<1100 or size.y<720 or GamePlatform.touch())
 
 
 func _ready() -> void:
-	mobile=MobileGarden.new(self)
+	mobile=AndroidGarden.new(self) if GamePlatform.android_controls() else MobileGarden.new(self)
+	if GamePlatform.android_controls(): clip_contents=true
 	testing="--smoke-test" in OS.get_cmdline_user_args() or "--music-test" in OS.get_cmdline_user_args()
 	preview="--preview" in OS.get_cmdline_user_args()
 	preview_gallery="--gallery" in OS.get_cmdline_user_args()
@@ -618,7 +619,7 @@ func draw_board() -> void:
 	if not inspected.is_empty(): draw_rect(enemy_rect(inspected).grow(3),GOLD,false,2)
 	for shot in game.shots: draw_shot(shot)
 	for e in game.enemies:
-		if e.boss>=0 and not remote_compact:
+		if e.boss>=0 and not remote_compact and not GamePlatform.android_controls():
 			text_fit(Balance.BOSSES[e.boss].name,Vector2(282,104),235,14,Balance.BOSSES[e.boss].color)
 			bar(Rect2(530,110,150,7),e.hp,Balance.BOSSES[e.boss].color)
 			right_text("%d%%" % roundi(e.hp*100),Vector2(732,103),14,MUTED)

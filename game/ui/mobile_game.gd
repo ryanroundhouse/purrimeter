@@ -105,17 +105,28 @@ func icon_button(icon: String, rect: Rect2, id: String, enabled: bool = true, li
 	var color = v.INK if lit and enabled else (v.CREAM if enabled else v.DISABLED)
 	v.draw_texture_rect(ICONS[icon],Rect2(rect.get_center()-Vector2(12,12),Vector2(24,24)),false,color)
 
+func panel_blocks_input(_event: InputEvent) -> bool:
+	return is_instance_valid(sheet) and sheet.visible
+
+func blocks_gesture(_point: Vector2) -> bool:
+	return false
+
+func dismiss_layer() -> bool:
+	if not panel.is_empty(): close_panel(); return true
+	return false
+
 func handle(event: InputEvent) -> bool:
-	if is_instance_valid(sheet) and sheet.visible: return true
+	if panel_blocks_input(event): return true
 	if event is InputEventScreenTouch:
 		var p: Vector2=v.get_global_transform_with_canvas().affine_inverse()*event.position
 		if event.pressed:
 			touches[event.index]=p
 			if touches.size()==1:
-				origin=p; gesture=false; board_gesture=field.has_point(p)
-			board_gesture=board_gesture and field.has_point(p)
+				origin=p; gesture=false; board_gesture=field.has_point(p) and not blocks_gesture(p)
+			board_gesture=board_gesture and field.has_point(p) and not blocks_gesture(p)
 			if touches.size()>1: gesture=true
 		else:
+			if not touches.has(event.index): return true
 			touches.erase(event.index)
 			if touches.is_empty() and not gesture and not event.canceled and p.distance_to(origin)<=8: tap(p)
 		return true

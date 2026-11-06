@@ -45,7 +45,7 @@ var browser_platform: BrowserPlatform
 var departed_room := {}
 
 func compact() -> bool:
-	return GamePlatform.responsive() and (size.x<1100 or size.y<720 or GamePlatform.touch())
+	return GamePlatform.android_controls() or GamePlatform.responsive() and (size.x<1100 or size.y<720 or GamePlatform.touch())
 
 
 func _ready() -> void:
@@ -53,6 +53,8 @@ func _ready() -> void:
 	if GamePlatform.responsive():
 		get_window().content_scale_size=Vector2i.ZERO
 		get_window().min_size=Vector2i.ZERO
+		if GamePlatform.android():
+			get_window().content_scale_factor=clampf(DisplayServer.screen_get_dpi()/160.0,1.0,4.0)
 	browser_platform=BrowserPlatform.new(); add_child(browser_platform)
 	test_mode="--multiplayer-test" in OS.get_cmdline_user_args() or "--app-preview" in OS.get_cmdline_user_args()
 	passthrough="--smoke-test" in OS.get_cmdline_user_args() or "--preview" in OS.get_cmdline_user_args() or "--music-test" in OS.get_cmdline_user_args()
@@ -106,7 +108,8 @@ func _ready() -> void:
 	if "--app-preview" in OS.get_cmdline_user_args(): preview_app.call_deferred()
 
 func make_theme() -> Theme:
-	var result := Theme.new(); result.default_font_size=18
+	var result := Theme.new(); result.default_font_size=GamePlatform.ui_font_size(16) if GamePlatform.android_controls() else 18
+	var surface := AndroidGarden.SURFACE if GamePlatform.android_controls() else PANEL
 	for type in ["Label","Button","LineEdit","CheckButton","RichTextLabel"]: result.set_color("font_color",type,CREAM)
 	result.set_color("font_placeholder_color","LineEdit",MUTED)
 	result.set_color("font_disabled_color","Button",MUTED.darkened(0.15))
@@ -114,8 +117,8 @@ func make_theme() -> Theme:
 	result.set_color("selection_color","LineEdit",Color("416957"))
 	for type in ["Button","LineEdit","PanelContainer"]:
 		for state in ["normal","hover","pressed","disabled","focus","panel"]:
-			var style := StyleBoxFlat.new(); style.bg_color=PANEL.lightened(0.1) if state=="hover" else PANEL
-			style.set_corner_radius_all(6); style.content_margin_left=16; style.content_margin_right=16; style.content_margin_top=12; style.content_margin_bottom=12
+			var style := StyleBoxFlat.new(); style.bg_color=surface.lightened(0.1) if state=="hover" else surface
+			style.set_corner_radius_all(12 if GamePlatform.android_controls() else 6); style.content_margin_left=16; style.content_margin_right=16; style.content_margin_top=12; style.content_margin_bottom=12
 			if state=="focus": style.bg_color=Color.TRANSPARENT; style.set_border_width_all(2); style.border_color=MINT
 			if state=="pressed": style.bg_color=Color("39584b")
 			result.set_stylebox(state,type,style)
@@ -124,13 +127,14 @@ func make_theme() -> Theme:
 func label(value: String, font_size: int = 18, color: Color = CREAM) -> Label:
 	var l := Label.new(); l.text=value;
 	if GamePlatform.responsive(): l.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
-	l.add_theme_font_size_override("font_size",font_size); l.add_theme_color_override("font_color",color); return l
+	GamePlatform.apply_font(l,font_size); l.add_theme_color_override("font_color",color); return l
 
 func button(value: String, callback: Callable, primary: bool = false) -> Button:
-	var b := Button.new(); b.text=value; b.custom_minimum_size.y=48; b.pressed.connect(callback)
+	var b := Button.new(); b.text=value; b.clip_text=GamePlatform.android_controls(); b.custom_minimum_size.y=48; b.pressed.connect(callback)
 	if primary:
+		var accent := GOLD if GamePlatform.android_controls() else MINT
 		for state in ["normal","hover","pressed"]:
-			var s := theme.get_stylebox(state,"Button").duplicate() as StyleBoxFlat; s.bg_color=MINT.lightened(0.12) if state=="hover" else MINT; b.add_theme_stylebox_override(state,s)
+			var s := theme.get_stylebox(state,"Button").duplicate() as StyleBoxFlat; s.bg_color=accent.lightened(0.12) if state=="hover" else accent; b.add_theme_stylebox_override(state,s)
 		for state in ["font_color","font_hover_color","font_pressed_color","font_focus_color"]: b.add_theme_color_override(state,INK)
 	return b
 
@@ -386,13 +390,15 @@ func leave_updates() -> void:
 
 ## Android back button: step out of the innermost layer, never quit from the menu.
 func go_back() -> void:
-	if not is_instance_valid(local_view) or local_view.draft_saving or (is_instance_valid(local_view.draft_panel) and local_view.draft_panel.visible) or local_view.confirm.visible: return
-	if not local_view.mobile.panel.is_empty(): local_view.mobile.close_panel(); return
+	if not is_instance_valid(local_view) or local_view.draft_saving or (is_instance_valid(local_view.draft_panel) and local_view.draft_panel.visible): return
+	if local_view.confirm.visible: local_view.confirm.close(); return
 	if is_instance_valid(achievement_panel) and achievement_panel.visible: achievement_panel.close(); return
 	if is_instance_valid(skins_panel) and skins_panel.visible: skins_panel.close(); return
 	if mobile_chat: mobile_chat=false; phone_layout(); return
-	if pause_open: close_pause()
-	elif not expanded.is_empty(): close_expanded()
+	if pause_open: close_pause(); return
+	var viewed: Control=remote_cards[expanded].view if not expanded.is_empty() and remote_cards.has(expanded) else local_view
+	if viewed.compact() and viewed.mobile.dismiss_layer(): return
+	if not expanded.is_empty(): close_expanded()
 	elif screen in ["single","multiplayer"]:
 		if local_view.placing>=0 or local_view.selected>=0 or local_view.selected_enemy>=0: local_view.placing=-1; local_view.selected=-1; local_view.selected_enemy=-1
 		else: open_pause()
@@ -563,8 +569,6 @@ func close_pause() -> void:
 func _input(event: InputEvent) -> void:
 	if passthrough or not event is InputEventKey or not event.pressed or event.echo: return
 	if local_view.draft_saving or (is_instance_valid(local_view.draft_panel) and local_view.draft_panel.visible): return
-	if event.keycode==KEY_ESCAPE and not local_view.mobile.panel.is_empty():
-		local_view.mobile.close_panel(); get_viewport().set_input_as_handled(); return
 	if is_instance_valid(achievement_panel) and achievement_panel.visible: return
 	if is_instance_valid(skins_panel) and skins_panel.visible: return
 	var focused := get_viewport().gui_get_focus_owner()
@@ -573,7 +577,10 @@ func _input(event: InputEvent) -> void:
 	if event.keycode!=KEY_ESCAPE: return
 	if focused is LineEdit:
 		focused.release_focus(); get_viewport().set_input_as_handled(); return
+	if local_view.confirm.visible or local_view.file_dialog.visible: return
+	var viewed: Control=remote_cards[expanded].view if not expanded.is_empty() and remote_cards.has(expanded) else local_view
 	if pause_open: close_pause(); get_viewport().set_input_as_handled()
+	elif viewed.compact() and viewed.mobile.dismiss_layer(): get_viewport().set_input_as_handled()
 	elif not expanded.is_empty(): close_expanded(); get_viewport().set_input_as_handled()
 	elif screen in ["single","multiplayer"] and not local_view.confirm.visible and not local_view.file_dialog.visible:
 		if local_view.placing>=0 or local_view.selected>=0 or local_view.selected_enemy>=0:
@@ -603,6 +610,10 @@ func _notification(what: int) -> void:
 	# Android backgrounds the whole activity: pause and save like a hidden browser tab.
 	if what==NOTIFICATION_APPLICATION_PAUSED or what==NOTIFICATION_APPLICATION_RESUMED:
 		app_focused=what==NOTIFICATION_APPLICATION_RESUMED
+		if app_focused and GamePlatform.android():
+			GamePlatform.font_sizes.clear()
+			theme.default_font_size=GamePlatform.ui_font_size(16)
+			GamePlatform.refresh_fonts(self)
 		if is_instance_valid(local_view): local_view.browser_event("visible" if app_focused else "hidden","")
 		sync_audio_selection()
 	if what==NOTIFICATION_APPLICATION_FOCUS_OUT or what==NOTIFICATION_APPLICATION_FOCUS_IN:

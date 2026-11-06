@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-06T02:09:32.768200+00:00",
+  "title": "Design System: Purrimeter Android",
+  "extensions": {
+    "colorMeta": {
+      "surface": {
+        "role": "neutral",
+        "displayName": "Forest surface",
+        "tonalRamp": [
+          "oklch(15% 0.0161 163.22)",
+          "oklch(25% 0.0299 163.22)",
+          "oklch(35% 0.0414 163.22)",
+          "oklch(45% 0.0460 163.22)",
+          "oklch(60% 0.0460 163.22)",
+          "oklch(75% 0.0391 163.22)",
+          "oklch(85% 0.0276 163.22)",
+          "oklch(95% 0.0115 163.22)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Deep forest panel",
+        "tonalRamp": [
+          "oklch(15% 0.0132 163.67)",
+          "oklch(25% 0.0245 163.67)",
+          "oklch(35% 0.0339 163.67)",
+          "oklch(45% 0.0376 163.67)",
+          "oklch(60% 0.0376 163.67)",
+          "oklch(75% 0.0320 163.67)",
+          "oklch(85% 0.0226 163.67)",
+          "oklch(95% 0.0094 163.67)"
+        ]
+      },
+      "hud": {
+        "role": "neutral",
+        "displayName": "Forest HUD",
+        "tonalRamp": [
+          "oklch(15% 0.0113 164.96)",
+          "oklch(25% 0.0209 164.96)",
+          "oklch(35% 0.0289 164.96)",
+          "oklch(45% 0.0322 164.96)",
+          "oklch(60% 0.0322 164.96)",
+          "oklch(75% 0.0273 164.96)",
+          "oklch(85% 0.0193 164.96)",
+          "oklch(95% 0.0080 164.96)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0083 251.52)",
+          "oklch(25% 0.0154 251.52)",
+          "oklch(35% 0.0213 251.52)",
+          "oklch(45% 0.0237 251.52)",
+          "oklch(60% 0.0237 251.52)",
+          "oklch(75% 0.0201 251.52)",
+          "oklch(85% 0.0142 251.52)",
+          "oklch(95% 0.0059 251.52)"
+        ]
+      },
+      "cream": {
+        "role": "neutral",
+        "displayName": "Cream",
+        "tonalRamp": [
+          "oklch(15% 0.0105 92.32)",
+          "oklch(25% 0.0195 92.32)",
+          "oklch(35% 0.0270 92.32)",
+          "oklch(45% 0.0300 92.32)",
+          "oklch(60% 0.0300 92.32)",
+          "oklch(75% 0.0255 92.32)",
+          "oklch(85% 0.0180 92.32)",
+          "oklch(95% 0.0075 92.32)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted sage",
+        "tonalRamp": [
+          "oklch(15% 0.0078 174.83)",
+          "oklch(25% 0.0145 174.83)",
+          "oklch(35% 0.0201 174.83)",
+          "oklch(45% 0.0224 174.83)",
+          "oklch(60% 0.0224 174.83)",
+          "oklch(75% 0.0190 174.83)",
+          "oklch(85% 0.0134 174.83)",
+          "oklch(95% 0.0056 174.83)"
+        ]
+      },
+      "mint": {
+        "role": "secondary",
+        "displayName": "Mint",
+        "tonalRamp": [
+          "oklch(15% 0.0361 161.85)",
+          "oklch(25% 0.0671 161.85)",
+          "oklch(35% 0.0929 161.85)",
+          "oklch(45% 0.1032 161.85)",
+          "oklch(60% 0.1032 161.85)",
+          "oklch(75% 0.0877 161.85)",
+          "oklch(85% 0.0619 161.85)",
+          "oklch(95% 0.0258 161.85)"
+        ]
+      },
+      "gold": {
+        "role": "primary",
+        "displayName": "Gold",
+        "tonalRamp": [
+          "oklch(15% 0.0441 75.97)",
+          "oklch(25% 0.0819 75.97)",
+          "oklch(35% 0.1134 75.97)",
+          "oklch(45% 0.1260 75.97)",
+          "oklch(60% 0.1260 75.97)",
+          "oklch(75% 0.1071 75.97)",
+          "oklch(85% 0.0756 75.97)",
+          "oklch(95% 0.0315 75.97)"
+        ]
+      },
+      "pink": {
+        "role": "secondary",
+        "displayName": "Pink",
+        "tonalRamp": [
+          "oklch(15% 0.0563 6.90)",
+          "oklch(25% 0.1046 6.90)",
+          "oklch(35% 0.1448 6.90)",
+          "oklch(45% 0.1609 6.90)",
+          "oklch(60% 0.1609 6.90)",
+          "oklch(75% 0.1367 6.90)",
+          "oklch(85% 0.0965 6.90)",
+          "oklch(95% 0.0402 6.90)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Garden line",
+        "tonalRamp": [
+          "oklch(15% 0.0088 184.97)",
+          "oklch(25% 0.0164 184.97)",
+          "oklch(35% 0.0228 184.97)",
+          "oklch(45% 0.0253 184.97)",
+          "oklch(60% 0.0253 184.97)",
+          "oklch(75% 0.0215 184.97)",
+          "oklch(85% 0.0152 184.97)",
+          "oklch(95% 0.0063 184.97)"
+        ]
+      },
+      "selected": {
+        "role": "neutral",
+        "displayName": "Selected forest",
+        "tonalRamp": [
+          "oklch(15% 0.0216 148.10)",
+          "oklch(25% 0.0402 148.10)",
+          "oklch(35% 0.0557 148.10)",
+          "oklch(45% 0.0618 148.10)",
+          "oklch(60% 0.0618 148.10)",
+          "oklch(75% 0.0526 148.10)",
+          "oklch(85% 0.0371 148.10)",
+          "oklch(95% 0.0155 148.10)"
+        ]
+      },
+      "pressed": {
+        "role": "neutral",
+        "displayName": "Pressed forest",
+        "tonalRamp": [
+          "oklch(15% 0.0149 166.31)",
+          "oklch(25% 0.0278 166.31)",
+          "oklch(35% 0.0384 166.31)",
+          "oklch(45% 0.0427 166.31)",
+          "oklch(60% 0.0427 166.31)",
+          "oklch(75% 0.0363 166.31)",
+          "oklch(85% 0.0256 166.31)",
+          "oklch(95% 0.0107 166.31)"
+        ]
+      },
+      "text-selection": {
+        "role": "neutral",
+        "displayName": "Text selection",
+        "tonalRamp": [
+          "oklch(15% 0.0189 164.21)",
+          "oklch(25% 0.0351 164.21)",
+          "oklch(35% 0.0487 164.21)",
+          "oklch(45% 0.0541 164.21)",
+          "oklch(60% 0.0541 164.21)",
+          "oklch(75% 0.0460 164.21)",
+          "oklch(85% 0.0324 164.21)",
+          "oklch(95% 0.0135 164.21)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Title",
+        "purpose": "Inspection titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Inspection summaries."
+      },
+      "detail": {
+        "displayName": "Detail",
+        "purpose": "Powerup details, costs and panel actions."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Floating control labels."
+      },
+      "metadata": {
+        "displayName": "Metadata",
+        "purpose": "Secondary status lines."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "notice-visibility",
+        "value": "3s",
+        "purpose": "Notice lifetime; not a transition or fade."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "horizontal-recruitment-safe-height",
+        "value": "<324 logical units"
+      },
+      {
+        "name": "large-overview-safe-height",
+        "value": ">=330 logical units"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Floating control",
+      "kind": "button",
+      "refersTo": "pill",
+      "description": "Native drawn pill; immediate states, no hover change. Browser sans-serif stands in for the Godot fallback font.",
+      "html": "<button class=\"ds-pill\">Fit</button>",
+      "css": ".ds-pill{background:#18382a;color:#f4edd7;border:0;border-radius:24px;min-width:120px;height:48px;font:15px sans-serif;padding:0 14px}.ds-pill:hover,.ds-pill:active{background:#18382a}.ds-pill:focus-visible{outline:2px solid #ffc46b;outline-offset:2px}.ds-pill:disabled{background:#18382a;color:#b0c3bd}"
+    },
+    {
+      "name": "Primary floating control",
+      "kind": "button",
+      "refersTo": "pill-primary",
+      "description": "Native drawn pill; immediate states, no hover change. Browser sans-serif stands in for the Godot fallback font.",
+      "html": "<button class=\"ds-pill\">Start</button>",
+      "css": ".ds-pill{background:#ffc46b;color:#131c26;border:0;border-radius:24px;min-width:120px;height:48px;font:15px sans-serif;padding:0 14px}.ds-pill:hover,.ds-pill:active{background:#ffc46b}.ds-pill:focus-visible{outline:2px solid #ffc46b;outline-offset:2px}.ds-pill:disabled{background:#18382a;color:#b0c3bd}"
+    },
+    {
+      "name": "Recruit",
+      "kind": "button",
+      "refersTo": "recruit",
+      "description": "Gold recruitment capsule; icon path copied from assets/controls/recruit.svg.",
+      "html": "<button class=\"ds-recruit\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg><span>Recruit</span></button>",
+      "css": ".ds-recruit{display:flex;align-items:center;gap:8px;width:132px;height:56px;padding:0 14px;border:0;border-radius:28px;background:#ffc46b;color:#131c26;font:15px sans-serif}.ds-recruit:hover,.ds-recruit:active{background:#ffc46b}.ds-recruit:focus-visible{outline:2px solid #ffc46b;outline-offset:2px}"
+    },
+    {
+      "name": "Panel action",
+      "kind": "button",
+      "refersTo": "panel-button",
+      "description": "Native panel button; 8% lightened hover and inherited mint focus.",
+      "html": "<button class=\"ds-action\">Repair</button>",
+      "css": ".ds-action{min-width:48px;min-height:48px;padding:6px 8px;background:#18382a;color:#f4edd7;border:0;border-radius:12px;font:14px sans-serif}.ds-action:hover{background:#2a483b}.ds-action:active{background:#18382a}.ds-action:focus-visible{outline:2px solid #89dfb5;outline-offset:-2px}.ds-action:disabled{background:#18382a;color:#96a6a1}"
+    },
+    {
+      "name": "Primary panel action",
+      "kind": "button",
+      "refersTo": "panel-button-primary",
+      "description": "Native panel button; 8% lightened hover and inherited mint focus.",
+      "html": "<button class=\"ds-action\">Buy · 100c</button>",
+      "css": ".ds-action{min-width:48px;min-height:48px;padding:6px 8px;background:#ffc46b;color:#131c26;border:0;border-radius:12px;font:14px sans-serif}.ds-action:hover{background:#ffc977}.ds-action:active{background:#ffc46b}.ds-action:focus-visible{outline:2px solid #89dfb5;outline-offset:-2px}.ds-action:disabled{background:#18382a;color:#96a6a1}"
+    },
+    {
+      "name": "Context panel",
+      "kind": "card",
+      "refersTo": "context-panel",
+      "description": "Opaque sheet with scrollable details and footer outside the scroll region. Sample content illustrates structure.",
+      "html": "<section class=\"ds-panel\"><header class=\"ds-header\">Inspect<button class=\"ds-close\" aria-label=\"Back to garden\">×</button></header><div class=\"ds-scroll\"><p class=\"ds-health\">Health 100% · Range 3.0 tiles</p><p>Damage 10</p><p class=\"ds-muted\">Sell returns 25c</p></div><footer class=\"ds-footer\"><button class=\"ds-upgrade\">Upgrade<br>100c</button><button class=\"ds-repair\">Fully healed</button></footer></section>",
+      "css": ".ds-panel{width:308px;padding:12px;border-radius:16px;background:#152e23;color:#f4edd7;font:15px sans-serif}.ds-header{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:18px}.ds-close{min-width:48px;min-height:48px;padding:6px 8px;background:#18382a;color:#f4edd7;border:0;border-radius:12px;font:20px sans-serif}.ds-scroll{max-height:112px;overflow:auto}.ds-scroll p{margin:6px 0}.ds-health{color:#89dfb5}.ds-muted{color:#b0c3bd;font-size:13px}.ds-footer{display:flex;gap:8px;margin-top:8px}.ds-upgrade,.ds-repair{flex:1;min-height:48px;padding:6px 8px;border:0;border-radius:12px;font:14px sans-serif}.ds-upgrade{background:#ffc46b;color:#131c26}.ds-repair{background:#18382a;color:#96a6a1}.ds-close:hover{background:#2a483b}.ds-upgrade:hover{background:#ffc977}.ds-close:active{background:#18382a}.ds-upgrade:active{background:#ffc46b}.ds-panel button:focus-visible{outline:2px solid #89dfb5;outline-offset:-2px}"
+    },
+    {
+      "name": "App text field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Portable illustration of the native app field; the actual Godot font and Android sp conversion are runtime-owned.",
+      "html": "<input class=\"ds-field\" placeholder=\"Game name\" aria-label=\"Game name\">",
+      "css": ".ds-field{box-sizing:border-box;min-height:48px;padding:12px 16px;border:0;border-radius:12px;background:#18382a;color:#f4edd7;caret-color:#89dfb5;font:16px sans-serif}.ds-field::placeholder{color:#b0c3bd}.ds-field:hover{background:#2f4c3f}.ds-field:focus-visible{outline:2px solid #89dfb5;outline-offset:-2px}.ds-field::selection{background:#416957}"
+    },
+    {
+      "name": "Combat status",
+      "kind": "custom",
+      "refersTo": "status",
+      "description": "Level, coin balance and numeric wave health; values below are illustrative.",
+      "html": "<div class=\"ds-status\"><div class=\"ds-top\"><span>Level 5</span><span class=\"ds-coins\">250c</span></div><div class=\"ds-bottom\"><span>Health 75%</span><span class=\"ds-track\"><span class=\"ds-fill\"></span></span></div></div>",
+      "css": ".ds-status{width:272px;height:46px;padding:3px 14px;border-radius:26px;background:#162b22;color:#f4edd7;font:14px sans-serif}.ds-top,.ds-bottom{display:flex;justify-content:space-between;align-items:center}.ds-coins{color:#ffc46b}.ds-bottom{margin-top:9px;color:#b0c3bd;font-size:12px}.ds-track{width:100px;height:4px;background:#3d514e}.ds-fill{display:block;width:75%;height:4px;background:#fa7897}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The garden under your fingertips",
+    "overview": "The selected prototype B puts the existing pixel garden behind a small set of forest-green controls. Cream labels, gold recruitment and mint tactical information keep the familiar cats and combat state readable. Opaque surfaces provide separation from the animated field.\n\nThis document captures the native Android implementation, including its app theme. It does not replace the desktop, browser or [website design system](../../../website/DESIGN.md). The selected direction is recorded in the [Android gameplay brief](../../../.impeccable/surface-briefs/android-gameplay.md); the name above describes that direction rather than introducing a new identity.",
+    "keyCharacteristics": [
+      "Existing pixel cats and garden artwork remain the visual identity.",
+      "Rounded, opaque controls float over an undistorted square field.",
+      "Compact contextual panels preserve access to the wave controls.",
+      "Density-scaled touch targets and Android text preferences govern readability."
+    ],
+    "rules": [
+      {
+        "name": "The Opaque Controls Rule",
+        "body": "Keep actionable surfaces opaque so their contrast does not depend on the field beneath them.",
+        "section": "colors"
+      },
+      {
+        "name": "The Native Text Rule",
+        "body": "Route custom-drawn labels and explicit native-control sizes through `GamePlatform` so Android text preferences reach both rendering paths.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do preserve the existing pixel cats, garden tiles and square board proportions.",
+      "Do keep wave controls accessible while contextual panels or placement are active.",
+      "Do use display-safe bounds, density scaling and native Android text scaling together.",
+      "Do keep purchase validation and read-only restrictions authoritative in the game session.",
+      "Do distinguish custom-drawn pill states from native-control theme states."
+    ],
+    "donts": [
+      "Don't stretch the board to fit landscape dimensions.",
+      "Don't add translucent control surfaces or floating shadows to this system.",
+      "Don't replace the compact Android panels with the desktop sidebar.",
+      "Don't apply this Android layout or typography contract to the website or other game platforms."
+    ]
+  }
+}
