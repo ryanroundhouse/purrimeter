@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-06T02:09:32.768200+00:00",
+  "generatedAt": "2026-11-06T02:54:42.229041+00:00",
   "title": "Design System: Purrimeter Android",
   "extensions": {
     "colorMeta": {
@@ -185,6 +185,48 @@
           "oklch(85% 0.0324 164.21)",
           "oklch(95% 0.0135 164.21)"
         ]
+      },
+      "menu-grass-light": {
+        "role": "neutral",
+        "displayName": "Menu grass light",
+        "tonalRamp": [
+          "oklch(15% 0.0123 161)",
+          "oklch(25% 0.0228 161)",
+          "oklch(35% 0.0315 161)",
+          "oklch(45% 0.0350 161)",
+          "oklch(60% 0.0350 161)",
+          "oklch(75% 0.0298 161)",
+          "oklch(85% 0.0210 161)",
+          "oklch(95% 0.0088 161)"
+        ]
+      },
+      "menu-grass-dark": {
+        "role": "neutral",
+        "displayName": "Menu grass dark",
+        "tonalRamp": [
+          "oklch(15% 0.0115 161)",
+          "oklch(25% 0.0215 161)",
+          "oklch(35% 0.0297 161)",
+          "oklch(45% 0.0330 161)",
+          "oklch(60% 0.0330 161)",
+          "oklch(75% 0.0281 161)",
+          "oklch(85% 0.0198 161)",
+          "oklch(95% 0.0083 161)"
+        ]
+      },
+      "menu-grass-detail": {
+        "role": "neutral",
+        "displayName": "Menu grass detail",
+        "tonalRamp": [
+          "oklch(15% 0.0175 147)",
+          "oklch(25% 0.0325 147)",
+          "oklch(35% 0.0450 147)",
+          "oklch(45% 0.0500 147)",
+          "oklch(60% 0.0500 147)",
+          "oklch(75% 0.0425 147)",
+          "oklch(85% 0.0300 147)",
+          "oklch(95% 0.0125 147)"
+        ]
       }
     },
     "typographyMeta": {
@@ -207,6 +249,18 @@
       "metadata": {
         "displayName": "Metadata",
         "purpose": "Secondary status lines."
+      },
+      "menu-display": {
+        "displayName": "Menu display",
+        "purpose": "Drawn main title; nominal size capped to hero width; FontVariation embolden 1.0."
+      },
+      "menu-heading": {
+        "displayName": "Menu heading",
+        "purpose": "Garden paused heading."
+      },
+      "menu-note": {
+        "displayName": "Menu note",
+        "purpose": "Actual save progression below Single player."
       }
     },
     "shadows": [],
@@ -215,6 +269,11 @@
         "name": "notice-visibility",
         "value": "3s",
         "purpose": "Notice lifetime; not a transition or fade."
+      },
+      {
+        "name": "menu-cat-frames",
+        "value": "3 frames/s, 4-frame cycle",
+        "purpose": "Existing main-menu cat portraits; no button transition."
       }
     ],
     "breakpoints": [
@@ -225,6 +284,10 @@
       {
         "name": "large-overview-safe-height",
         "value": ">=330 logical units"
+      },
+      {
+        "name": "single-column-menu-actions",
+        "value": "panel width <460 logical units AND ui_font_size(14) >16"
       }
     ]
   },
@@ -266,7 +329,7 @@
       "kind": "button",
       "refersTo": "panel-button-primary",
       "description": "Native panel button; 8% lightened hover and inherited mint focus.",
-      "html": "<button class=\"ds-action\">Buy · 100c</button>",
+      "html": "<button class=\"ds-action\">Buy \u00b7 100c</button>",
       "css": ".ds-action{min-width:48px;min-height:48px;padding:6px 8px;background:#ffc46b;color:#131c26;border:0;border-radius:12px;font:14px sans-serif}.ds-action:hover{background:#ffc977}.ds-action:active{background:#ffc46b}.ds-action:focus-visible{outline:2px solid #89dfb5;outline-offset:-2px}.ds-action:disabled{background:#18382a;color:#96a6a1}"
     },
     {
@@ -274,7 +337,7 @@
       "kind": "card",
       "refersTo": "context-panel",
       "description": "Opaque sheet with scrollable details and footer outside the scroll region. Sample content illustrates structure.",
-      "html": "<section class=\"ds-panel\"><header class=\"ds-header\">Inspect<button class=\"ds-close\" aria-label=\"Back to garden\">×</button></header><div class=\"ds-scroll\"><p class=\"ds-health\">Health 100% · Range 3.0 tiles</p><p>Damage 10</p><p class=\"ds-muted\">Sell returns 25c</p></div><footer class=\"ds-footer\"><button class=\"ds-upgrade\">Upgrade<br>100c</button><button class=\"ds-repair\">Fully healed</button></footer></section>",
+      "html": "<section class=\"ds-panel\"><header class=\"ds-header\">Inspect<button class=\"ds-close\" aria-label=\"Back to garden\">\u00d7</button></header><div class=\"ds-scroll\"><p class=\"ds-health\">Health 100% \u00b7 Range 3.0 tiles</p><p>Damage 10</p><p class=\"ds-muted\">Sell returns 25c</p></div><footer class=\"ds-footer\"><button class=\"ds-upgrade\">Upgrade<br>100c</button><button class=\"ds-repair\">Fully healed</button></footer></section>",
       "css": ".ds-panel{width:308px;padding:12px;border-radius:16px;background:#152e23;color:#f4edd7;font:15px sans-serif}.ds-header{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:18px}.ds-close{min-width:48px;min-height:48px;padding:6px 8px;background:#18382a;color:#f4edd7;border:0;border-radius:12px;font:20px sans-serif}.ds-scroll{max-height:112px;overflow:auto}.ds-scroll p{margin:6px 0}.ds-health{color:#89dfb5}.ds-muted{color:#b0c3bd;font-size:13px}.ds-footer{display:flex;gap:8px;margin-top:8px}.ds-upgrade,.ds-repair{flex:1;min-height:48px;padding:6px 8px;border:0;border-radius:12px;font:14px sans-serif}.ds-upgrade{background:#ffc46b;color:#131c26}.ds-repair{background:#18382a;color:#96a6a1}.ds-close:hover{background:#2a483b}.ds-upgrade:hover{background:#ffc977}.ds-close:active{background:#18382a}.ds-upgrade:active{background:#ffc46b}.ds-panel button:focus-visible{outline:2px solid #89dfb5;outline-offset:-2px}"
     },
     {
@@ -292,15 +355,32 @@
       "description": "Level, coin balance and numeric wave health; values below are illustrative.",
       "html": "<div class=\"ds-status\"><div class=\"ds-top\"><span>Level 5</span><span class=\"ds-coins\">250c</span></div><div class=\"ds-bottom\"><span>Health 75%</span><span class=\"ds-track\"><span class=\"ds-fill\"></span></span></div></div>",
       "css": ".ds-status{width:272px;height:46px;padding:3px 14px;border-radius:26px;background:#162b22;color:#f4edd7;font:14px sans-serif}.ds-top,.ds-bottom{display:flex;justify-content:space-between;align-items:center}.ds-coins{color:#ffc46b}.ds-bottom{margin-top:9px;color:#b0c3bd;font-size:12px}.ds-track{width:100px;height:4px;background:#3d514e}.ds-fill{display:block;width:75%;height:4px;background:#fa7897}"
+    },
+    {
+      "name": "Garden sidebar actions",
+      "kind": "nav",
+      "refersTo": "menu-panel",
+      "description": "A menu family: bounded forest panel, primary capsule, secondary and quiet native buttons. Native maximum size bounds the panel; buttons pass touch gestures to the scroller, and layout updates only on resize, safe-bounds or scaled-font changes. Browser sans-serif illustrates the Godot fallback; caption values are illustrative.",
+      "html": "<nav class=\"ds-menu\" aria-label=\"Garden\"><button class=\"ds-menu-primary\">Single player</button><p class=\"ds-menu-note\">Your garden \u00b7 Level 10 \u00b7 2 rebirths</p><button class=\"ds-menu-action\">Multiplayer</button><div class=\"ds-menu-grid\"><button class=\"ds-menu-action\">Achievements</button><button class=\"ds-menu-action\">Cat Skins</button></div><button class=\"ds-menu-quiet\">Connection settings</button><button class=\"ds-menu-quiet\">Check for updates</button></nav>",
+      "css": ".ds-menu{width:340px;max-height:408px;overflow:auto;padding:16px;border-radius:20px;background:#152e23;color:#f4edd7;font:14px sans-serif;display:flex;flex-direction:column;gap:8px}.ds-menu button{min-width:48px;min-height:48px;padding:6px 10px;border:0;color:#f4edd7;font:14px sans-serif;border-radius:12px}.ds-menu .ds-menu-primary{background:#ffc46b;color:#131c26;border-radius:24px;font-size:15px}.ds-menu-primary:hover{background:#ffc977}.ds-menu-primary:active{background:#ffc46b}.ds-menu-action{background:#18382a}.ds-menu-action:hover{background:#2f4c3f}.ds-menu-action:active{background:#39584b}.ds-menu-quiet{background:transparent}.ds-menu-quiet:hover,.ds-menu-quiet:active{background:#18382a}.ds-menu button:focus-visible{outline:2px solid #89dfb5;outline-offset:-2px}.ds-menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ds-menu-note{font-size:13px;color:#b0c3bd;text-align:center;margin:0}"
+    },
+    {
+      "name": "Menu state toggle",
+      "kind": "button",
+      "refersTo": "menu-action",
+      "description": "Route/Sound use a native toggle button with explicit state text and right-aligned switch SVG; enabled state shown.",
+      "html": "<button class=\"ds-menu-toggle\" aria-pressed=\"true\"><span>Route on</span><svg width=\"32\" height=\"20\" viewBox=\"0 0 32 20\" aria-hidden=\"true\"><rect x=\"1\" y=\"1\" width=\"30\" height=\"18\" rx=\"9\" fill=\"#ffc46b\"/><circle cx=\"22\" cy=\"10\" r=\"6\" fill=\"#131c26\"/></svg></button>",
+      "css": ".ds-menu-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:160px;min-height:48px;padding:6px 10px;border:0;border-radius:12px;background:#39584b;color:#f4edd7;font:14px sans-serif}.ds-menu-toggle:hover{background:#2f4c3f}.ds-menu-toggle:active{background:#39584b}.ds-menu-toggle:focus-visible{outline:2px solid #89dfb5;outline-offset:-2px}"
     }
   ],
   "narrative": {
     "northStar": "The garden under your fingertips",
-    "overview": "The selected prototype B puts the existing pixel garden behind a small set of forest-green controls. Cream labels, gold recruitment and mint tactical information keep the familiar cats and combat state readable. Opaque surfaces provide separation from the animated field.\n\nThis document captures the native Android implementation, including its app theme. It does not replace the desktop, browser or [website design system](../../../website/DESIGN.md). The selected direction is recorded in the [Android gameplay brief](../../../.impeccable/surface-briefs/android-gameplay.md); the name above describes that direction rather than introducing a new identity.",
+    "overview": "The selected prototype B puts the existing pixel garden behind a small set of forest-green controls. Cream labels, gold recruitment and mint tactical information keep the familiar cats and combat state readable. Opaque surfaces provide separation from the animated field.\n\nThe selected A Garden sidebar extends this family to the main and in-game menus: existing animated cats and the title accompany a bounded forest action panel; a gold action gives entry or return to the garden priority. Menu surfaces share the gameplay palette without changing B\u2019s field controls.\n\nThis document captures the native Android implementation, including its app theme. It does not replace the desktop, browser or [website design system](../../../website/DESIGN.md). The selected direction is recorded in the [Android gameplay brief](../../../.impeccable/surface-briefs/android-gameplay.md); the [Android menu brief](../../../.impeccable/surface-briefs/android-menus.md) records the selected A direction. The name above describes the shared family rather than introducing a new identity.",
     "keyCharacteristics": [
       "Existing pixel cats and garden artwork remain the visual identity.",
       "Rounded, opaque controls float over an undistorted square field.",
       "Compact contextual panels preserve access to the wave controls.",
+      "Menu sidebars prioritize one gold action and keep secondary navigation in a bounded scroll region.",
       "Density-scaled touch targets and Android text preferences govern readability."
     ],
     "rules": [
@@ -313,6 +393,11 @@
         "name": "The Native Text Rule",
         "body": "Route custom-drawn labels and explicit native-control sizes through `GamePlatform` so Android text preferences reach both rendering paths.",
         "section": "typography"
+      },
+      {
+        "name": "The Deliberate Resume Rule",
+        "body": "Opening the menu pauses local play. Resume closes the menu and explicitly resumes; both close controls dismiss it while keeping the garden paused. Nested panels retain the existing app navigation and confirmation paths. Main menu saves and pauses after confirmation, and New garden retains its destructive-action confirmation. No visual menu state bypasses these behaviors.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -320,12 +405,14 @@
       "Do keep wave controls accessible while contextual panels or placement are active.",
       "Do use display-safe bounds, density scaling and native Android text scaling together.",
       "Do keep purchase validation and read-only restrictions authoritative in the game session.",
-      "Do distinguish custom-drawn pill states from native-control theme states."
+      "Do distinguish custom-drawn pill states from native-control theme states.",
+      "Do preserve the gold primary menu action, visible pause close controls and scrollable secondary actions.",
+      "Do show actual save progression and preserve explicit resume and destructive-action confirmation."
     ],
     "donts": [
       "Don't stretch the board to fit landscape dimensions.",
-      "Don't add translucent control surfaces or floating shadows to this system.",
-      "Don't replace the compact Android panels with the desktop sidebar.",
+      "Don't add translucent control surfaces or floating shadows to this system; quiet menu actions sit on an opaque panel, and the pause scrim is only a backdrop.",
+      "Don't replace the compact B gameplay panels with the desktop sidebar; A menu sidebars are a separate navigation surface.",
       "Don't apply this Android layout or typography contract to the website or other game platforms."
     ]
   }

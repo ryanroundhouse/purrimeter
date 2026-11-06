@@ -100,3 +100,11 @@ PURRIMETER_NATIVE_UI_TESTS=1 ./scripts/test.sh
 Native emulator captures in `.impeccable/review/android-gameplay/` cover a 914×411 logical phone, 640×320 small phone, 1280×800 tablet, and 1.3× system text with dark mode. These verify layout and interaction; physical-device performance remains a release check. The Android design system is documented in [the scoped design guide](../game/ui/android/DESIGN.md).
 
 The selected browser prototype is archived on `prototype/android-controls` (`1a0419e`). It is intentionally absent from the implementation branch and Android exports.
+
+## Android sidebar menus
+
+The Android main and pause menus implement the selected A (Garden sidebar) sample in `game/ui/android_menus.gd`. The main screen pairs animated cats and the title with a forest action panel. During play, a bounded right-side panel leaves the field visible, with Resume and both close actions outside a scrollable action list. Android Back and the existing New Garden / return-to-menu confirmations remain active.
+
+Menus use safe-area bounds, 48dp minimum actions and Android system text sizing. Secondary actions become a single column when enlarged text needs the width. Explicit maximum panel bounds keep scrolling stable; buttons pass touch gestures to the native scroller. Native emulator captures, including the lower actions after finger scrolling, are in `.impeccable/review/android-menus/`. This covers phones, a tablet and 1.3× system text. Physical hardware performance remains a release check.
+
+`PURRIMETER_NATIVE_UI_TESTS=1 ./scripts/test.sh` now includes menu navigation, pause/resume, confirmation, layout and scroll-position checks. `--app-preview --preview-scene main-menu` and `--app-preview --preview-scene pause` provide isolated staged scenes for capture.

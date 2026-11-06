@@ -10,6 +10,8 @@ Preserve desktop game conventions in native builds. Mobile play uses landscape w
 
 Android gameplay uses the floating-control direction selected from prototype B on 2026-11-05. The square field initially fills the landscape viewport width, with vertical cropping and pinch/pan, a tappable overview, and Fit/Focus. Forest-green controls and gold recruitment float over the field. A collapsible recruitment palette and bounded inspection/Powerups panels replace the broad sidebar. Pause remains accessible while panels are open; Start/Resume remains accessible during placement. Android uses density-scaled 48dp targets and display-safe insets. This selection does not change macOS or browser layout conventions. The three exploratory variants remain on `prototype/android-controls` at `1a0419e`.
 
+Android main and pause menus use sample A (Garden sidebar), selected on 2026-11-05. The main menu places the title and animated cats beside a forest action panel. The pause menu keeps the field visible behind a right-side panel, with pinned Resume/close actions and a scrollable two-column action list. Existing confirmations and progression remain authoritative.
+
 ## Users
 
 The original players are the owner on macOS and their son on Windows. The game now also supports public multiplayer discovery on an owner-hosted server, with up to three independent gardeners watching one another play and chatting.

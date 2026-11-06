@@ -22,4 +22,5 @@ godot_bin="${GODOT:-$PWD/.tools/Godot.app/Contents/MacOS/Godot}"
 
 if [ "${PURRIMETER_NATIVE_UI_TESTS:-0}" = 1 ]; then
   "$godot_bin" --path game --script res://tests/android_controls.gd -- --multiplayer-test --android-ui-test
+  "$godot_bin" --path game --script res://tests/android_menus.gd -- --multiplayer-test --android-ui-test
 fi

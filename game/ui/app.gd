@@ -185,6 +185,8 @@ func title_page(title: String, subtitle: String) -> VBoxContainer:
 func show_menu() -> void:
 	if network!=null: network.disconnect_server()
 	clear_remotes(); transcript.clear(); muted.clear(); configure_window(false); clear_page("menu")
+	if GamePlatform.android_controls():
+		var menus := AndroidMenus.new(); menus.app=self; page.add_child(menus); return
 	var box: VBoxContainer
 	if GamePlatform.responsive() or compact(): box=title_page("Purrimeter","The Garden Guard")
 	else:
@@ -527,6 +529,8 @@ func open_pause() -> void:
 	if not expanded.is_empty(): close_expanded()
 	local_view.mobile.close_panel()
 	local_view.game.paused=true; local_view.gameplay_enabled=false; pause_open=true
+	if GamePlatform.android_controls():
+		var menus := AndroidMenus.new(); menus.app=self; menus.paused=true; overlay=menus; add_child(menus); return
 	overlay=Control.new(); overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(overlay)
 	var shade := ColorRect.new(); shade.color=Color(INK,0.93); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); overlay.add_child(shade)
 	var center := CenterContainer.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); overlay.add_child(center)
@@ -644,6 +648,10 @@ func silence_fanfare() -> void:
 ## Store screenshot scenes: staged with the demonstration garden, never a player's save.
 func preview_scene(scene: String) -> void:
 	match scene:
+		"main-menu":
+			local_view.make_preview(); show_menu(); silence_fanfare()
+		"pause":
+			show_game(false); local_view.make_preview(); local_view.game.paused=true; silence_fanfare(); open_pause()
 		"garden", "placement", "inspect", "powerups", "achievements", "rebirth":
 			show_game(false); local_view.make_preview(); local_view.game.paused=true; silence_fanfare()
 			if scene=="placement": local_view.selected=-1; local_view.mobile.act("cat2"); local_view.mobile.pending=9*16+12
