@@ -66,7 +66,7 @@ python3 -m unittest discover -s scripts/deployment -p 'test_*.py' -v
 
 ## Store listing content
 
-`store/android/listing.json` holds the title, short and full descriptions, contact details and category; `release-notes.txt` is the "What's new" text with `{version}` substituted. Images under `store/android/images/`: `icon.png` (512), `feature.png` (1024×500), `phone/` (1080×1800 portrait plus one 1800×1080 landscape), `tablet7/` and `tablet10/` (1800×1120). Every upload replaces the listing wholesale, so the repository is the source of truth.
+`store/android/listing.json` holds the title, short and full descriptions, contact details and category; `release-notes.txt` is the "What's new" text with `{version}` substituted. Images under `store/android/images/`: `icon.png` (512), `feature.png` (1024×500), `phone/` (2400×1080 landscape), `tablet7/` and `tablet10/` (2560×1600 landscape). The 4.2.5 images use the verified native emulator captures in `.impeccable/review/android-gameplay/` and `.impeccable/review/android-menus/`. Every upload replaces the listing wholesale, so the repository is the source of truth.
 
 Regenerate images after visual changes; they are committed, not rebuilt per release:
 
