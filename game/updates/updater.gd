@@ -18,9 +18,9 @@ var isolated := false
 var progress_second := -1
 var browser_request: HTTPRequest
 
-## Desktop builds replace their own executable; browser and Android builds only read the server designation.
+## Desktop builds replace their own executable; browser and mobile builds only read the server designation.
 static func native() -> bool:
-	return not OS.has_feature("web") and not OS.has_feature("android")
+	return not OS.has_feature("web") and not GamePlatform.native_mobile()
 
 static func build() -> Dictionary:
 	var config := ConfigFile.new()
@@ -137,8 +137,8 @@ func check_browser(endpoint: String) -> void:
 		latest=release
 		var installed := build()
 		if release.id==installed.id: state="current"; message="You're up to date. Multiplayer is ready."
-		elif OS.has_feature("android"):
-			if int(release.get("sequence",0))>int(installed.sequence): state="available"; message="Purrimeter %s is rolling out on Google Play. Update there to join multiplayer; single player is always ready."%release.version
+		elif GamePlatform.native_mobile():
+			if int(release.get("sequence",0))>int(installed.sequence): state="available"; message="Purrimeter %s is rolling out on %s. Update there to join multiplayer; single player is always ready."%[release.version,GamePlatform.store_name()]
 			else: state="newer"; message="This server requires an older release (%s). Downgrades aren’t supported. You can keep playing single player."%release.version
 		else: state="available"; message="The server requires %s. Save and reload to load the current browser game. If this server uses a different release, choose the official server or keep playing single player."%release.version
 		changed.emit())

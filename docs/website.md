@@ -11,7 +11,7 @@
 
 The domain already serves the multiplayer relay. Preserve `/ws`, `/healthz`, HTTPS, and certificate renewal when adding the website. See [deployment.md](deployment.md).
 
-Available client packages are universal macOS (Intel and Apple Silicon, macOS 11 or later), Windows x64, and an Android app on Google Play (`com.roundhouselabsinc.purrimeter`, see [android.md](android.md)). Phone and tablet play also works in the browser; there is no iOS or Linux download. macOS builds currently use ad hoc signing and are not notarized; Windows builds are unsigned. Signed game releases now use the repository build/publication scripts; GitHub releases are not used.
+Available client packages are universal macOS (Intel and Apple Silicon, macOS 11 or later), Windows x64, and an Android app on Google Play (`com.roundhouselabsinc.purrimeter`, see [android.md](android.md)). Phone and tablet play also works in the browser; an iOS App Store build is prepared separately (see [ios.md](ios.md)), and there is no Linux client download. macOS builds currently use ad hoc signing and are not notarized; Windows builds are unsigned. Signed game releases now use the repository build/publication scripts; GitHub releases are not used.
 
 Multiplayer supports up to three players with independent gardens and progression, plus chat. Marketing copy must reflect this rather than imply shared combat.
 
@@ -24,6 +24,7 @@ Multiplayer supports up to three players with independent gardens and progressio
 - Offer Play in browser on all devices; retain both native download links and detect their matching desktop OS as a convenience.
 - Start downloads only after the visitor clicks a download link.
 - Show a Google Play entry beside the desktop downloads. One flag in `website/index.html`, `data-store-status` on `#download-android`, is `coming-soon` until Google publishes the listing and `live` afterwards; `download.js` disables the link while coming soon and recommends it on Android once live. No other markup changes when flipping it.
+- Show an App Store entry for iPhone/iPad with the same availability flag on `#download-ios`. Its `data-store-url` becomes clickable only when `data-store-status` is `live`; iPad desktop-mode Safari is recognised as iOS.
 - Serve the privacy policy at `/privacy/`; Google Play requires it and it documents the multiplayer relay and report retention.
 
 ## Implementation scope
@@ -77,7 +78,7 @@ Ordinary `scripts/build.sh` runs produce development builds and do not publish a
 
 See [deployment.md](deployment.md) for server paths and rollback, [website-assets.md](website-assets.md) for asset sources, and [../website/DESIGN.md](../website/DESIGN.md) for the website's visual system.
 
-The website publication manifest `/release.json` remains separate from signed game metadata `/game-release.json`. The relay serves its verified current designation at `/updates`. Activation first retains immutable platform packages and signed metadata under `/game-releases/<game-release-id>/`, then switches the website pointer. All three platforms must match the signed game release before publication; updating website content alone does not change multiplayer admission.
+The website publication manifest `/release.json` remains separate from signed game metadata `/game-release.json`. The relay serves its verified current designation at `/updates`. Activation first retains immutable platform packages and signed metadata under `/game-releases/<game-release-id>/`, then switches the website pointer. All five platforms must match the signed game release (the two mobile packages are distributed by their stores) before publication; updating website content alone does not change multiplayer admission.
 
 ## Browser publication
 

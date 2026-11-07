@@ -34,6 +34,7 @@ const root=path.resolve(__dirname,'..'),site=path.join(root,'build/website');
   const wasm=requested.find(r=>r.url.endsWith('.wasm'));assert.ok(wasm.url.includes(`/game-releases/${release.id}/web/`));assert.equal(wasm.headers['content-encoding'],'gzip');
   assert.equal(requested.some(r=>r.status>=400),false,'all release assets resolve');assert.deepEqual(errors,[],'packaged runtime obeys CSP and loads without errors');
   await page.goto(origin+'/');assert.equal(await page.locator('a[href="/play/"]').count(),1);assert.equal(await page.locator('a[href="/downloads/Purrimeter-Server.tar.gz"]').count(),1);assert.equal(await page.locator('#download-android').count(),1);assert.equal(await page.locator('#download-android[data-store-status="coming-soon"][href]').count(),0,'coming-soon Play link is inert');
+  assert.equal(await page.locator('#download-ios').count(),1);assert.equal(await page.locator('#download-ios[data-store-status="coming-soon"][href]').count(),0,'coming-soon App Store link is inert');
   await page.goto(origin+'/privacy/');assert.equal(await page.locator('h1').textContent(),'Privacy policy');await page.screenshot({path:path.join(root,'build/browser-release-home.png'),fullPage:true});
   console.log('PASS production browser packaging, immutable assets, gzip, CSP and homepage entry',release.id);
  }finally{if(browser)await browser.close();server.close()}

@@ -7,8 +7,8 @@ const cases = [
   ["Mac Chrome client hints", { userAgentData: { platform: "macOS", mobile: false } }, "macos"],
   ["Windows Chrome client hints", { userAgentData: { platform: "Windows", mobile: false } }, "windows"],
   ["Windows Firefox", { platform: "Win32", userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }, "windows"],
-  ["iPad desktop mode", { platform: "MacIntel", userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)", maxTouchPoints: 5 }, null],
-  ["iPhone", { platform: "iPhone", userAgent: "iPhone; CPU iPhone OS 18 like Mac OS X" }, null],
+  ["iPad desktop mode", { platform: "MacIntel", userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)", maxTouchPoints: 5 }, "ios"],
+  ["iPhone", { platform: "iPhone", userAgent: "iPhone; CPU iPhone OS 18 like Mac OS X" }, "ios"],
   ["Android", { platform: "Linux armv8l", userAgent: "Linux; Android 15", userAgentData: { platform: "Android", mobile: true } }, "android"],
   ["Android UA only", { platform: "Linux armv8l", userAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 8) Mobile" }, "android"],
   ["Windows Phone", { platform: "Win32", userAgent: "Windows Phone 10.0; Android 6.0" }, null],
@@ -38,6 +38,7 @@ function fakePage(status) {
   const links = {
     "download-macos": element("download-macos", { href: "/downloads/Purrimeter-macOS.zip" }),
     "download-windows": element("download-windows", { href: "/downloads/Purrimeter-Windows.zip" }),
+    "download-ios": element("download-ios", { "data-store-url": "https://apps.apple.com/app/id6831635489", "data-store-status": status, "aria-disabled": "true" }),
     "download-android": element("download-android", { href: "https://play.google.com/store/apps/details?id=com.roundhouselabsinc.purrimeter", "data-store-status": status }),
   };
   return { links, getElementById: id => links[id] || null };
@@ -69,3 +70,14 @@ test("desktop recommendation is unaffected by the store flag", () => {
   assert.equal(page.links["download-macos"].classList.contains("recommended"), true);
   assert.equal(page.links["download-android"].getAttribute("href"), null);
 });
+
+for (const status of ["coming-soon", "live"]) {
+  test(`iOS ${status} respects store availability`, () => {
+    const page = fakePage(status);
+    enhanceDownloads({platform: "MacIntel", maxTouchPoints: 5}, page);
+    const store = page.links["download-ios"];
+    assert.equal(store.classList.contains("recommended"), status === "live");
+    assert.equal(store.getAttribute("href"), status === "live" ? "https://apps.apple.com/app/id6831635489" : null);
+    assert.equal(store.getAttribute("aria-disabled"), status === "live" ? null : "true");
+  });
+}

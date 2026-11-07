@@ -1,6 +1,6 @@
 # Purrimeter — The Garden Guard
 
-An endless pixel-art cat tower defence game for browsers, Android, native macOS and Windows, built from one Godot 4.7.2 project.
+An endless pixel-art cat tower defence game for browsers, Android, iOS, native macOS and Windows, built from one Godot 4.7.2 project.
 
 Play in your browser at **[purrimeter.graham.pub/play/](https://purrimeter.graham.pub/play/)**, download the game at **[purrimeter.graham.pub](https://purrimeter.graham.pub/)**, or install it from Google Play once the listing is published (see [docs/android.md](docs/android.md)). The page highlights the download for your operating system and includes installation help for the unsigned builds. Website source is in `website/`; preview and publication instructions are in [docs/website.md](docs/website.md).
 
@@ -35,6 +35,10 @@ These downloadable builds use ad hoc signing on Mac and are unsigned on Windows.
 The Android app (`com.roundhouselabsinc.purrimeter`) is the same game with the phone layouts, published to Google Play by `scripts/deploy_all.sh` as part of every release. Updates arrive through Play; Game updates opens the listing when the server requires a newer release. The back button steps out of panels and menus, and backgrounding the app pauses and saves. Store listing text and images live in `store/android/`.
 
 Android gameplay uses a full-screen, zoomable field with floating forest-green controls. **Recruit** opens the three cats; select one, tap a tile, then **Confirm**. **Fit / Focus** switches between the whole garden and the enlarged view; pinch, drag, or tap the overview to navigate. Start/Resume, speed, Auto and Menu stay at the top. Inspection and Powerups use compact panels with actions kept visible; the Powerups filter also opens **Patrol & rebirth** for Rebirth and Draft Collection. Android Back closes the innermost panel or placement first. macOS and browser layouts retain their existing controls.
+
+## iOS
+
+The iPhone and iPad app shares Android's floating controls and sidebar menus, with iOS screen scaling and safe areas. It builds as a signed App Store IPA and joins every `deploy_all.sh` release. Apple uploads, repository listing updates, and review submission use checkpointed retries. See [docs/ios.md](docs/ios.md) for Apple setup, screenshots, first-release status, and the `--skip-app-store` escape hatch. The website shows Coming soon until Apple publishes the first version.
 
 ## Browser and phone play
 

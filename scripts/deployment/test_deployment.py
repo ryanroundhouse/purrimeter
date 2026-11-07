@@ -75,6 +75,7 @@ def make_site(path, version, commit, sequence):
                                       'sha256': digest(file), 'size': file.stat().st_size}
     game['packages']['android'] = {'url': 'https://play.google.com/store/apps/details?id=com.roundhouselabsinc.purrimeter',
                                    'sha256': 'ab' * 32, 'size': 5, 'version_code': 2000000}
+    game['packages']['ios'] = {'url': 'https://apps.apple.com/app/id6831635489', 'sha256': 'cd' * 32, 'size': 7}
     (path / 'downloads/Purrimeter-Server.tar.gz').write_bytes(b'server archive')
     (path / 'downloads/SHA256SUMS.txt').write_text('checksums')
     write_json(path / 'game-release.json', {'payload': base64.b64encode(json.dumps(game).encode()).decode()})

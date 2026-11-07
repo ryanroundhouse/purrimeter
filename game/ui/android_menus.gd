@@ -58,9 +58,8 @@ func _ready() -> void:
 
 func safe_bounds() -> Rect2:
 	var bounds := Rect2(Vector2.ZERO,size)
-	if GamePlatform.android():
-		var pixels := Rect2(DisplayServer.get_display_safe_area())
-		if pixels.has_area(): bounds=bounds.intersection(get_screen_transform().affine_inverse()*pixels)
+	if GamePlatform.native_mobile():
+		bounds=bounds.intersection(GamePlatform.safe_area_in(self))
 	return bounds.grow(-12)
 
 func layout() -> void:

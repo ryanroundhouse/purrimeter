@@ -1,0 +1,20 @@
+{
+  "app_id": "6831635489",
+  "bundle_id": "com.roundhouselabsinc.purrimeter",
+  "locale": "en-US",
+  "name": "Purrimeter — The Garden Guard",
+  "subtitle": "Build a maze with claws",
+  "description": "Purrimeter is an endless pixel-art tower defence game. Enemies cross your square garden from the entrance to the exit; you recruit cats, place them to build a maze, and keep the swarm from escaping.\n\nBUILD A MAZE WITH CLAWS\nThree cat types, each with a purchased form plus five upgrades: quick shots, splash damage and slowing attacks. Enemies take the shortest open route, so every cat you place reshapes the path. Block them completely and they claw through the quickest breach instead, and foes that backtrack too long enter a frenzy.\n\nENDLESS PROGRESSION\nEvery level doubles total enemy health and raises the bounty. One escape loses the attempt and sends you back a level, keeping your coins, upgrades and surviving cats. Clear level five and Rebirth becomes available: return to level one with your coins and cats, and choose one permanent Rebirth Draft improvement.\n\nYOUR GARDEN STAYS WITH YOU\nCoins, cats, powerups, discoveries, draft improvements and rebirth bonuses live in your garden on this device. Thirty achievements and unlockable cat skins carry across every garden. Export and import your garden to move it between devices or browsers.\n\nPLAY ALONGSIDE FRIENDS\nMultiplayer gardens hold up to three players. Everyone defends their own garden and progresses independently while watching one another play and chatting. Open games can be password protected, and you can mute or report other players at any time.\n\nMADE FOR TOUCH\nLandscape layouts, pinch to zoom, drag to pan, tap any cat or enemy to inspect it, and a tactical pause for building and repairs.\n\nFree, no ads, no purchases, no account. The same game is available for Android, browsers, macOS and Windows at purrimeter.graham.pub, and a multiplayer server can be self-hosted.",
+  "keywords": "cat,tower,defence,defense,strategy,maze,garden,pixel,offline,multiplayer,rebirth",
+  "support_url": "https://purrimeter.graham.pub/",
+  "marketing_url": "https://purrimeter.graham.pub/",
+  "privacy_url": "https://purrimeter.graham.pub/privacy/index.html",
+  "copyright": "2026 Roundhouse Labs Inc.",
+  "review": {
+    "first_name": "Ryan",
+    "last_name": "Graham",
+    "email_address": "ryan@roundhouselabsinc.com",
+    "demo_account_required": false,
+    "notes": "No account, ads, purchases, or login are required. Single player works offline. Tap Single player, then Recruit to place cats, then Start to begin a wave. Multiplayer is optional: open Join a game to connect to the official server, or host a game. Each player has an independent garden. Chat includes Mute and Report; reporting also mutes and sends a safety report to the server operator. Owners can kick players. The server requires its current game release; while this build is awaiting review, single player remains fully available. Support: ryan@roundhouselabsinc.com."
+  }
+}

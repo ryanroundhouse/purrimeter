@@ -1,4 +1,4 @@
-"""Build, verify, deploy and clean up a complete Purrimeter release, including Google Play."""
+"""Build, verify, deploy and clean up a complete Purrimeter release, including Google Play and the App Store."""
 import argparse
 import base64
 import fcntl
@@ -16,6 +16,7 @@ import tarfile
 import time
 
 import play
+import app_store
 from remote import DEPLOY_ID, RETENTION, digest, extract, read_json, retain, safe_remove, semver, signed_release, write_json
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -74,7 +75,26 @@ def android_prerequisites(skip_play):
     return env
 
 
-def prerequisites(skip_play=False):
+def ios_prerequisites(skip_app_store):
+    if not (ROOT / '.tools/templates/ios.zip').is_file():
+        raise ValueError('Missing iOS export template; run scripts/setup_godot.sh')
+    output('xcodebuild', '-version')
+    if skip_app_store:
+        return {}
+    output('ruby', '-e', "require 'fastlane'; require 'deliver'; require 'spaceship'")
+    credentials = private_file(os.environ.get('PURRIMETER_APP_STORE_CREDENTIALS', '~/.config/purrimeter/app-store.json'),
+                               'App Store API credentials')
+    data = json.loads(credentials.read_text())
+    if not data.get('key_id') or not data.get('issuer_id'):
+        raise ValueError('App Store credentials require key_id, issuer_id, and key_file')
+    private_file(data['key_file'], 'App Store API private key')
+    if not data.get('review_phone'):
+        raise ValueError('Set review_phone in the private App Store credentials file for Apple reviewers')
+    app_store.validate_listing(ROOT / 'store/ios')
+    return {'PURRIMETER_APP_STORE_CREDENTIALS': str(credentials)}
+
+
+def prerequisites(skip_play=False, skip_app_store=False):
     if platform.system() != 'Darwin' or sys.version_info < (3, 11):
         raise ValueError('Run on macOS with Python 3.11 or newer')
     if not hasattr(tarfile, 'data_filter'):
@@ -112,7 +132,7 @@ def prerequisites(skip_play=False):
     executable = output('node', '-e', "process.stdout.write(require(process.argv[1]).chromium.executablePath())", playwright)
     if not Path(executable).is_file():
         raise ValueError('Install the Playwright Chromium browser before deploying')
-    return {**os.environ, **android_prerequisites(skip_play), 'GODOT': str(godot), 'GO_BIN': str(Path(go).resolve()),
+    return {**os.environ, **android_prerequisites(skip_play), **ios_prerequisites(skip_app_store), 'GODOT': str(godot), 'GO_BIN': str(Path(go).resolve()),
             'PURRIMETER_RELEASE_KEY': str(key), 'PLAYWRIGHT_MODULE': playwright,
             # Commit provenance belongs in the publication manifest. Embedding
             # unrelated repository commits would restart an unchanged relay.
@@ -202,6 +222,12 @@ def prepare(record, state, env):
     if digest(bundle_source) != game['packages']['android']['sha256']:
         raise ValueError('Android bundle does not match the signed game release')
     shutil.copy2(bundle_source, record / 'Purrimeter.aab')
+    ipa = source / 'dist/ios/Purrimeter.ipa'
+    if digest(ipa) != game['packages']['ios']['sha256']:
+        raise ValueError('iOS IPA does not match the signed game release')
+    shutil.copy2(ipa, record / 'Purrimeter.ipa')
+    # Both stores publish listing content from the same immutable source as the binary.
+    shutil.copytree(source / 'store', record / 'store', dirs_exist_ok=True)
     # freeze source/tool outputs into a single retryable transport artifact
     with tarfile.open(archive, 'w:gz') as bundle:
         bundle.add(site, arcname='public')
@@ -210,7 +236,7 @@ def prepare(record, state, env):
     expanded = sum(p.stat().st_size for p in site.rglob('*') if p.is_file())
     state.update(prepared=True, site=website_id, relay_sha256=digest(relay),
                  android_sha256=game['packages']['android']['sha256'], version_code=game['packages']['android']['version_code'],
-                 game_release=game['id'],
+                 ios_sha256=game['packages']['ios']['sha256'], game_release=game['id'],
                  bundle_sha256=digest(archive), bundle_bytes=archive.stat().st_size,
                  # uploaded tar + extraction + site + immutable game tree + margin
                  required_bytes=archive.stat().st_size + 3 * expanded + 256 * 1024 * 1024)
@@ -250,11 +276,12 @@ def main():
     parser.add_argument('--preview', action='store_true', help='Read-only preflight and deployment plan')
     parser.add_argument('--play-track', choices=PLAY_TRACKS, default='production', help='Google Play track for the Android release (default production)')
     parser.add_argument('--skip-play', action='store_true', help='Build the Android bundle but do not upload it to Google Play')
-    parser.add_argument('--skip-listing', action='store_true', help='Upload the bundle without the store listing (publish it later with scripts/publish_play_listing.py)')
+    parser.add_argument('--skip-app-store', action='store_true', help='Build and record iOS, but skip Apple upload and submission')
+    parser.add_argument('--skip-listing', action='store_true', help='Upload and submit builds without changing either store listing; first-launch metadata must already be complete')
     args = parser.parse_args()
     semver(args.version)
     commit = source_commit()
-    env = prerequisites(args.skip_play)
+    env = prerequisites(args.skip_play, args.skip_app_store)
     record = HISTORY / f'{args.version}-{commit}'
     state = read_json(record / 'state.json') if (record / 'state.json').exists() else {
         'id': record.name, 'commit': commit, 'version': args.version, 'created_at': time.time()}
@@ -267,13 +294,14 @@ def main():
                        or state['relay_sha256'] != live['running_relay_sha256'] or not live['config_matches'])
             print(f"Prepared artifacts available; relay restart: {'yes' if restart else 'no'}")
         else:
-            print('Build/test/sign all clients, updaters, server, Android bundle and website. Restart relay only if built bytes or service configuration differ.')
+            print('Build/test/sign all clients, updaters, server, Android bundle, iOS IPA and website. Restart relay only if built bytes or service configuration differ.')
         if args.skip_play:
             print('Google Play: skipped by --skip-play (bundle is still built and recorded).')
         elif state.get('play', {}).get('committed_at'):
             print(f"Google Play: version code {state['play']['version_code']} already committed to {state['play']['track']}.")
         else:
             print(f"Google Play: upload version code {play.version_code(args.version)} to the {args.play_track} track before the VM transaction.")
+        print('App Store: ' + ('skip publication (IPA is still built)' if args.skip_app_store else 'upload frozen IPA and listing; submit for review with automatic release before the VM transaction'))
         print(f"VM free space: {live['free_bytes'] / 1024**3:.2f} GiB. Exact required space is calculated after packaging.")
         print('Upload, verify relay, activate site/clients, verify public hashes, clean up. No changes made.')
         print('Eligible remote cleanup:\n' + ('\n'.join(live['cleanup']) or '(none)'))
@@ -292,7 +320,12 @@ def main():
         else:
             # Play cannot be rolled back, so it must accept the bundle before anything public changes.
             account = json.loads(Path(env['PURRIMETER_PLAY_SERVICE_ACCOUNT']).read_text())
-            state = publish_play(record, state, args.play_track, account, play.Listing(STORE), include_listing=not args.skip_listing)
+            state = publish_play(record, state, args.play_track, account, play.Listing(record / 'store/android'), include_listing=not args.skip_listing)
+        if args.skip_app_store:
+            print('App Store publication skipped; rerun without --skip-app-store to publish this exact IPA.', flush=True)
+        else:
+            state = app_store.publish(record, state, env['PURRIMETER_APP_STORE_CREDENTIALS'],
+                                      record / 'store/ios', include_listing=not args.skip_listing)
         with (record / 'bundle.tar.gz').open('rb') as stream:
             status = subprocess.run(remote_command('deploy', state), stdin=stream).returncode
         if status:

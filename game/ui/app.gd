@@ -45,7 +45,7 @@ var browser_platform: BrowserPlatform
 var departed_room := {}
 
 func compact() -> bool:
-	return GamePlatform.android_controls() or GamePlatform.responsive() and (size.x<1100 or size.y<720 or GamePlatform.touch())
+	return GamePlatform.native_mobile_controls() or GamePlatform.responsive() and (size.x<1100 or size.y<720 or GamePlatform.touch())
 
 
 func _ready() -> void:
@@ -53,8 +53,8 @@ func _ready() -> void:
 	if GamePlatform.responsive():
 		get_window().content_scale_size=Vector2i.ZERO
 		get_window().min_size=Vector2i.ZERO
-		if GamePlatform.android():
-			get_window().content_scale_factor=clampf(DisplayServer.screen_get_dpi()/160.0,1.0,4.0)
+		if GamePlatform.native_mobile():
+			get_window().content_scale_factor=GamePlatform.ui_scale()
 	browser_platform=BrowserPlatform.new(); add_child(browser_platform)
 	test_mode="--multiplayer-test" in OS.get_cmdline_user_args() or "--app-preview" in OS.get_cmdline_user_args()
 	passthrough="--smoke-test" in OS.get_cmdline_user_args() or "--preview" in OS.get_cmdline_user_args() or "--music-test" in OS.get_cmdline_user_args()
@@ -108,8 +108,8 @@ func _ready() -> void:
 	if "--app-preview" in OS.get_cmdline_user_args(): preview_app.call_deferred()
 
 func make_theme() -> Theme:
-	var result := Theme.new(); result.default_font_size=GamePlatform.ui_font_size(16) if GamePlatform.android_controls() else 18
-	var surface := AndroidGarden.SURFACE if GamePlatform.android_controls() else PANEL
+	var result := Theme.new(); result.default_font_size=GamePlatform.ui_font_size(16) if GamePlatform.native_mobile_controls() else 18
+	var surface := AndroidGarden.SURFACE if GamePlatform.native_mobile_controls() else PANEL
 	for type in ["Label","Button","LineEdit","CheckButton","RichTextLabel"]: result.set_color("font_color",type,CREAM)
 	result.set_color("font_placeholder_color","LineEdit",MUTED)
 	result.set_color("font_disabled_color","Button",MUTED.darkened(0.15))
@@ -118,7 +118,7 @@ func make_theme() -> Theme:
 	for type in ["Button","LineEdit","PanelContainer"]:
 		for state in ["normal","hover","pressed","disabled","focus","panel"]:
 			var style := StyleBoxFlat.new(); style.bg_color=surface.lightened(0.1) if state=="hover" else surface
-			style.set_corner_radius_all(12 if GamePlatform.android_controls() else 6); style.content_margin_left=16; style.content_margin_right=16; style.content_margin_top=12; style.content_margin_bottom=12
+			style.set_corner_radius_all(12 if GamePlatform.native_mobile_controls() else 6); style.content_margin_left=16; style.content_margin_right=16; style.content_margin_top=12; style.content_margin_bottom=12
 			if state=="focus": style.bg_color=Color.TRANSPARENT; style.set_border_width_all(2); style.border_color=MINT
 			if state=="pressed": style.bg_color=Color("39584b")
 			result.set_stylebox(state,type,style)
@@ -130,9 +130,9 @@ func label(value: String, font_size: int = 18, color: Color = CREAM) -> Label:
 	GamePlatform.apply_font(l,font_size); l.add_theme_color_override("font_color",color); return l
 
 func button(value: String, callback: Callable, primary: bool = false) -> Button:
-	var b := Button.new(); b.text=value; b.clip_text=GamePlatform.android_controls(); b.custom_minimum_size.y=48; b.pressed.connect(callback)
+	var b := Button.new(); b.text=value; b.clip_text=GamePlatform.native_mobile_controls(); b.custom_minimum_size.y=48; b.pressed.connect(callback)
 	if primary:
-		var accent := GOLD if GamePlatform.android_controls() else MINT
+		var accent := GOLD if GamePlatform.native_mobile_controls() else MINT
 		for state in ["normal","hover","pressed"]:
 			var s := theme.get_stylebox(state,"Button").duplicate() as StyleBoxFlat; s.bg_color=accent.lightened(0.12) if state=="hover" else accent; b.add_theme_stylebox_override(state,s)
 		for state in ["font_color","font_hover_color","font_pressed_color","font_focus_color"]: b.add_theme_color_override(state,INK)
@@ -185,7 +185,7 @@ func title_page(title: String, subtitle: String) -> VBoxContainer:
 func show_menu() -> void:
 	if network!=null: network.disconnect_server()
 	clear_remotes(); transcript.clear(); muted.clear(); configure_window(false); clear_page("menu")
-	if GamePlatform.android_controls():
+	if GamePlatform.native_mobile_controls():
 		var menus := AndroidMenus.new(); menus.app=self; page.add_child(menus); return
 	var box: VBoxContainer
 	if GamePlatform.responsive() or compact(): box=title_page("Purrimeter","The Garden Guard")
@@ -529,7 +529,7 @@ func open_pause() -> void:
 	if not expanded.is_empty(): close_expanded()
 	local_view.mobile.close_panel()
 	local_view.game.paused=true; local_view.gameplay_enabled=false; pause_open=true
-	if GamePlatform.android_controls():
+	if GamePlatform.native_mobile_controls():
 		var menus := AndroidMenus.new(); menus.app=self; menus.paused=true; overlay=menus; add_child(menus); return
 	overlay=Control.new(); overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(overlay)
 	var shade := ColorRect.new(); shade.color=Color(INK,0.93); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); overlay.add_child(shade)
@@ -720,7 +720,7 @@ func render_updates() -> void:
 	var actions := row(box)
 	if updater.state=="available":
 		if OS.has_feature("web"): actions.add_child(button("Save and reload",func(): BrowserPlatform.current.bridge.reload(JSON.stringify(local_view.game.snapshot(),"",true,true)),true))
-		elif GamePlatform.android(): actions.add_child(button("Update in Google Play",GamePlatform.open_store,true))
+		elif GamePlatform.native_mobile(): actions.add_child(button("Update in "+GamePlatform.store_name(),GamePlatform.open_store,true))
 		else: actions.add_child(button("Download update",updater.download,true))
 	if updater.state=="downloaded": actions.add_child(button("Restart and play",updater.install,true))
 	if updater.state=="error": actions.add_child(button("Retry",updater.retry,true))

@@ -26,11 +26,8 @@ func _init(view: Control) -> void:
 
 func safe_bounds() -> Rect2:
 	var result := Rect2(Vector2.ZERO,v.size)
-	if GamePlatform.android():
-		var pixels := Rect2(DisplayServer.get_display_safe_area())
-		if pixels.has_area():
-			var local := v.get_screen_transform().affine_inverse()*pixels
-			result=result.intersection(local)
+	if GamePlatform.native_mobile():
+		result=result.intersection(GamePlatform.safe_area_in(v))
 	return result.grow(-12)
 
 func focus_zoom() -> float:
