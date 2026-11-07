@@ -69,6 +69,7 @@ var mobile: MobileGarden
 var browser_blocked := false
 var draft_panel: Control
 var draft_saving := false
+var reset_saving := false
 var victory_presented := false
 
 func compact() -> bool:
@@ -96,7 +97,7 @@ func _ready() -> void:
 		if BrowserPlatform.enabled():
 			startup_save_valid=BrowserPlatform.load_garden(game)
 			if not startup_save_valid: browser_blocked=true; status="Saved garden could not be read. Export a backup before replacing it."
-		elif FileAccess.file_exists(SaveStore.SAVE_PATH):
+		elif SaveStore.has_save():
 			startup_save_valid=SaveStore.read_into(game)
 			status="Welcome back. Your patrol is paused and ready." if startup_save_valid else "Save could not be read. A fresh garden is ready."
 		if BrowserPlatform.enabled(): BrowserPlatform.load_settings("audio",prefs)
@@ -180,7 +181,7 @@ func on_achievement(_id: String) -> void:
 	save_achievements()
 
 func save_achievements() -> void:
-	if read_only or testing or preview or not achievement_save_valid or OS.has_feature("web"): return
+	if read_only or testing or preview or reset_saving or not achievement_save_valid or OS.has_feature("web"): return
 	if SaveStore.write_achievements(game.achievements)!=OK: status="Unable to save achievements. Export your garden to keep your progress."
 
 func new_garden(selected_level: int = 1) -> void:
@@ -192,6 +193,27 @@ func new_garden(selected_level: int = 1) -> void:
 	selected=-1; selected_enemy=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0
 	status="%s · A fresh garden. Start wave 1 when ready." % GardenLevels.title(game.garden_level)
 	save_game(); garden_replaced.emit()
+
+func reset_all_progress() -> bool:
+	if reset_saving or draft_saving or read_only or not BrowserPlatform.may_save(): return false
+	var next := Session.fresh()
+	next.paused=true; next.auto_start=game.auto_start; next.speed=game.speed
+	reset_saving=true
+	var saved := testing or preview
+	if not saved:
+		if BrowserPlatform.enabled(): saved=await BrowserPlatform.reset_progress(next)
+		else: saved=SaveStore.reset_progress(next)==OK
+	reset_saving=false
+	if not saved: return false
+	draft_panel.finish_choice(); confirm.close(); mobile.close_panel(); mobile.pending=-1
+	game=next; connect_game(); fanfare.reset(game.achievements)
+	browser_blocked=false; startup_save_valid=true; achievement_save_valid=true
+	selected=-1; selected_enemy=-1; placing=-1; hover=-1
+	selected_powerup="training"; powerup_tab="available"; powerup_page=0
+	accumulator=0.0; save_clock=0.0
+	status="A fresh garden. Start wave 1 when ready."
+	garden_replaced.emit()
+	return true
 
 func choose_level() -> void:
 	game.paused=true; mobile.close_panel(); placing=-1; mobile.pending=-1
@@ -207,7 +229,7 @@ func show_victory() -> void:
 	confirm.show_victory(game,func(): confirm_new_garden(game.garden_level+1),choose_level)
 
 func save_game() -> void:
-	if read_only or testing or preview or browser_blocked or draft_saving: return
+	if read_only or testing or preview or browser_blocked or draft_saving or reset_saving: return
 	if BrowserPlatform.enabled():
 		BrowserPlatform.save_garden(game); return
 	save_achievements()

@@ -8,6 +8,7 @@
   let db, callback, engine, releaseLock, started = false, active = false, volatile = false, sessionAccepted = false;
   let initial = '', current = '', saving = Promise.resolve(), lastSaved = '', pendingReload = false;
   let settings = {};
+  let resetting = false;
   function emit(type, value = '') { if (callback) callback(type, value); }
   function gate(message) { $('gate').hidden = false; $('message').textContent = message; $('progress').hidden = true; }
   function storageError() {
@@ -47,6 +48,7 @@
     });
   }
   function persist(snapshot = current) {
+    if (resetting) return saving;
     if (!active) return Promise.resolve(false);
     if (snapshot) current = snapshot;
     if (volatile || !db) return Promise.resolve(false);
@@ -139,6 +141,26 @@
       if (active && volatile && sessionAccepted) { current = snapshot; emit('draft_saved', 'session'); return; }
       emit('draft_saved', await persist(snapshot) ? 'ok' : 'failed');
     },
+    resetSave: snapshot => {
+      if (resetting) return;
+      resetting = true;
+      // Serialize behind existing saves, but never publish a failed candidate to
+      // current: visibility/settings writes must not resurrect or commit it later.
+      saving = saving.then(async () => {
+        if (!active) return 'failed';
+        if (volatile && sessionAccepted) { current = snapshot; return 'session'; }
+        if (volatile || !db) return 'failed';
+        try {
+          await write(snapshot);
+          current = snapshot; lastSaved = snapshot;
+          return 'ok';
+        } catch (_) { storageError(); return 'failed'; }
+      }).then(result => {
+        resetting = false;
+        emit('reset_saved', result);
+        return result !== 'failed';
+      });
+    },
     sessionOnly: () => volatile && sessionAccepted,
     exportSave: snapshot => {
       const url = URL.createObjectURL(new Blob([snapshot], { type: 'application/json' }));
@@ -153,7 +175,7 @@
       if (ok) location.reload();
       else { pendingReload = false; emit('reload_failed'); }
     },
-    saveState: () => volatile ? 'unavailable' : (lastSaved === current && current ? 'saved' : 'saving')
+    saveState: () => resetting ? 'saving' : volatile ? 'unavailable' : (lastSaved === current && current ? 'saved' : 'saving')
   };
   $('import-file').addEventListener('change', async event => {
     const file = event.target.files[0]; if (!file) return;
