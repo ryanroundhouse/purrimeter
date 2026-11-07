@@ -1,1 +1,1 @@
-Purrimeter {version}: a fresh Android interface with more room for your garden. Floating controls, redesigned main and pause menus, easier recruitment and upgrades, and improved layouts for phones, tablets and larger text.
+Purrimeter {version}: unlock Ranger anti-air cats by beating level one and defend your garden against flying Moths. Want a fresh start? Reset all progress from the main menu clears your garden and earned progress while keeping your preferences.
