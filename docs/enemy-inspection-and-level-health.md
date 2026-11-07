@@ -1,5 +1,7 @@
 # Enemy inspection and level health
 
+The [five-level progression](five-level-progression.md) supersedes the single endless challenge described here. In this document, historical “level” depth means **wave** depth; rebirth stays within the selected level, and finite victory stops Auto and rebirth.
+
 Confirmed and implemented on 2026-10-31.
 
 ## Confirmed requirements

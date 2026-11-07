@@ -8,7 +8,7 @@ func check(ok: bool, message: String) -> void:
 func near(a: float,b: float) -> bool: return absf(a-b)<0.000001
 func portable(g: Session) -> Dictionary: return JSON.parse_string(JSON.stringify(g.snapshot(),"",true,true))
 func ready_garden(depth: int = 5) -> Session:
-	var g := Session.new(); g.best=depth; g.run_best=depth; g.level=depth+1; g.draft_seed=17; return g
+	var g := Session.new(); g.garden_level=5; g.achievements.unlocked_level=5; g.best=depth; g.run_best=depth; g.level=depth+1; g.draft_seed=17; return g
 func combat(kind: int) -> Session:
 	var g := Session.new(); g.coins=Amount.of(10000); g.build(kind,129); g.start(); return g
 func foe(g: Session, cell: int = 130) -> Dictionary:

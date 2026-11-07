@@ -18,6 +18,7 @@ var accept_button: Button
 var cancel_button: Button
 var desired_size := Vector2(640,520)
 var on_accept := Callable()
+var level_buttons: Dictionary = {}
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -69,6 +70,7 @@ func begin_dialog(heading: String, subtitle: String, dimensions: Vector2) -> voi
 	if is_instance_valid(panel): panel.hide(); panel.queue_free()
 	desired_size=dimensions
 	on_accept=Callable(); cancel_button=null
+	level_buttons.clear()
 	panel=PanelContainer.new(); add_child(panel)
 	var frame := surface(PANEL,12)
 	frame.set_border_width_all(1); frame.border_color=LINE
@@ -157,14 +159,62 @@ func show_confirmation(heading: String, message: String, callback: Callable, acc
 	label(body,message,19,CREAM)
 	finish_dialog(accept_text,callback,true)
 
+func show_levels(g: Session, callback: Callable) -> void:
+	begin_dialog("Choose a garden","Five landscapes to master. Unlock each by clearing the one before it.",Vector2(720,820))
+	body.add_theme_constant_override("separation",8)
+	var available: Array[Button] = []
+	for selected in range(1,GardenLevels.COUNT+1):
+		var unlocked := selected<=g.achievements.unlocked_level
+		var item := make_button("",false,func(): close(); callback.call(selected))
+		item.reparent(body); item.disabled=not unlocked
+		item.custom_minimum_size=Vector2(0,88 if unlocked else 104)
+		item.add_theme_stylebox_override("disabled",surface(Color("1b2832")))
+		var margin := MarginContainer.new(); item.add_child(margin)
+		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		for side in ["left","right"]: margin.add_theme_constant_override("margin_"+side,12)
+		for side in ["top","bottom"]: margin.add_theme_constant_override("margin_"+side,8)
+		var row := HBoxContainer.new(); margin.add_child(row); row.add_theme_constant_override("separation",14)
+		var icon := preload("res://ui/level_terrain_icon.gd").new(); icon.selected_level=selected
+		icon.custom_minimum_size=Vector2(72,72); icon.size_flags_vertical=Control.SIZE_SHRINK_CENTER; row.add_child(icon)
+		var copy := VBoxContainer.new(); copy.size_flags_horizontal=Control.SIZE_EXPAND_FILL; copy.size_flags_vertical=Control.SIZE_SHRINK_CENTER
+		copy.add_theme_constant_override("separation",1); row.add_child(copy)
+		label(copy,GardenLevels.level_name(selected),20,CREAM if unlocked else MUTED)
+		label(copy,"Level %d · %s" % [selected,"Endless" if selected==5 else "%d waves" % GardenLevels.wave_limit(selected)],14,MINT if unlocked else MUTED)
+		label(copy,GardenLevels.terrain_profile(selected).summary,14,MUTED)
+		if not unlocked: label(copy,"Locked · beat level %d" % (selected-1),14,GOLD)
+		# The whole row is one keyboard/touch target, including its icon and copy.
+		margin.mouse_filter=Control.MOUSE_FILTER_IGNORE
+		for child in margin.find_children("*","Control",true,false): child.mouse_filter=Control.MOUSE_FILTER_IGNORE
+		item.tooltip_text="%s. %s. Terrain icons are examples; each new garden has a fresh layout." % [GardenLevels.title(selected),GardenLevels.terrain_profile(selected).summary]
+		level_buttons[selected]=item
+		if unlocked: available.append(item)
+	finish_dialog("Keep garden",Callable(),false)
+	# Include the choices in the keyboard loop, rather than trapping focus in the footer.
+	var controls: Array[Button] = available.duplicate()
+	controls.append(accept_button)
+	for i in range(controls.size()):
+		controls[i].focus_next=controls[i].get_path_to(controls[(i+1)%controls.size()])
+		controls[i].focus_previous=controls[i].get_path_to(controls[posmod(i-1,controls.size())])
+	available[0].grab_focus()
+
+func show_victory(g: Session, next_level: Callable, choose_level: Callable) -> void:
+	begin_dialog("Level %d complete!" % g.garden_level,"All %d waves cleared. Your next challenge is ready." % g.wave_limit(),Vector2(640,620 if size.x<650 else 440))
+	label(body,"%s unlocked" % GardenLevels.title(g.garden_level+1),24,MINT)
+	label(body,"Keep this garden to view or export, or start a fresh garden for your next challenge.",18,CREAM)
+	make_button("View garden",false,close)
+	make_button("Choose level",false,func(): close(); choose_level.call())
+	accept_button=make_button("Next level",true,func(): close(); next_level.call())
+	accept_button.grab_focus()
+	layout_panel.call_deferred()
+
 func show_rebirth(run_best: int, _bonus: float, callback: Callable) -> void:
 	begin_dialog("Rebirth your patrol?","Confirm before seeing your offers. No cancellation or rerolls afterward.",Vector2(680,size.y-16 if size.x<650 else 650))
 	var reward := VBoxContainer.new(); body.add_child(reward)
 	reward.add_theme_constant_override("separation",6)
 	label(reward,"Choose one permanent improvement",25,MINT)
-	label(reward,"Cleared level %d this run · deeper runs favor stronger offers" % run_best,17,GOLD)
+	label(reward,"Cleared wave %d this run · deeper runs favor stronger offers" % run_best,17,GOLD)
 	section(body,"Keep your patrol","Keep all coins, surviving cats, their upgrades, powerups and discoveries. Surviving cats return at full health.")
-	section(body,"Commit, then choose","Return to level 1 and reveal up to three offers. No cancellation or rerolls. Offers stay saved until you choose. Start level 1 manually afterward.")
+	section(body,"Commit, then choose","Return to wave 1 and reveal up to three offers. No cancellation or rerolls. Offers stay saved until you choose. Start wave 1 manually afterward.")
 	finish_dialog("Rebirth patrol",callback,true)
 
 func show_help() -> void:
@@ -175,8 +225,8 @@ func show_help() -> void:
 	rules.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	rules.size_flags_stretch_ratio=1.15
 	rules.add_theme_constant_override("separation",22)
-	section(rules,"Defend the garden","Foes follow open routes or attack cats. Backtracking turns them red; sweat marks frenzy and a breakout toward the exit. One escape ends the attempt: lose a level.")
-	section(rules,"Grow your patrol","Cats have five upgrades. Powerup icons show effects and rank requirements; Owned shows purchases. Clear level 5 to rebirth. Bosses arrive every tenth level.")
+	section(rules,"Defend the garden","Foes follow open routes or attack cats. Backtracking turns them red; sweat marks frenzy and a breakout toward the exit. One escape ends the attempt: lose a wave.")
+	section(rules,"Grow your patrol","Cats have five upgrades. Powerup icons show effects and rank requirements; Owned shows purchases. Clear wave 5 to rebirth. Bosses arrive every tenth wave.")
 	section(rules,"Keep your progress","Autosaves keep progress. Export / Import transfers saves. Defeat keeps coins and surviving cats, including damage.")
 	var controls := VBoxContainer.new(); columns.add_child(controls)
 	controls.size_flags_horizontal=Control.SIZE_EXPAND_FILL

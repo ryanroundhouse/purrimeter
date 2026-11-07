@@ -17,7 +17,7 @@ func run() -> void:
 	var app=load("res://app.tscn").instantiate(); root.add_child(app)
 	await process_frame; await process_frame
 	app.show_game(false); var view=app.local_view
-	view.game=Session.fresh(42); view.connect_game(); view.game.paused=true; view.game.coins=Amount.of(1000)
+	view.game=Session.fresh(42,3); view.game.achievements.unlocked_level=3; view.connect_game(); view.game.paused=true; view.game.coins=Amount.of(1000)
 	if view.mobile is AndroidGarden: view.mobile.focused_camera=false; view.mobile.zoom=1; view.mobile.layout()
 	var terrain_cell: int=view.game.terrain.cells.keys()[0]
 	view.action("cat0"); view.interact_cell(terrain_cell)

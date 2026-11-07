@@ -1,6 +1,6 @@
 # Purrimeter — The Garden Guard
 
-An endless pixel-art cat tower defence game for browsers, Android, iOS, native macOS and Windows, built from one Godot 4.7.2 project.
+A five-level pixel-art cat tower defence game for browsers, Android, iOS, native macOS and Windows, built from one Godot 4.7.2 project.
 
 Play in your browser at **[purrimeter.graham.pub/play/](https://purrimeter.graham.pub/play/)**, download the game at **[purrimeter.graham.pub](https://purrimeter.graham.pub/)**, or install it from Google Play once the listing is published (see [docs/android.md](docs/android.md)). The page highlights the download for your operating system and includes installation help for the unsigned builds. Website source is in `website/`; preview and publication instructions are in [docs/website.md](docs/website.md).
 
@@ -16,7 +16,7 @@ Existing multiplayer visits can continue after a release is published, including
 
 Choose a player name in **Connection settings**, then open Multiplayer to create or join a game. The default server is `wss://purrimeter.graham.pub/ws` and is live. The address can be changed in settings.
 
-Your garden stays on the left. One other field fills the right-hand field area; with three players, the other two share it vertically. **View** enlarges a field for read-only cat, enemy, and powerup inspection and switches music and gameplay effects to that garden. Your own garden keeps its running or paused state while viewing. Closing View restores your audio; small previews stay silent. Each player controls their own levels, rebirths, pause, and speed. Opening a menu pauses only your combat.
+Your garden stays on the left. One other field fills the right-hand field area; with three players, the other two share it vertically. **View** enlarges a field for read-only cat, enemy, and powerup inspection and switches music and gameplay effects to that garden. Your own garden keeps its running or paused state while viewing. Closing View restores your audio; small previews stay silent. Each player controls their own waves, rebirths, pause, and speed. Opening a menu pauses only your combat.
 
 Press **T** to focus chat, **Enter** to send, and **Esc** to leave the text box. **Mute** hides one player's messages; **Report** sends that player's recent messages to the server operator and mutes them for you. Chat notification sound is separately switchable. The owner can kick a player; ownership transfers when they leave. Dropped connections reserve a place for 60 seconds and reconnect automatically, leaving your garden paused. **Continue offline** in the Escape menu keeps your personal game going without the other players.
 
@@ -56,25 +56,29 @@ With no placement or inspection active, **Esc** opens the pause menu; the visibl
 
 Click an enemy or boss to inspect its animated portrait, name, current/max health, speed, tower damage, and active effects. A highlight follows the selected enemy; inspection does not change targeting. Cats take priority on occupied tiles, and recruitment mode keeps placing cats. **Esc** or **Back to powerups** closes inspection; death or the end of the attempt clears it automatically. Both cat and enemy inspector portraits animate while paused.
 
-**Tab / Shift+Tab** move between controls and the garden, with a visible focus outline. **Enter** activates a focused control. On the garden, use **arrow keys** to choose a tile and **Enter** to recruit or inspect a cat or enemy. Selecting a cat with 1 / 2 / 3 moves keyboard focus to the garden. During paused combat, the main **Resume level** button continues the current attempt.
+**Tab / Shift+Tab** move between controls and the garden, with a visible focus outline. **Enter** activates a focused control. On the garden, use **arrow keys** to choose a tile and **Enter** to recruit or inspect a cat or enemy. Selecting a cat with 1 / 2 / 3 moves keyboard focus to the garden. During paused combat, the main **Resume wave** button continues the current attempt.
 
 ## Progression
 
-- **Auto-start next level** is off by default. After each clear, a large 3–2–1 shrinks and fades in the center of the garden, then the next level starts. The countdown takes three real seconds at either combat speed. Space pauses it; N starts early. Use the **Auto** checkbox to the right of Start/Wave in progress. Your choice and any pending countdown are saved; loading resumes paused. Defeat, rebirth, and new gardens still wait for Start.
+Choose from **five levels: 10, 20, 30, 40 waves, then endless**. Beat each finite level to unlock the next. **New Garden** shows every level and lets you choose any unlocked one, then confirms replacing your garden. Each starts at wave one with fresh terrain, coins, cats, and garden progression. Level unlocks, achievements, and cat skins remain yours.
+
+Clearing the final wave ends that garden’s challenge and opens a victory screen with **View garden**, **Choose level**, and **Next level**. Auto and rebirth stop at victory; the completed garden remains available to view, save, and export. Players in a multiplayer room may play different levels independently. See [the complete progression rules](docs/five-level-progression.md).
+
+- **Auto-start next wave** is off by default. After each clear, a large 3–2–1 shrinks and fades in the center of the garden, then the next wave starts. The countdown takes three real seconds at either combat speed. Space pauses it; N starts early. Use the **Auto** checkbox to the right of Start/Wave in progress. Your choice and any pending countdown are saved; loading resumes paused. Defeat, rebirth, and new gardens still wait for Start.
 - Three cat types, each with a purchased form plus **five upgrades**: six animated forms and distinct attack effects.
-- New gardens contain permanent rock clusters and a winding stream across roughly 15–20% of the field. They block recruitment and enemy movement, cannot be destroyed, and allow cats to shoot across them. Terrain and connected visual styles persist through defeat, rebirth, saves, and multiplayer. Existing gardens keep their original empty terrain. See [obstacle rules](docs/obstacles.md).
+- New gardens contain level-specific terrain: sparse rocks in Open Meadow, more rocks in Stone Garden, then one, two, or three streams in Winding Brook, Twin Streams, and Wildwater. They block recruitment and enemy movement, cannot be destroyed, and allow cats to shoot across them. Terrain and connected visual styles persist through defeat, rebirth, saves, and multiplayer. Existing gardens keep their original empty terrain. See [obstacle rules](docs/obstacles.md).
 - Enemies take the shortest open route; fully blocked enemies attack towers along the quickest estimated breach route.
 - Repeated backtracking builds frustration. After 12 tile-lengths of revisits, that enemy enters permanent **frenzy**, moving toward the exit and destroying obstructing cats even when an open route exists. Increasing redness warns you; red with animated sweat means frenzy. Long unchanged mazes are unaffected. Slow, stun, and normal combat stats still apply; saves preserve the history.
 - All enemies move diagonally at the same physical speed as straight movement. Towers block their whole square and prevent corner cutting, so corner-touching towers form a wall. Squares needed to clear a diagonal crossing temporarily reject construction. Blocked enemies can attack diagonally only when both side squares are clear, destroying the tower before entering its square.
-- **One escape loses the attempt.** Return one level, keeping coins, upgrades, training and surviving cats—including damage. At level one, an empty patrol with fewer than 50 coins receives enough for one Scout.
-- Total enemy health **doubles every level**. Total base coin bounty grows by **1.5×**. Progression continues beyond level 20.
-- **Level health** beneath the field/arrival counts shows the entire wave's remaining health, including enemies still waiting to arrive and the boss. Damage drains the bar; arrivals do not refill it. The bar appears during active attempts, including tactical pause.
-- A huge boss appears every tenth level: caterpillar, cobra, spider, then hound, cycling thereafter. Bosses use the same routing rules; their artwork is larger than their logical footprint.
-- Boss levels play five original, more intense chiptune themes: levels 10–50 cycle through all five, then repeat. Music crossfades at the start and end of the whole level; the garden theme resumes afterward. Retries and saved boss levels restart their assigned theme.
+- **One escape loses the attempt.** Return one wave, keeping coins, upgrades, training and surviving cats—including damage. At wave one, an empty patrol with fewer than 50 coins receives enough for one Scout.
+- Total enemy health **doubles every wave**. Total base coin bounty grows by **1.5×**. Wave strength follows the same curve in every level; endless has no final wave.
+- **Wave health** beneath the field/arrival counts shows the entire wave's remaining health, including enemies still waiting to arrive and the boss. Damage drains the bar; arrivals do not refill it. The bar appears during active attempts, including tactical pause.
+- A huge boss appears every tenth wave: caterpillar, cobra, spider, then hound, cycling thereafter. Bosses use the same routing rules; their artwork is larger than their logical footprint.
+- Boss waves play five original, more intense chiptune themes: waves 10–50 cycle through all five, then repeat. Music crossfades at the start and end of the whole wave; the garden theme resumes afterward. Retries and saved boss waves restart their assigned theme.
 - **30 permanent powerups** cover patrol stats, economy, durability, and unique Bolt/Cannon/Frost abilities. Click a discovered icon to inspect its current effect, next benefit, and prerequisite. **Available / Owned** switches between unfinished powerups and your collection. Hidden icons appear when their discovery milestones are earned; discoveries persist through rebirth and defeat. Each rank needs its own milestone and coin price. Completed powers remain in Owned. Select a placed cat for its controls; **Back to powerups** restores the browser.
-- **Patrol Training** increases all cats' damage and maximum health by 25% per purchase, compounded, while preserving their health percentage. Initial cost: 100 coins; each purchase costs 1.5× the previous one. It has unlimited ranks: rank one is available immediately, and rank n requires 4 × n × (n − 1) lifetime kills. Replayed levels count.
-- **Rebirth** unlocks after clearing level 5 and can be used during combat or between attempts. Return to level 1, retain coins, surviving cats, tiers, training and existing bonuses, and fully heal cats. Remaining enemies disappear; only cleared levels count toward draft quality. Level one waits for a manual Start, even with Auto enabled.
-- **Rebirth Draft** replaces automatic coin bonuses: confirm rebirth, then choose one permanent improvement from up to three eligible offers. The 12-improvement collection has capped ranks, prerequisites, and stronger-offer odds after deeper runs. Offers survive reopening without rerolls. Existing coin bonuses stay; if no normal improvement is eligible, the sole fallback adds 10 percentage points. **Draft Collection** shows every reward and requirement (inside Powerups on phones). Clear level 5 again to qualify. New Garden resets the draft collection. See [the complete rules](docs/rebirth-draft.md).
+- **Patrol Training** increases all cats' damage and maximum health by 25% per purchase, compounded, while preserving their health percentage. Initial cost: 100 coins; each purchase costs 1.5× the previous one. It has unlimited ranks: rank one is available immediately, and rank n requires 4 × n × (n − 1) lifetime kills. Replayed waves count.
+- **Rebirth** unlocks after clearing wave 5 and can be used during combat or between attempts. Return to wave 1, retain coins, surviving cats, tiers, training and existing bonuses, and fully heal cats. Remaining enemies disappear; only cleared waves count toward draft quality. Wave one waits for a manual Start, even with Auto enabled.
+- **Rebirth Draft** replaces automatic coin bonuses: confirm rebirth, then choose one permanent improvement from up to three eligible offers. The 12-improvement collection has capped ranks, prerequisites, and stronger-offer odds after deeper runs. Offers survive reopening without rerolls. Existing coin bonuses stay; if no normal improvement is eligible, the sole fallback adds 10 percentage points. **Draft Collection** shows every reward and requirement (inside Powerups on phones). Clear wave 5 again to qualify. New Garden resets the draft collection. See [the complete rules](docs/rebirth-draft.md).
 
 ## Achievements
 
@@ -84,12 +88,14 @@ Open **Cat Skins** from the main or Escape menu to choose among **five skins per
 
 ## Saves
 
-Autosave runs every four seconds, after changes, when losing focus and on exit. Loads resume paused. **Export / Import** transfers a JSON save between computers. New Garden resets all progression after confirmation.
+Autosave runs every four seconds, after changes, when losing focus and on exit. Loads resume paused. **Export / Import** transfers a JSON save between computers. New Garden resets garden progression after level selection and confirmation, while keeping permanent level unlocks, achievements, and cat skins.
 
 - Mac: `~/Library/Application Support/Purrimeter/save.json`
 - Windows: `%APPDATA%/Purrimeter/save.json`
 
 The original Swift game's save was deleted as requested. Existing Godot version-2 gardens migrate automatically, preserving every training rank and crediting recorded lifetime milestones and surviving cats. Version-3 saves also preserve powerups, discoveries, and active combat effects. No migration from the original Swift format is performed. Game tests and screenshot previews do not modify the player's save.
+
+Older Godot gardens continue in endless mode with their existing possessions and wave intact. Recorded highest cleared wave (including achievement history) grants new-garden access at 10/20/30/40 for levels 2/3/4/5. Continuing a legacy endless garden does not grant permission to create another until unlocked. Save transfers preserve the higher unlocked level from either device.
 
 ## Build on macOS
 
@@ -126,6 +132,7 @@ Native GUI checks should run from a normal desktop session outside an agent sand
 ## Source map
 
 - `game/core/session.gd`: simulation, economy, progression and save validation.
+- `game/core/levels.gd`: the five level lengths, selection labels, legacy unlock credit, and progression validation.
 - `game/core/achievements.gd`: the 30-achievement catalog, lifetime progress, challenge evidence, and migration.
 - `game/ui/achievements_panel.gd`, `achievement_fanfare.gd`: collection menu and queued celebrations.
 - `game/core/powerups.gd`, `powerup_combat.gd`, `powerup_save.gd`: the 30-powerup catalog, milestone rules, combat effects, and save migration.

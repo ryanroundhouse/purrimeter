@@ -120,7 +120,7 @@ func updates() -> void:
 func build_main() -> void:
 	var content := scroller()
 	action(content,"single","Single player",func(): app.show_game(false),true,"play")
-	note(content,"Your garden · Level %d · %d rebirths"%[app.local_view.game.level,app.local_view.game.rebirths])
+	note(content,"Your garden · %s" % app.local_view.game.progress_label())
 	action(content,"multiplayer","Multiplayer",func(): app.notice=""; app.show_browser(); app.network.connect_server(),false,"people")
 	note(content,"Up to 3 gardeners · Live fields and chat",12)
 	actions=grid(content)

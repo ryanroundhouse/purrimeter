@@ -1,5 +1,7 @@
 # Rebirth Draft
 
+The [five-level progression](five-level-progression.md) supersedes the single endless challenge described here. In this document, historical “level” depth means **wave** depth; rebirth stays within the selected level, and finite victory stops Auto and rebirth.
+
 Status: confirmed design implemented in the shared Godot game. Initial numerical tuning and automated progression checks are recorded below; extended human balance testing remains ongoing.
 
 ## Requested direction

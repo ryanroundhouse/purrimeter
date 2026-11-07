@@ -3,12 +3,12 @@ extends RefCounted
 ## Player-wide recognition. Attempt evidence belongs to Session, not this book.
 signal earned_now(id: String)
 const ITEMS := [
- ["first","First Watch","Clear level 1.","best",1,"First steps","training"],
+ ["first","First Watch","Clear wave 1.","best",1,"First steps","training"],
  ["crew","The Whole Crew","Have Bolt, Cannon and Frost cats placed together.","crew",3,"First steps","quick"],
  ["upgrade","Sharper Claws","Purchase your first tower-tier upgrade.","upgrades",1,"First steps","equipment"],
  ["power","A Little Extra","Purchase your first powerup rank.","ranks",1,"First steps","lucky"],
  ["rebirth","Nine Lives Begin","Perform your first rebirth.","rebirths",1,"First steps","aid"],
- ["boss_level","Big Pest, Small Problem","Clear level 10, including the boss and its escorts.","best",10,"First steps","purse"],
+ ["boss_level","Big Pest, Small Problem","Clear wave 10, including the boss and its escorts.","best",10,"First steps","purse"],
  ["kills100","Pest Patrol","Defeat 100 enemies across your gardens.","kills",100,"Lifetime","heavy"],
  ["kills5000","Garden Veteran","Defeat 5,000 enemies across your gardens.","kills",5000,"Lifetime","giant"],
  ["bosses","Big Game Hunter","Defeat 25 bosses across your gardens.","bosses",25,"Lifetime","siege"],
@@ -17,18 +17,18 @@ const ITEMS := [
  ["upgrades","Better Every Day","Purchase 100 tower-tier upgrades.","upgrades",100,"Lifetime","eyes"],
  ["rebirths","Back for More","Perform 10 rebirths.","rebirths",10,"Lifetime","catnap"],
  ["ranks","Power Collector","Purchase 25 powerup ranks across any powerups.","ranks",25,"Lifetime","bounty"],
- ["solo","Lone Guardian","Clear level 5 or higher with exactly one cat present throughout the attempt.","solo",5,"Tactics","focus"],
- ["bolt","Bolt from the Blue","Clear level 5 or higher using only Bolt cats throughout the attempt.","bolt",5,"Tactics","needle"],
- ["cannon","Cannon Fodder","Clear level 5 or higher using only Cannon cats throughout the attempt.","cannon",5,"Tactics","blast"],
- ["basic","Back to Basics","Clear level 10 or higher with every cat at base tier throughout the attempt.","basic",10,"Tactics","beds"],
- ["idle","Set and Forget","Clear level 10 or higher without recruiting, selling, upgrading, repairing or buying powerups during the attempt.","idle",10,"Tactics","stand"],
- ["unhurt","Not a Scratch","Clear level 10 or higher without any cat taking damage during the attempt.","unhurt",10,"Tactics","fur"],
+ ["solo","Lone Guardian","Clear wave 5 or higher with exactly one cat present throughout the attempt.","solo",5,"Tactics","focus"],
+ ["bolt","Bolt from the Blue","Clear wave 5 or higher using only Bolt cats throughout the attempt.","bolt",5,"Tactics","needle"],
+ ["cannon","Cannon Fodder","Clear wave 5 or higher using only Cannon cats throughout the attempt.","cannon",5,"Tactics","blast"],
+ ["basic","Back to Basics","Clear wave 10 or higher with every cat at base tier throughout the attempt.","basic",10,"Tactics","beds"],
+ ["idle","Set and Forget","Clear wave 10 or higher without recruiting, selling, upgrading, repairing or buying powerups during the attempt.","idle",10,"Tactics","stand"],
+ ["unhurt","Not a Scratch","Clear wave 10 or higher without any cat taking damage during the attempt.","unhurt",10,"Tactics","fur"],
  ["cold","Cold Reception","Defeat a boss while it is slowed by a Frost cat or its powerups.","cold",1,"Tactics","chill"],
  ["frenzy","Keep Your Cool","Defeat an enemy after it enters frenzy.","frenzy",1,"Tactics","concussion"],
- ["medic","Field Medic","During level 5 or higher, pay to repair a damaged cat, then clear that attempt with that same cat still present.","medic",5,"Tactics","aid"],
- ["streak","On a Roll","Clear five consecutive levels numbered 10 or higher without defeat or rebirth.","streak",5,"Tactics","quick"],
- ["level25","Garden Sentinel","Clear level 25.","best",25,"Mastery","embers"],
- ["level50","Legendary Guard","Clear level 50.","best",50,"Mastery","aftershock"],
+ ["medic","Field Medic","During wave 5 or higher, pay to repair a damaged cat, then clear that attempt with that same cat still present.","medic",5,"Tactics","aid"],
+ ["streak","On a Roll","Clear five consecutive waves numbered 10 or higher without defeat or rebirth.","streak",5,"Tactics","quick"],
+ ["level25","Garden Sentinel","Clear wave 25.","best",25,"Mastery","embers"],
+ ["level50","Legendary Guard","Clear wave 50.","best",50,"Mastery","aftershock"],
  ["dream","Dream Team","Have a tier-six Bolt, Cannon and Frost placed together.","dream",3,"Mastery","static"],
  ["toys","Full Toy Box","Own at least one rank of all 30 powerups in one garden.","toys",30,"Mastery","winter"],
  ["school","Finishing School","Reach maximum rank on five different capped powerups in one garden. Unlimited Patrol Training does not count.","school",5,"Mastery","lock"],
@@ -41,6 +41,7 @@ var pending: Array = []
 var summary: Array = []
 var skin_choices: Dictionary = {}
 var seen_skins: Array = []
+var unlocked_level := 1 # Player-wide access, independent of achievement wave records.
 
 static func item(id: String) -> Array:
 	for row in ITEMS:
@@ -51,7 +52,8 @@ static func valid_number(value) -> bool:
 	return (value is int or value is float) and is_finite(float(value)) and value>=0 and value<=9e15 and floor(float(value))==float(value)
 
 static func valid(data) -> bool:
-	if not data is Dictionary or data.get("version")!=1: return false
+	if not data is Dictionary or not PowerupSave.number(data.get("version"),1,2,true): return false
+	if data.version==2 and not PowerupSave.number(data.get("unlocked_level"),1,GardenLevels.COUNT,true): return false
 	if not CatSkins.valid_choices(data.get("skin_choices",{})) or not CatSkins.valid_seen(data.get("seen_skins",[])): return false
 	if not data.get("values") is Dictionary or not data.get("earned") is Dictionary or not data.get("pending") is Array: return false
 	var keys := ["bonus"] # Accept historical Golden Garden progress without removing earned rewards.
@@ -86,7 +88,10 @@ static func valid_run(data) -> bool:
 	return true
 
 func snapshot() -> Dictionary:
-	return {"version":1,"values":values.duplicate(),"earned":earned.duplicate(),"pending":pending.duplicate(),"skin_choices":skin_choices.duplicate(),"seen_skins":seen_skins.duplicate()}
+	return {"version":2,"unlocked_level":unlocked_level,"values":values.duplicate(),"earned":earned.duplicate(),"pending":pending.duplicate(),"skin_choices":skin_choices.duplicate(),"seen_skins":seen_skins.duplicate()}
+
+static func saved_unlock(data: Dictionary) -> int:
+	return int(data.unlocked_level) if data.version==2 else GardenLevels.legacy_unlock(int(data.values.get("best",0)))
 
 func highest(key: String, value: float) -> void:
 	values[key]=maxf(float(values.get(key,0)),minf(value,9e15))
@@ -105,6 +110,7 @@ func evaluate(retrospective: bool = false) -> void:
 		if values.get(row[3],0)>=row[4]: award(row[0],retrospective)
 
 func merge(data: Dictionary, startup: bool = false) -> void:
+	unlocked_level=maxi(unlocked_level,saved_unlock(data))
 	for key in data.values: highest(key,data.values[key])
 	for id in data.earned: award(id,true)
 	if startup:
@@ -208,15 +214,15 @@ func progress_text(row: Array, g) -> String:
 	var value: int = mini(int(values.get(row[3],0)),int(row[4]))
 	if earned.has(row[0]): return "Earned · %d / %d%s" % [int(row[4]),int(row[4]),"%" if row[3]=="bonus" else ""]
 	var result := "%d / %d%s" % [value,int(row[4]),"% coin bonus" if row[3]=="bonus" else ""]
-	if row[3] in CONDITIONS or row[3]=="medic": result="Best qualifying level: "+result
+	if row[3] in CONDITIONS or row[3]=="medic": result="Best qualifying wave: "+result
 	elif row[3] in ["crew","dream","toys","school"]: result="Best in one garden: "+result
-	elif row[3]=="best": result="Best level cleared: "+result
+	elif row[3]=="best": result="Best wave cleared: "+result
 	if row[3] in CONDITIONS:
 		var a := attempt(g)
 		if a.is_empty(): result+="\nStart a new attempt to try this challenge."
 		elif a.failed.has(row[3]): result+="\nThis attempt: ineligible. "+str(a.failed[row[3]])
-		elif g.level<row[4]: result+="\nThis attempt is below the required level."
-		else: result+="\nThis attempt: eligible. Clear the level to earn it."
+		elif g.level<row[4]: result+="\nThis attempt is below the required wave."
+		else: result+="\nThis attempt: eligible. Clear the wave to earn it."
 	if row[3]=="medic":
 		var a := attempt(g)
 		result+="\nRepair recorded this attempt: "+("yes" if not a.is_empty() and not a.repaired.is_empty() else "not yet")

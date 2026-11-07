@@ -21,10 +21,10 @@ func components(terrain: GardenTerrain, kind: int, diagonals: bool) -> Array:
 func generation() -> void:
 	var layouts := {}; var water_styles := {}
 	for seed_value in range(1,151):
-		var t := GardenTerrain.generate(seed_value)
+		var t := GardenTerrain.generate(seed_value,3)
 		check(t.cells.size()>=39 and t.cells.size()<=51,"coverage seed %d"%seed_value)
 		check(GardenTerrain.decode(t.snapshot())!=null,"valid connected layout seed %d"%seed_value)
-		check(t.snapshot()==GardenTerrain.generate(seed_value).snapshot(),"reproducible seed %d"%seed_value)
+		check(t.snapshot()==GardenTerrain.generate(seed_value,3).snapshot(),"reproducible seed %d"%seed_value)
 		var rocks := components(t,GardenTerrain.ROCK,true)
 		for group in rocks: check(group.size()<=4,"rock formation size seed %d"%seed_value)
 		var streams := components(t,GardenTerrain.STREAM,false)
@@ -41,6 +41,40 @@ func generation() -> void:
 		check(ends==2,"stream has two ends")
 		layouts[hash(t.snapshot())]=true
 	check(layouts.size()>140 and water_styles.size()==3,"layout and stream style variety")
+
+func level_profiles() -> void:
+	for selected in range(1,6):
+		var profile := GardenLevels.terrain_profile(selected)
+		for seed_value in range(1,61):
+			var terrain := GardenTerrain.generate(seed_value,selected)
+			check(terrain.cells.size()>=profile.min_tiles and terrain.cells.size()<=profile.max_tiles,"level %d obstacle budget seed %d" % [selected,seed_value])
+			check(GardenTerrain.decode(terrain.snapshot())!=null,"level %d retains connected ground and clear gates" % selected)
+			check(components(terrain,GardenTerrain.STREAM,true).size()==profile.streams,"level %d has its promised number of separate streams" % selected)
+			for group in components(terrain,GardenTerrain.ROCK,true): check(group.size()<=4,"profile rocks remain small formations")
+			for group in components(terrain,GardenTerrain.STREAM,false):
+				var ends := 0
+				for cell in group:
+					var degree := 0
+					for neighbor in GardenTerrain.adjacent(cell):
+						if terrain.cells.has(neighbor) and terrain.cells[neighbor].kind==GardenTerrain.STREAM: degree+=1
+					check(degree in [1,2],"profile streams stay narrow and unbranched")
+					if degree==1:
+						ends+=1
+						check(cell%16>0 and cell%16<15 and cell/16>0 and cell/16<15,"profile stream ends remain inside the field")
+				check(ends==2,"each profile stream has two ends")
+		var fallback := GardenTerrain.fallback(selected)
+		check(fallback.cells.size()==profile.min_tiles and GardenTerrain.decode(fallback.snapshot())!=null,"fallback respects level %d budget and connectivity" % selected)
+		check(components(fallback,GardenTerrain.STREAM,true).size()==profile.streams,"fallback retains level identity")
+	var meadow := Session.fresh(42)
+	check(meadow.terrain.cells.size()<=14 and components(meadow.terrain,GardenTerrain.STREAM,false).is_empty(),"first-time gardens use Open Meadow terrain")
+	meadow.achievements.unlocked_level=5
+	for selected in range(1,6):
+		var replacement := meadow.replacement(selected)
+		check(components(replacement.terrain,GardenTerrain.STREAM,true).size()==GardenLevels.terrain_profile(selected).streams,"New Garden uses selected level terrain")
+	# Existing saved terrain is authoritative even if it differs from today's profile.
+	var existing := Session.fresh(42,3); existing.garden_level=1
+	var restored := Session.new()
+	check(restored.restore(portable(existing)) and restored.terrain.snapshot()==existing.terrain.snapshot(),"new profiles never regenerate terrain in saved gardens")
 func gameplay() -> void:
 	var g := Session.fresh(7); g.coins=Amount.of(1e12)
 	var original := g.terrain.snapshot(); var balance := g.coins.power
@@ -125,5 +159,5 @@ func persistence() -> void:
 	bad=portable(overlap); bad.terrain=[{"cell":40,"kind":0,"style":0}]
 	check(not restored.restore(bad),"enemy cannot overlap terrain on restore")
 func run() -> void:
-	generation(); gameplay(); persistence()
+	generation(); level_profiles(); gameplay(); persistence()
 	print("%d terrain checks, %d failures"%[checks,failures]); quit(1 if failures else 0)

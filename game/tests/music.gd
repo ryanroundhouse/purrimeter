@@ -17,6 +17,7 @@ func run() -> void:
 		push_error("Run with -- --music-test to isolate player data."); quit(1); return
 	var scene = load("res://main.tscn").instantiate()
 	root.add_child(scene)
+	scene.game.garden_level=5; scene.game.achievements.unlocked_level=5
 	var audio: GameSound = scene.audio
 	AudioServer.set_bus_mute(0,true)
 	audio.quiet=false; audio.focus(true); audio.set_process(false)
@@ -92,7 +93,7 @@ func run() -> void:
 	audio.boss_music.seek(audio.boss_music.stream.get_length()-.08)
 	await create_timer(.25).timeout
 	check(audio.boss_music.playing and audio.boss_music.get_playback_position()<1.0,"boss score loops past its end without stopping")
-	scene.action("new"); scene.confirm.accept(); audio._process(.5)
+	scene.action("new"); scene.confirm.level_buttons[5].pressed.emit(); scene.confirm.accept(); audio._process(.5)
 	check(not scene.game.active and audio.current_theme==0 and not audio.music.stream_paused,"New Garden exits boss music")
 	scene.game.level=10; scene.game.start(); audio._process(.5)
 	scene.game.spawned=scene.game.wave_plan.size(); scene.game.step(.01)

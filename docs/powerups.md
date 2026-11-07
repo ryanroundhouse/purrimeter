@@ -1,5 +1,7 @@
 # Permanent powerups
 
+The [five-level progression](five-level-progression.md) supersedes the single endless challenge described here. In this document, historical “level” depth means **wave** depth; rebirth stays within the selected level, and finite victory stops Auto and rebirth.
+
 Status: confirmed by the user, implemented, and verified in the shared Godot game.
 
 ## Confirmed decisions

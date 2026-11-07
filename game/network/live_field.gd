@@ -16,6 +16,7 @@ static func capture(g: Session, revision: int, sequence: int, sounds: Array = []
 	garden.skins={}
 	for kind in range(3): garden.skins[str(kind)]=g.skin_id(kind)
 	garden.active=g.active; garden.auto_start=g.auto_start
+	garden.garden_level=g.garden_level; garden.completed=g.completed
 	garden.powerups=g.powerup_ranks.duplicate(); garden.discovered=g.discovered.duplicate(); garden.cat_milestones=g.cat_milestones.duplicate()
 	garden.draft_ranks=g.draft_ranks.duplicate(); garden.draft_rescue_used=g.draft_rescue_used
 	garden.towers=[]; garden.enemies=[]
@@ -55,6 +56,10 @@ static func decode(data: Dictionary) -> Session:
 	for key in VALUES+["coins"]:
 		if not PowerupSave.number(d.get(key),-1e100,1e16): return null
 	if not d.get("active") is bool or not d.get("auto_start") is bool or d.auto_start_remaining<0 or d.auto_start_remaining>3: return null
+	if not PowerupSave.number(d.get("garden_level",5),1,5,true) or not d.get("completed",false) is bool: return null
+	var limit := GardenLevels.wave_limit(int(d.get("garden_level",5)))
+	if limit>0 and (d.level>limit or d.best>limit or d.run_best>limit): return null
+	if d.get("completed",false) and (limit==0 or d.level!=limit or d.best!=limit or d.run_best!=limit or d.active or d.auto_start_remaining>0): return null
 	if not d.get("powerups") is Dictionary or d.powerups.size()>30 or not d.get("discovered") is Dictionary or d.discovered.size()>30: return null
 	for id in d.powerups:
 		var definition := Powerups.definition(str(id))
@@ -92,6 +97,7 @@ static func decode(data: Dictionary) -> Session:
 				if not PowerupSave.number(n,0,15): return null
 	var g := Session.new()
 	g.terrain=terrain
+	g.garden_level=int(d.get("garden_level",5)); g.completed=d.get("completed",false)
 	g.viewed_skins=d.get("skins",{}).duplicate()
 	for key in COUNTERS: g.set(key,int(d[key]))
 	for key in VALUES: g.set(key,float(d[key]))

@@ -5,7 +5,7 @@ const FALLBACK := "lasting_fortune"
 # id, name, band, cap, first best, best step, first rebirth, rebirth step, description
 const ITEMS := [
 	["mixed","Mixed Patrol",0,3,5,5,1,1,"Cats attack faster within 2 tiles of a different cat role. Multiple neighbors do not multiply the benefit."],
-	["supply","Supply Cache",0,3,5,5,1,1,"Successful clears award extra coins based on that level's base bounty."],
+	["supply","Supply Cache",0,3,5,5,1,1,"Successful clears award extra coins based on that wave's base bounty."],
 	["salvage","Salvage Crew",0,3,5,5,1,1,"Destroyed cats refund part of their actual recruitment and tier investment. Selling grants no extra refund."],
 	["guard","Frost Guard",0,3,5,5,1,1,"Chilled enemies deal less damage to cats. Total damage reduction is capped at 60%."],
 	["spotter","Spotter Bolts",1,3,10,5,2,2,"Scout primary hits mark an enemy for 3 seconds. A Gunner's direct hit consumes the mark for bonus damage."],
@@ -14,7 +14,7 @@ const ITEMS := [
 	["steady","Steady Aim",1,3,10,5,2,2,"Scouts retain Focus Fire buildup when their target dies. Switching away from a living target still resets it."],
 	["treasure","Treasure Trail",1,3,15,5,3,2,"Consecutive clears build extra base-bounty rewards, capped at five clears. Defeat or rebirth resets the streak."],
 	["thermal","Thermal Shock",2,3,20,5,4,2,"A direct Gunner hit deals bonus damage to an enemy already burning and chilled. Both statuses remain."],
-	["lives","Nine Lives",2,1,20,0,4,0,"Once per level attempt, save one cat from destruction and restore 35% health. One charge shared by your patrol."],
+	["lives","Nine Lives",2,1,20,0,4,0,"Once per wave attempt, save one cat from destruction and restore 35% health. One charge shared by your patrol."],
 	["triad","Triad Strike",2,3,30,5,5,2,"Primary hits from all three roles within 3 seconds trigger bonus damage. Each enemy has a 3-second recovery."],
 ]
 const BANDS := ["Basic","Advanced","Keystone"]
@@ -70,7 +70,7 @@ static func requirements(g, id: String) -> String:
 	var d := definition(id)
 	var rank: int = g.draft_rank(id)
 	if rank>=d.cap: return "Complete · all ranks owned"
-	var parts: Array[String] = ["Clear level %d · best %d"%[d.best+d.best_step*rank,g.best],"Rebirths %d / %d"%[g.rebirths,d.rebirths+d.rebirth_step*rank]]
+	var parts: Array[String] = ["Clear wave %d · best %d"%[d.best+d.best_step*rank,g.best],"Rebirths %d / %d"%[g.rebirths,d.rebirths+d.rebirth_step*rank]]
 	for prerequisite in DRAFT_REQUIRES.get(id,[]): parts.append("%s rank %d / 1"%[definition(prerequisite).name,g.draft_rank(prerequisite)])
 	if POWER_REQUIRES.has(id):
 		var power: String = POWER_REQUIRES[id]
@@ -81,7 +81,7 @@ static func effect(id: String, rank: int) -> String:
 	if rank==0: return "Not owned"
 	match id:
 		"mixed": return "+%d%% attack speed near another role"%(rank*8)
-		"supply": return "+%d%% base level bounty per clear"%(rank*25)
+		"supply": return "+%d%% base wave bounty per clear"%(rank*25)
 		"salvage": return "%d%% investment returned on destruction"%(rank*15)
 		"guard": return "%d%% less damage from chilled enemies"%(rank*10)
 		"spotter": return "+%d%% direct Gunner damage to a marked foe"%(rank*25)

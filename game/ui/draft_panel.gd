@@ -21,7 +21,7 @@ func finish_choice() -> void:
 
 func show_draft(session: Session) -> void:
 	game=session; locked=true; selected_id=""; cards.clear(); backup_button=null
-	begin_dialog("Rebirth Draft","Rebirth %d · cleared level %d this run\nChoose one permanent improvement."%[game.rebirths,game.pending_draft.depth],Vector2(1080,780))
+	begin_dialog("Rebirth Draft","Rebirth %d · cleared wave %d this run\nChoose one permanent improvement."%[game.rebirths,game.pending_draft.depth],Vector2(1080,780))
 	var grid := GridContainer.new(); grid.columns=3 if size.x>=800 else 1
 	grid.set_meta("draft_grid",true); grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation",14); grid.add_theme_constant_override("v_separation",14); body.add_child(grid)

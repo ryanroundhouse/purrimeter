@@ -25,7 +25,7 @@ func equivalent(a, b) -> bool:
 	return a==b
 
 func rich() -> Session:
-	var g := Session.new(); g.coins=Amount.of(1000000); return g
+	var g := Session.new(); g.garden_level=5; g.achievements.unlocked_level=5; g.coins=Amount.of(1000000); return g
 
 func put_enemy(g: Session, kind: int, cell: int, boss: int = -1) -> Dictionary:
 	if g.wave_plan.is_empty(): g.wave_plan=Balance.plan(g.level)
@@ -253,7 +253,7 @@ func run() -> void:
 	check(kinds==[0,1,2,3,0],"four varied bosses cycle")
 	var cleared := Session.new(); cleared.level=5; cleared.start(); cleared.spawned=cleared.wave_plan.size(); cleared.step(0.01)
 	check(cleared.level==6 and cleared.run_best==5 and cleared.best==5 and cleared.can_rebirth(),"clearing fifth level unlocks rebirth")
-	cleared.level=20; cleared.start(); cleared.spawned=cleared.wave_plan.size(); cleared.step(0.01)
+	cleared.garden_level=5; cleared.achievements.unlocked_level=5; cleared.level=20; cleared.start(); cleared.spawned=cleared.wave_plan.size(); cleared.step(0.01)
 	check(cleared.level==21 and not cleared.active,"progression continues beyond twenty")
 	var combat := rich(); combat.build(0,115); combat.start(); combat.spawned=combat.wave_plan.size(); combat.bonus_points=50
 	var victim := put_enemy(combat,0,131); victim.hp=0.01

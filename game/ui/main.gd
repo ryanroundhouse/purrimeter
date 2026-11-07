@@ -68,6 +68,7 @@ var mobile: MobileGarden
 var browser_blocked := false
 var draft_panel: Control
 var draft_saving := false
+var victory_presented := false
 
 func compact() -> bool:
 	return GamePlatform.native_mobile_controls() or GamePlatform.responsive() and (size.x<1100 or size.y<720 or GamePlatform.touch())
@@ -89,7 +90,7 @@ func _ready() -> void:
 	add_child(audio); audio.setup(testing or preview or "--multiplayer-test" in OS.get_cmdline_user_args() or "--app-preview" in OS.get_cmdline_user_args() or DisplayServer.get_name()=="headless")
 	connect_game()
 	if not testing and not preview and not read_only:
-		game.terrain=GardenTerrain.generate()
+		game.terrain=GardenTerrain.generate(0,game.garden_level)
 		achievement_save_valid=SaveStore.read_achievements(game.achievements) if not OS.has_feature("web") else true
 		if BrowserPlatform.enabled():
 			startup_save_valid=BrowserPlatform.load_garden(game)
@@ -117,6 +118,7 @@ func _ready() -> void:
 	if "--smoke-test" in OS.get_cmdline_user_args() and not read_only: smoke_test.call_deferred()
 
 func connect_game() -> void:
+	victory_presented=false
 	selected_enemy=-1
 	recent_sounds.clear()
 	if not game.achievements.earned_now.is_connected(on_achievement): game.achievements.earned_now.connect(on_achievement)
@@ -165,6 +167,8 @@ func _process(delta: float) -> void:
 		save_clock+=delta
 		if save_clock>=4.0: save_game(); save_clock=0.0
 	validate_selection()
+	if game.completed and not victory_presented and not read_only and gameplay_enabled and is_visible_in_tree() and not confirm.visible and not file_dialog.visible and not draft_panel.visible:
+		show_victory()
 	if not read_only and gameplay_enabled and not draft_saving and not game.pending_draft.is_empty() and not draft_panel.visible and not confirm.visible and not file_dialog.visible:
 		mobile.close_panel(); draft_panel.show_draft(game)
 	if fanfare!=null and not read_only:
@@ -178,14 +182,28 @@ func save_achievements() -> void:
 	if read_only or testing or preview or not achievement_save_valid or OS.has_feature("web"): return
 	if SaveStore.write_achievements(game.achievements)!=OK: status="Unable to save achievements. Export your garden to keep your progress."
 
-func new_garden() -> void:
+func new_garden(selected_level: int = 1) -> void:
+	var next := game.replacement(selected_level)
+	if next==null: status="Beat the preceding level to unlock this garden."; return
 	draft_panel.finish_choice()
 	browser_blocked=false; startup_save_valid=true
-	var book := game.achievements
-	game=Session.fresh(); game.achievements=book; game.paused=true; connect_game()
+	game=next; connect_game(); mobile.close_panel(); mobile.pending=-1
 	selected=-1; selected_enemy=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0
-	status="A fresh garden. Your achievements are yours to keep."
+	status="%s · A fresh garden. Start wave 1 when ready." % GardenLevels.title(game.garden_level)
 	save_game(); garden_replaced.emit()
+
+func choose_level() -> void:
+	game.paused=true; mobile.close_panel(); placing=-1; mobile.pending=-1
+	confirm.show_levels(game,confirm_new_garden)
+
+func confirm_new_garden(selected_level: int) -> void:
+	if selected_level<1 or selected_level>game.achievements.unlocked_level: return
+	ask("Start %s?" % GardenLevels.title(selected_level),"This replaces your garden and resets coins, cats, powerups, discoveries, draft improvements, best wave and rebirth bonuses. Your level unlocks, achievements and cat skins remain.","New garden",func(): new_garden(selected_level))
+
+func show_victory() -> void:
+	if not game.completed or read_only: return
+	victory_presented=true; game.paused=true; mobile.close_panel(); placing=-1; mobile.pending=-1
+	confirm.show_victory(game,func(): confirm_new_garden(game.garden_level+1),choose_level)
 
 func save_game() -> void:
 	if read_only or testing or preview or browser_blocked or draft_saving: return
@@ -215,7 +233,7 @@ func commit_draft(choice: String = "") -> void:
 			draft_panel.show_draft(game); play_game_sound("rebirth",6)
 		else:
 			draft_panel.finish_choice()
-			status="%s · rank %d. Start level 1 when ready."%[RebirthDraft.definition(choice).name,game.draft_rank(choice)]
+			status="%s · rank %d. Start wave 1 when ready."%[RebirthDraft.definition(choice).name,game.draft_rank(choice)]
 			play_game_sound("upgrade",6)
 	else:
 		draft_saving=false
@@ -373,6 +391,7 @@ func enemy_rect(e: Dictionary) -> Rect2:
 
 func action(id: String) -> void:
 	if draft_saving: return
+	if game.completed and (id.begins_with("cat") or id in ["pause","resume","speed","auto_start","upgrade","repair","sell","train","powerup_buy","rebirth"]): return
 	if not game.pending_draft.is_empty() and id not in ["export","menu"]: return
 	if browser_blocked and id not in ["export","import","menu","help","new"]: return
 	if read_only and not (id.begins_with("powerup:") or id in ["powerup_back","powerup_available","powerup_owned","powerup_prev","powerup_next","draft_collection"]): return
@@ -392,13 +411,14 @@ func action(id: String) -> void:
 		"route": route_on=not route_on
 		"auto_start":
 			game.set_auto_start(not game.auto_start)
-			status="Auto-start on. Cleared levels continue after a 3-second countdown." if game.auto_start else "Auto-start off. Start each level when you are ready."
+			status="Auto-start on. Cleared waves continue after a 3-second countdown." if game.auto_start else "Auto-start off. Start each wave when you are ready."
 		"sound":
 			audio.set_mute(not audio.muted)
 			if not testing and not preview: prefs.set_value("audio","muted",audio.muted); BrowserPlatform.save_settings("audio",prefs) if BrowserPlatform.enabled() else prefs.save("user://settings.cfg")
 			audio_settings_changed.emit()
 		"start":
-			if game.start(): status="Level %d · %s" % [game.level,Balance.title(game.level)]
+			if game.completed: show_victory()
+			elif game.start(): status="%s · %s" % [game.progress_label(),Balance.title(game.level)]
 		"upgrade": game.upgrade(selected)
 		"repair": game.repair(selected)
 		"sell": game.sell(selected); selected=-1
@@ -415,7 +435,7 @@ func action(id: String) -> void:
 			if game.can_rebirth():
 				game.paused=true
 				confirm.show_rebirth(game.run_best,game.bonus_points,commit_draft)
-		"new": ask("Start a completely new garden?","This resets coins, cats, powerups, discoveries, draft improvements, best level and rebirth bonuses. Your achievements and lifetime achievement progress remain.","New garden",new_garden)
+		"new": choose_level()
 		"export":
 			if BrowserPlatform.enabled():
 				game.paused=true; BrowserPlatform.current.bridge.exportSave(str(BrowserPlatform.current.bridge.initial()) if not startup_save_valid else JSON.stringify(game.snapshot(),"\t",true,true)); return
@@ -435,8 +455,8 @@ func ask(title: String, message: String, accept_text: String, callback: Callable
 func file_selected(path: String) -> void:
 	if file_action=="export": status="Patrol exported." if SaveStore.write(game,path)==OK else "Export failed. Choose a writable folder."
 	else:
-		ask("Replace this patrol?","Importing replaces your current progress with the selected save.","Replace patrol",func():
-			if SaveStore.read_into(game,path): sync_music(true); selected=-1; selected_enemy=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0; status="Patrol imported and paused."; save_game(); garden_replaced.emit()
+		ask("Replace this patrol?","Importing replaces your current garden. Level unlocks, achievements and cat skins are preserved.","Replace patrol",func():
+			if SaveStore.read_into(game,path): victory_presented=false; sync_music(true); selected=-1; selected_enemy=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0; status="Patrol imported and paused."; save_game(); garden_replaced.emit()
 			else: status="Invalid save. Your current patrol has not changed.")
 
 func box(rect: Rect2, color: Color, radius: float = 0.0) -> void:
@@ -454,6 +474,7 @@ func wrapped(value: String, at: Vector2, width: float, size: int = 14, color: Co
 	paragraph.draw(get_canvas_item(),at,color)
 
 func button(label: String, rect: Rect2, id: String, enabled: bool = true, lit: bool = false) -> void:
+	if game.completed and (id.begins_with("cat") or id in ["pause","resume","speed","auto_start","upgrade","repair","sell","train","powerup_buy","rebirth"]): enabled=false
 	if read_only and not (id.begins_with("powerup:") or id in ["powerup_back","powerup_available","powerup_owned","powerup_prev","powerup_next"]): enabled=false
 	var hovered := focus_id.is_empty() and rect.has_point(get_local_mouse_position())
 	var fill := MINT if lit and enabled else PANEL
@@ -466,16 +487,17 @@ func button(label: String, rect: Rect2, id: String, enabled: bool = true, lit: b
 	buttons.append({"rect":rect,"id":id,"enabled":enabled})
 
 func checkbox(label: String, rect: Rect2, id: String, checked: bool) -> void:
+	var enabled := not read_only and not game.completed
 	var hovered := focus_id.is_empty() and rect.has_point(get_local_mouse_position())
-	if hovered: box(rect,PANEL,6)
+	if hovered and enabled: box(rect,PANEL,6)
 	var mark := Rect2(rect.position+Vector2(8,12),Vector2(20,20))
 	box(mark,MINT if checked else PANEL,3)
 	if checked:
 		draw_polyline(PackedVector2Array([mark.position+Vector2(4,10),mark.position+Vector2(8,14),mark.position+Vector2(16,5)]),INK,2.5,true)
 	else: draw_rect(mark,CREAM,false,1.5)
-	text(label,rect.position+Vector2(38,12),16,CREAM)
+	text(label,rect.position+Vector2(38,12),16,CREAM if enabled else DISABLED)
 	if focus_id==id: draw_rect(rect.grow(3),MINT,false,2)
-	buttons.append({"rect":rect,"id":id,"enabled":true})
+	buttons.append({"rect":rect,"id":id,"enabled":enabled})
 
 func text_fit(value: String, at: Vector2, width: float, font_size: int = 16, color: Color = CREAM) -> void:
 	var fitted := value
@@ -540,8 +562,8 @@ func _draw() -> void:
 	text("Read-only · inspect cats, enemies and powerups" if read_only else "The Garden Guard",Vector2(30,59),16,MUTED)
 	right_text(game.coins.label(),Vector2(492,18),32,GOLD)
 	right_text("coins",Vector2(492,58),15,MUTED)
-	text_fit("Level %d" % game.level,Vector2(528,24),204,25,MINT)
-	text_fit("Personal best  %d" % game.best,Vector2(528,60),204,15,MUTED)
+	text_fit(GardenLevels.level_name(game.garden_level),Vector2(528,24),204,23,MINT)
+	text_fit("Level %d · Wave %d%s" % [game.garden_level,game.level," / %d" % game.wave_limit() if game.wave_limit()>0 else " · Endless"],Vector2(528,60),204,15,MUTED)
 	button("Resume" if game.paused else "Pause",Rect2(772,25,108,44),"pause")
 	button("%d× Speed" % game.speed,Rect2(888,25,108,44),"speed",true,game.speed==2)
 	button("Menu · Esc",Rect2(1004,25,248,44),"menu")
@@ -713,31 +735,33 @@ func draw_sidebar() -> void:
 		draw_enemy_inspector(inspected_enemy())
 	else:
 		draw_powerups()
-	var rebirth_label := "Rebirth · choose a reward" if game.can_rebirth() else "Rebirth · clear level 5"
+	var rebirth_label := "Rebirth · choose a reward" if game.can_rebirth() else "Rebirth · clear wave 5"
 	button(rebirth_label,Rect2(772,647,272,38),"rebirth",game.can_rebirth())
 	button("Draft Collection",Rect2(1052,647,200,38),"draft_collection")
 	# Keep progression metadata with the rebirth controls, above the wave separator.
 	right_text("%d rebirths · coins +%s%%" % [game.rebirths,Amount.of(game.bonus_points).label()],Vector2(1252,687),11,MUTED)
 	draw_line(Vector2(772,705),Vector2(1252,705),LINE,1)
-	text_fit(Balance.title(game.level),Vector2(772,711),480,20,GOLD if game.level%10==0 else CREAM)
+	text_fit("Level complete" if game.completed else Balance.title(game.level),Vector2(772,711),480,20,GOLD if game.level%10==0 else CREAM)
 	if game.active:
 		text("%d on the field · %d / %d arrived" % [game.enemies.size(),game.spawned,game.wave_plan.size()],Vector2(772,741),15,MUTED)
 		var health := game.level_health_fraction()
-		text("Level health · %d%%" % ceili(health*100.0),Vector2(772,765),14,CREAM)
+		text("Wave health · %d%%" % ceili(health*100.0),Vector2(772,765),14,CREAM)
 		bar(Rect2(944,773,308,7),health,PINK,LINE)
 	elif game.auto_start_remaining>0.0:
-		text("Countdown paused · Space resumes" if game.paused else "Next level in %ds · Space pauses" % ceili(game.auto_start_remaining),Vector2(772,741),15,MUTED)
+		text("Countdown paused · Space resumes" if game.paused else "Next wave in %ds · Space pauses" % ceili(game.auto_start_remaining),Vector2(772,741),15,MUTED)
 	else:
-		wrapped(Balance.preview(game.level),Vector2(772,741),480,15,MUTED)
+		wrapped("All %d waves cleared. Choose your next garden." % game.wave_limit() if game.completed else Balance.preview(game.level),Vector2(772,741),480,15,MUTED)
 	var start_rect := Rect2(772,794,364,44)
-	if game.auto_start_remaining>0.0 and game.paused:
+	if game.completed:
+		button("Level complete · Next garden",start_rect,"start",true,true)
+	elif game.auto_start_remaining>0.0 and game.paused:
 		button("Resume countdown",start_rect,"resume",true,true)
 	elif game.active and game.paused:
-		button("Resume level %d" % game.level,start_rect,"resume",true,true)
+		button("Resume wave %d" % game.level,start_rect,"resume",true,true)
 	elif game.active:
 		button("Wave in progress",start_rect,"start",false)
 	else:
-		button("Start level %d   ·   N" % game.level,start_rect,"start",true,true)
+		button("Start wave %d   ·   N" % game.level,start_rect,"start",true,true)
 	checkbox("Auto",Rect2(1148,794,104,44),"auto_start",game.auto_start)
 
 func enemy_effects(e: Dictionary) -> Array[String]:
@@ -847,6 +871,7 @@ func draw_gallery() -> void:
 		text(Balance.BOSSES[i].subtitle,Vector2(35+i*308,865),13,MUTED)
 
 func make_preview() -> void:
+	game.garden_level=5; game.achievements.unlocked_level=5
 	var args := OS.get_cmdline_user_args()
 	var index := args.find("--preview")
 	preview_path=args[index+1] if index>=0 and index+1<args.size() else "user://preview.png"
@@ -864,7 +889,7 @@ func make_preview() -> void:
 		for kind in range(3):
 			for tier in range(1,7):
 				game.shots.append({"from":Vector2(tier*2,kind*3),"to":Vector2(tier*2+1.5,kind*3+2),"kind":kind,"tier":tier,"life":0.14})
-	status="Boss level 10 · Build a maze, evolve your cats, and hold the garden."
+	status="Boss wave 10 · Build a maze, evolve your cats, and hold the garden."
 	var state_index := args.find("--preview-state")
 	if state_index>=0 and state_index+1<args.size():
 		match args[state_index+1]:
@@ -915,7 +940,7 @@ func make_preview() -> void:
 				if args[state_index+1]=="countdown-two": game.auto_start_remaining=2.0
 				if args[state_index+1]=="countdown-one": game.auto_start_remaining=1.0
 				if args[state_index+1]=="auto-start-off": game.set_auto_start(false)
-				status="Level cleared. Space pauses the countdown." if game.auto_start else "Auto-start off. Start each level when you are ready."
+				status="Wave cleared. Space pauses the countdown." if game.auto_start else "Auto-start off. Start each wave when you are ready."
 			"running": game.paused=false
 			"long":
 				game.level=2000; game.best=1999; game.training=10000
@@ -938,7 +963,8 @@ func capture() -> void:
 
 func smoke_test() -> void:
 	await get_tree().process_frame
-	# Start the isolated fixture in a known state.
+	# Start the isolated endless fixture in a known state.
+	game.garden_level=5; game.achievements.unlocked_level=5
 	game.paused=false
 	var results := {}
 	action("cat0"); click_at(center(115)); results["recruit input"]=game.towers.size()==1
@@ -1008,7 +1034,7 @@ func smoke_test() -> void:
 	results["help copy fits without scrolling"]=confirm.body.size.y<=confirm.scroll.size.y+1
 	confirm.accept_button.pressed.emit()
 	results["help dismissal keeps combat paused"]=not confirm.visible and game.paused
-	game.active=false; game.level=23; game.best=22; game.run_best=22; game.bonus_points=150; game.start()
+	game.garden_level=5; game.achievements.unlocked_level=5; game.active=false; game.level=23; game.best=22; game.run_best=22; game.bonus_points=150; game.start()
 	game.tower_at(120).hp=0.27
 	action("rebirth")
 	await get_tree().process_frame; await get_tree().process_frame
@@ -1086,7 +1112,7 @@ func enemy_inspection_smoke(results: Dictionary) -> void:
 	last.cell=118; click_at(center(118)); game.enemies.clear(); game.step(0.01)
 	results["victory immediately clears enemy selection"]=not game.active and selected_enemy==-1
 	game.start(); last=game.spawn_enemy(game.wave_plan[0]); last.cell=118; click_at(center(118))
-	action("new"); confirm.accept_button.pressed.emit()
+	action("new"); confirm.level_buttons[1].pressed.emit(); confirm.accept_button.pressed.emit()
 	results["new garden clears selected enemy identity"]=selected_enemy==-1 and not game.active
 
 func powerup_smoke(results: Dictionary) -> void:
@@ -1153,7 +1179,7 @@ func browser_event(kind: String, value: String) -> void:
 			var data = JSON.parse_string(value)
 			var candidate := Session.new()
 			if not data is Dictionary or not candidate.restore(data): status="Invalid save. Your garden has not changed."; return
-			ask("Replace this garden?","Importing replaces this garden. Earned achievements are preserved.","Replace garden",func():
+			ask("Replace this garden?","Importing replaces this garden. Level unlocks, achievements and cat skins are preserved.","Replace garden",func():
 				if game.restore(data):
-					browser_blocked=false; startup_save_valid=true; selected=-1; selected_enemy=-1; placing=-1; mobile.close_panel(); sync_music(true)
+					victory_presented=false; browser_blocked=false; startup_save_valid=true; selected=-1; selected_enemy=-1; placing=-1; mobile.close_panel(); sync_music(true)
 					status="Garden imported and paused."; save_game(); garden_replaced.emit())

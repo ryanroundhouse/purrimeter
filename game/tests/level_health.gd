@@ -36,7 +36,7 @@ func _initialize() -> void:
 	restored.step(10)
 	check(near(restored.level_health_fraction(),before),"paused restored wave preserves health")
 	for level in [4,10,100,2000,1000000000]:
-		g=Session.new(); g.level=level; g.start()
+		g=Session.new(); g.garden_level=5; g.achievements.unlocked_level=5; g.level=level; g.start()
 		var full_through_arrivals := true
 		while g.spawned<g.wave_plan.size():
 			spawn_next(g)

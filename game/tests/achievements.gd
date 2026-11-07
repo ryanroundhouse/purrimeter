@@ -9,7 +9,7 @@ func check(ok: bool, message: String) -> void:
 	print(("PASS " if ok else "FAIL ")+message)
 
 func garden(level: int = 1, kind: int = 0) -> Session:
-	var g := Session.new(); g.level=level; g.coins=Amount.from_power(100)
+	var g := Session.new(); g.garden_level=5; g.achievements.unlocked_level=5; g.level=level; g.coins=Amount.from_power(100)
 	g.build(kind,119)
 	return g
 
@@ -115,7 +115,7 @@ func _initialize() -> void:
 	invalid=before.duplicate(true); invalid.achievement_run={"attempt":{"level":10,"failed":{},"repaired":[]}}
 	check(not fresh.restore(invalid) and fresh.snapshot()==before,"inactive save cannot claim active eligibility")
 	g=garden(10); g.start(); snapshot=g.snapshot(); snapshot.erase("achievements"); snapshot.erase("achievement_run")
-	snapshot.kills=100; snapshot.best=25
+	snapshot.version=5; snapshot.kills=100; snapshot.best=25
 	resumed=Session.new(); check(resumed.restore(snapshot),"legacy save migration")
 	check(resumed.achievements.earned.has("kills100") and resumed.achievements.earned.has("level25"),"legacy recorded progress credited")
 	resumed.paused=false; clear(resumed)

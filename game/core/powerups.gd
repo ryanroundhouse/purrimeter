@@ -15,7 +15,7 @@ const ITEMS = [
 	["repair", "Repair Kit", "Economy", 5, 180, 2.4, "kills", 40, 100, -1, "Paid repairs cost 10% less per rank."],
 	["beds", "Reinforced Beds", "Durability", 5, 180, 2.5, "best", 3, 4, -1, "Every cat gains 15% additional maximum health per rank. Health percentage is preserved."],
 	["fur", "Thick Fur", "Durability", 5, 300, 2.8, "best", 5, 5, -1, "Cats take 6% less damage per rank."],
-	["catnap", "Catnap", "Durability", 5, 320, 2.6, "best", 4, 4, -1, "Clearing a level restores 5% of each surviving cat's maximum health per rank."],
+	["catnap", "Catnap", "Durability", 5, 320, 2.6, "best", 4, 4, -1, "Clearing a wave restores 5% of each surviving cat's maximum health per rank."],
 	["aid", "First Aid", "Durability", 5, 700, 3.0, "rebirths", 1, 1, -1, "During combat, cats regenerate 0.2% of maximum health each second per rank."],
 	["stand", "Last Stand", "Durability", 1, 900, 1.0, "best", 8, 0, -1, "Cats below 30% health attack 30% faster until their health recovers."],
 	["needle", "Needle Bolts", "Bolt", 3, 350, 3.2, "best", 4, 6, 0, "Bolts pierce up to one extra enemy per rank behind their target, dealing 60% damage."],
@@ -75,12 +75,12 @@ static func requirement_text(g, id: String, next_rank: int) -> String:
 		var label: String
 		match metric:
 			"kills": label="Lifetime kills %d / %d"%[current,int(needed)]
-			"best": label="Clear level %d · best %d"%[needed,current]
+			"best": label="Clear wave %d · best %d"%[needed,current]
 			"rebirths": label="Rebirths %d / %d"%[current,needed]
 			"lucky": label="Lucky Claws rank %d / %d"%[current,needed]
 			_: label="%s tier %d / %d"%[["Bolt","Cannon","Frost"][int(metric.right(1))],current,needed]
 		parts.append(label)
-	return "  ·  ".join(parts) if not parts.is_empty() else "Available from level 1"
+	return "  ·  ".join(parts) if not parts.is_empty() else "Available from wave 1"
 
 static func effect(id: String, rank: int) -> String:
 	if rank==0: return "Not purchased"

@@ -8,9 +8,10 @@ var achievement_run: Dictionary = {}
 var viewed_skins: Dictionary = {} # Remote presentation only; never grants ownership.
 var terrain := GardenTerrain.new()
 
-static func fresh(seed_value: int = 0) -> Session:
+static func fresh(seed_value: int = 0, selected_level: int = 1) -> Session:
 	var result := Session.new()
-	result.terrain=GardenTerrain.generate(seed_value)
+	result.garden_level=selected_level
+	result.terrain=GardenTerrain.generate(seed_value,selected_level)
 	return result
 
 func skin_id(kind: int) -> String:
@@ -20,7 +21,10 @@ var towers: Array = []
 var enemies: Array = []
 var shots: Array = []
 var coins := Amount.of(200)
-var level := 1 # Challenge ready to start, or currently active. Never last-completed.
+var level := 1 # Wave ready/active, or the final cleared wave in a completed garden.
+var garden_level := 1 # Selected multi-wave level. `level` retains its legacy wave/save meaning.
+var completed := false
+var legacy_endless := false
 var best := 0
 var run_best := 0
 var rebirths := 0
@@ -52,6 +56,18 @@ var open_field: Dictionary = {}
 var breach_fields: Dictionary = {}
 var route_age := 0.0
 var last_defeat := 0
+
+func wave_limit() -> int:
+	return GardenLevels.wave_limit(garden_level)
+
+func progress_label() -> String:
+	return "%s · Wave %d%s" % [GardenLevels.title(garden_level),level," / %d" % wave_limit() if wave_limit()>0 else ""]
+
+func replacement(selected_level: int) -> Session:
+	if selected_level<1 or selected_level>achievements.unlocked_level: return null
+	var next := Session.fresh(0,selected_level)
+	next.garden_level=selected_level; next.achievements=achievements; next.paused=true
+	return next
 
 func invalidate_routes() -> void:
 	open_field.clear(); breach_fields.clear(); route_age=0.0
@@ -85,7 +101,7 @@ func choose_draft(id: String) -> bool:
 	draft_ranks[id]=draft_rank(id)+1
 	if id==RebirthDraft.FALLBACK: bonus_points+=10.0
 	pending_draft.clear(); paused=true; invalidate_routes()
-	notice.emit("%s · rank %d. Start level 1 when ready."%[RebirthDraft.definition(id).name,draft_rank(id)])
+	notice.emit("%s · rank %d. Start wave 1 when ready."%[RebirthDraft.definition(id).name,draft_rank(id)])
 	sound.emit("upgrade",6); changed.emit(); return true
 
 func refresh_powerups() -> void:
@@ -99,7 +115,7 @@ func powerup_complete(id: String) -> bool:
 	return not d.is_empty() and d.cap>0 and powerup_rank(id)>=d.cap
 
 func can_buy_powerup(id: String) -> bool:
-	if not pending_draft.is_empty(): return false
+	if completed or not pending_draft.is_empty(): return false
 	if Powerups.definition(id).is_empty() or powerup_complete(id): return false
 	return Powerups.eligible(self,id,powerup_rank(id)+1) and coins.enough(Powerups.cost(id,powerup_rank(id)))
 
@@ -124,6 +140,7 @@ func tower_at(cell: int) -> Dictionary:
 	return {}
 
 func placement_error(cell: int, kind: int) -> String:
+	if completed: return "Level complete. Choose a new garden to recruit cats."
 	if not pending_draft.is_empty(): return "Choose your rebirth improvement first."
 	if cell < 0 or cell > 255: return "Choose a tile inside the garden."
 	if cell == Routes.ENTRANCE or cell == Routes.EXIT: return "Keep the entrance and exit clear."
@@ -148,7 +165,7 @@ func build(kind: int, cell: int) -> bool:
 	refresh_powerups(); invalidate_routes(); sound.emit("build",1); changed.emit(); return true
 
 func upgrade(cell: int) -> bool:
-	if not pending_draft.is_empty(): return false
+	if completed or not pending_draft.is_empty(): return false
 	var t := tower_at(cell)
 	if t.is_empty() or t.tier>=6: return false
 	var cost := upgrade_cost(t)
@@ -158,7 +175,7 @@ func upgrade(cell: int) -> bool:
 	refresh_powerups(); invalidate_routes(); sound.emit("upgrade",t.tier); changed.emit(); return true
 
 func repair(cell: int) -> bool:
-	if not pending_draft.is_empty(): return false
+	if completed or not pending_draft.is_empty(): return false
 	var t := tower_at(cell)
 	if t.is_empty() or t.hp>=0.999999: return false
 	var cost := repair_cost(t)
@@ -168,7 +185,7 @@ func repair(cell: int) -> bool:
 	refresh_powerups(); invalidate_routes(); sound.emit("build",1); changed.emit(); return true
 
 func sell(cell: int) -> bool:
-	if not pending_draft.is_empty(): return false
+	if completed or not pending_draft.is_empty(): return false
 	var t := tower_at(cell)
 	if t.is_empty(): return false
 	coins=coins.plus(refund(t)); towers.erase(t)
@@ -179,10 +196,10 @@ func train() -> bool:
 	return buy_powerup("training")
 
 func can_rebirth() -> bool:
-	return run_best>=5 and pending_draft.is_empty()
+	return not completed and run_best>=5 and pending_draft.is_empty()
 
 func set_auto_start(enabled: bool) -> void:
-	if not pending_draft.is_empty(): return
+	if completed or not pending_draft.is_empty(): return
 	if auto_start==enabled: return
 	auto_start=enabled
 	auto_start_remaining=AUTO_START_DELAY if enabled and not active and last_defeat==0 and level>1 and run_best>=level-1 else 0.0
@@ -207,21 +224,22 @@ func recover() -> void:
 		coins=Amount.of(50)
 
 func defeat() -> void:
-	if not pending_draft.is_empty(): return
+	if completed or not pending_draft.is_empty(): return
 	draft_streak=0
 	achievements.record(self,"defeat")
 	last_defeat=level; level=maxi(1,level-1); active=false; paused=true; auto_start_remaining=0.0
 	enemies.clear(); shots.clear(); aftershocks.clear(); wave_plan.clear(); spawned=0; spawn_clock=0
 	invalidate_routes(); recover(); sound.emit("lose",1)
-	notice.emit("A foe escaped level %d. Regroup at level %d — your coins and surviving cats remain." % [last_defeat,level])
+	notice.emit("A foe escaped wave %d. Regroup at wave %d — your coins and surviving cats remain." % [last_defeat,level])
 	changed.emit()
 
 func start() -> bool:
-	if active or not pending_draft.is_empty(): return false
+	if completed or active or not pending_draft.is_empty(): return false
+	if wave_limit()>0 and level>wave_limit(): return false
 	DraftCombat.reset_attempt(self)
 	wave_plan=Balance.plan(level); spawned=0; spawn_clock=0; active=true; paused=false; auto_start_remaining=0.0
 	achievements.record(self,"start")
-	last_defeat=0; sound.emit("wave",1); notice.emit("Level %d · %s" % [level,Balance.title(level)]); changed.emit(); return true
+	last_defeat=0; sound.emit("wave",1); notice.emit("Wave %d · %s" % [level,Balance.title(level)]); changed.emit(); return true
 
 func foe_speed(e: Dictionary) -> float:
 	var base: float = Balance.BOSSES[e.boss].speed if e.boss>=0 else Balance.FOES[e.kind].speed
@@ -312,7 +330,7 @@ func damage(e: Dictionary, power: float) -> void:
 	e.hp-=pow(10.0,clampf(power-e.hp_power,-300,100))
 
 func step(dt: float, real_dt: float = -1.0) -> void:
-	if paused or not pending_draft.is_empty(): return
+	if completed or paused or not pending_draft.is_empty(): return
 	elapsed+=dt
 	for shot in shots: shot.life-=dt
 	shots=shots.filter(func(s): return s.life>0)
@@ -375,23 +393,29 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 	if spawned>=wave_plan.size() and enemies.is_empty():
 		DraftCombat.clear_level(self)
 		achievements.record(self,"clear")
-		active=false; best=maxi(best,level); run_best=maxi(run_best,level); level+=1
+		active=false; best=maxi(best,level); run_best=maxi(run_best,level)
+		completed=wave_limit()>0 and level==wave_limit()
+		if completed:
+			achievements.unlocked_level=maxi(achievements.unlocked_level,garden_level+1)
+			paused=true; shots.clear()
+		else: level+=1
 		wave_plan.clear(); aftershocks.clear(); spawned=0; spawn_clock=0.0
 		for t in towers: t.hp=minf(1.0,t.hp+0.05*powerup_rank("catnap"))
 		refresh_powerups()
-		auto_start_remaining=AUTO_START_DELAY if auto_start else 0.0
-		sound.emit("clear",1)
-		notice.emit("Level cleared. Next level in 3 seconds. Space pauses." if auto_start else "Level cleared. Prepare your patrol, train, or rebirth.")
+		auto_start_remaining=AUTO_START_DELAY if auto_start and not completed else 0.0
+		sound.emit("win" if completed else "clear",1)
+		if completed: notice.emit("Level %d complete! %s unlocked." % [garden_level,GardenLevels.title(garden_level+1)])
+		else: notice.emit("Wave cleared. Next wave in 3 seconds. Space pauses." if auto_start else "Wave cleared. Prepare your patrol, train, or rebirth.")
 		changed.emit()
 
 func snapshot() -> Dictionary:
 	refresh_powerups()
-	return {"version":5,"terrain":terrain.snapshot(),"draft_ranks":draft_ranks.duplicate(),"draft_seed":draft_seed,"pending_draft":pending_draft.duplicate(true),"draft_streak":draft_streak,"draft_rescue_used":draft_rescue_used,"achievements":achievements.snapshot(),"achievement_run":achievement_run.duplicate(true),"powerups":powerup_ranks.duplicate(true),"discovered":discovered.duplicate(true),"cat_milestones":cat_milestones.duplicate(),"combat_seed":combat_seed,"aftershocks":aftershocks.duplicate(true),"coins":coins.power,"towers":towers.duplicate(true),"enemies":enemies.duplicate(true),"level":level,"best":best,"run_best":run_best,"rebirths":rebirths,"bonus_points":bonus_points,"training":training,"kills":kills,"active":active,"spawned":spawned,"spawn_clock":spawn_clock,"next_id":next_id,"elapsed":elapsed,"last_defeat":last_defeat,"auto_start":auto_start,"auto_start_remaining":auto_start_remaining}
+	return {"version":6,"garden_level":garden_level,"completed":completed,"legacy_endless":legacy_endless,"terrain":terrain.snapshot(),"draft_ranks":draft_ranks.duplicate(),"draft_seed":draft_seed,"pending_draft":pending_draft.duplicate(true),"draft_streak":draft_streak,"draft_rescue_used":draft_rescue_used,"achievements":achievements.snapshot(),"achievement_run":achievement_run.duplicate(true),"powerups":powerup_ranks.duplicate(true),"discovered":discovered.duplicate(true),"cat_milestones":cat_milestones.duplicate(),"combat_seed":combat_seed,"aftershocks":aftershocks.duplicate(true),"coins":coins.power,"towers":towers.duplicate(true),"enemies":enemies.duplicate(true),"level":level,"best":best,"run_best":run_best,"rebirths":rebirths,"bonus_points":bonus_points,"training":training,"kills":kills,"active":active,"spawned":spawned,"spawn_clock":spawn_clock,"next_id":next_id,"elapsed":elapsed,"last_defeat":last_defeat,"auto_start":auto_start,"auto_start_remaining":auto_start_remaining}
 
 func restore(data: Dictionary) -> bool:
 	# Validate everything before replacing the live run.
 	var ints := ["level","best","run_best","rebirths","training","kills","spawned","next_id","last_defeat"]
-	if not PowerupSave.number(data.get("version"),2,5,true): return false
+	if not PowerupSave.number(data.get("version"),2,6,true): return false
 	var restored_terrain := GardenTerrain.decode(data.get("terrain") if data.version>=5 else [])
 	if restored_terrain==null: return false
 	if not PowerupSave.valid(data): return false
@@ -431,6 +455,11 @@ func restore(data: Dictionary) -> bool:
 	var plan := Balance.plan(int(data.level))
 	if data.spawned>plan.size() or (not data.active and not data.enemies.is_empty()): return false
 	if not DraftSave.valid(data): return false
+	var unlocked := achievements.unlocked_level
+	if data.has("achievements"): unlocked=maxi(unlocked,Achievements.saved_unlock(data.achievements))
+	if data.version>=6:
+		if not data.has("achievements") or data.achievements.version!=2 or not GardenLevels.valid(data,unlocked): return false
+		if data.completed and unlocked<int(data.garden_level)+1: return false
 	terrain=restored_terrain
 	for key in ints: set(key,int(data[key]))
 	auto_start=data.get("auto_start",false); auto_start_remaining=float(remaining_delay)
@@ -448,4 +477,9 @@ func restore(data: Dictionary) -> bool:
 	if data.has("achievements"): achievements.merge(data.achievements)
 	else: achievements.credit_saved(self)
 	if data.version<4: achievements.highest("rebirths",rebirths); achievements.evaluate(true)
+	if data.version<6:
+		garden_level=5; completed=false; legacy_endless=true
+		achievements.unlocked_level=maxi(achievements.unlocked_level,GardenLevels.legacy_unlock(maxi(best,int(achievements.values.get("best",0)))))
+	else:
+		garden_level=int(data.garden_level); completed=data.completed; legacy_endless=data.legacy_endless
 	wave_plan=plan if active else []; paused=true; shots.clear(); invalidate_routes(); return true

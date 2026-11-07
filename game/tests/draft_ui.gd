@@ -17,7 +17,7 @@ func run() -> void:
 	var app=load("res://app.tscn").instantiate(); root.add_child(app)
 	await settle(); app.show_game(false); await settle()
 	var view=app.local_view; view.testing=true
-	view.game.best=30; view.game.run_best=30; view.game.level=31; view.game.rebirths=5; view.game.powerup_ranks={"embers":1,"focus":1}; view.game.draft_ranks={"supply":1,"spotter":1,"front":1}
+	view.game.garden_level=5; view.game.achievements.unlocked_level=5; view.game.best=30; view.game.run_best=30; view.game.level=31; view.game.rebirths=5; view.game.powerup_ranks={"embers":1,"focus":1}; view.game.draft_ranks={"supply":1,"spotter":1,"front":1}
 	view.action("rebirth"); await settle()
 	check(view.confirm.visible and view.game.rebirths==5,"confirmation precedes rebirth commitment")
 	await capture_image("confirmation")
@@ -55,7 +55,7 @@ func run() -> void:
 	check(not panel.visible,"collection closes normally")
 	for dimensions in [Vector2i(390,844),Vector2i(360,740),Vector2i(844,390)]:
 		root.size=dimensions; await settle(); app.layout_game(); await settle()
-		view.game.best=30; view.game.run_best=20; view.game.level=21
+		view.game.garden_level=5; view.game.achievements.unlocked_level=5; view.game.best=30; view.game.run_best=20; view.game.level=21
 		view.action("rebirth"); await settle(); await capture_image("confirm-%dx%d"%[dimensions.x,dimensions.y])
 		view.confirm.accept_button.pressed.emit(); await settle()
 		check(panel.visible and Rect2(Vector2.ZERO,view.size).encloses(panel.panel.get_rect()),"draft fits %dx%d"%[dimensions.x,dimensions.y])

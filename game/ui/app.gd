@@ -195,7 +195,7 @@ func show_menu() -> void:
 	var description := label("Build your patrol. Grow your garden.\nKeep good company.",21,MUTED); box.add_child(description)
 	var space := Control.new(); space.custom_minimum_size.y=22; box.add_child(space)
 	box.add_child(button("Single player",func(): show_game(false),true))
-	box.add_child(label("Your garden · Level %d · %d rebirths"%[local_view.game.level,local_view.game.rebirths],16,MUTED))
+	box.add_child(label("Your garden · %s" % local_view.game.progress_label(),16,MUTED))
 	box.add_child(button("Multiplayer",func(): notice=""; show_browser(); network.connect_server()))
 	box.add_child(label("Up to 3 gardeners · Live fields and chat",16,MUTED))
 	box.add_child(button("Achievements",open_achievements))
@@ -355,7 +355,7 @@ func update_remote_label(item: Dictionary) -> void:
 	var view: Control=item.view
 	if not item.member.get("connected",false): item.details.text="Reconnecting · place reserved"; return
 	if view.remote_revision<0: item.details.text="Waiting for field…"; return
-	item.details.text="Level %d · %d rebirths · %s"%[view.game.level,view.game.rebirths,"Paused" if view.game.paused else "%d×"%view.game.speed]
+	item.details.text="%s · %s"%[view.game.progress_label(),"Complete" if view.game.completed else ("Paused" if view.game.paused else "%d×"%view.game.speed)]
 
 func receive_field(player: String, data: Dictionary) -> void:
 	if remote_cards.has(player):
@@ -664,7 +664,7 @@ func preview_scene(scene: String) -> void:
 			network.room={"id":"room","name":"Sunny corner","owner":"mine","players":[{"id":"mine","name":"You","connected":true},{"id":"maple","name":"Maple","connected":true},{"id":"pepper","name":"Pepper","connected":true}]}
 			show_game(true); local_view.make_preview(); local_view.game.paused=true; silence_fanfare()
 			for player in ["maple","pepper"]: receive_field(player,LiveField.capture(local_view.game,1,1,[]))
-			receive_chat("maple","Maple","The Thorn Crawler is back on level 10!")
+			receive_chat("maple","Maple","The Thorn Crawler is back on wave 10!")
 			receive_chat("mine","You","Holding the corner. Rerouting with the Siamese.")
 			receive_chat("pepper","Pepper","My rebirth draft offered Winter Coat. Took it.")
 			if scene=="chat": mobile_chat=true

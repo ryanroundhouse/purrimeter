@@ -7,7 +7,7 @@ func check(ok: bool, label: String) -> void:
 	print(("PASS " if ok else "FAIL ")+label)
 func near(a: float, b: float) -> bool: return absf(a-b)<0.000001
 func rich() -> Session:
-	var g := Session.new(); g.coins=Amount.of(1e12); return g
+	var g := Session.new(); g.garden_level=5; g.achievements.unlocked_level=5; g.coins=Amount.of(1e12); return g
 func foe(g: Session, cell: int, boss: int = -1) -> Dictionary:
 	if g.wave_plan.is_empty(): g.wave_plan=Balance.plan(g.level)
 	var e := g.spawn_enemy({"kind":0,"boss":boss}); e.cell=cell; e.hp_power=4.0

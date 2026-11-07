@@ -69,6 +69,21 @@ func validateState(raw []byte) (*fieldState, error) {
 	if !boolean(g["active"]) || !boolean(g["auto_start"]) || !number(g["auto_start_remaining"], 0, 3, false) {
 		return nil, bad
 	}
+	// Optional for older clients, which only had endless waves.
+	if selected, present := g["garden_level"]; present {
+		if !number(selected, 1, 5, true) || !boolean(g["completed"]) {
+			return nil, bad
+		}
+		limit := selected.(float64) * 10
+		if selected.(float64) < 5 && (g["level"].(float64) > limit || g["best"].(float64) > limit || g["run_best"].(float64) > limit) {
+			return nil, bad
+		}
+		if g["completed"].(bool) && (selected.(float64) == 5 || g["level"] != limit || g["best"] != limit || g["run_best"] != limit || g["active"].(bool) || g["auto_start_remaining"].(float64) != 0) {
+			return nil, bad
+		}
+	} else if _, present := g["completed"]; present {
+		return nil, bad
+	}
 	for _, key := range []string{"powerups", "discovered"} {
 		m, ok := g[key].(map[string]any)
 		if !ok || len(m) > 30 {

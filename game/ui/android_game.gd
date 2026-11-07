@@ -68,7 +68,7 @@ func draw() -> void:
 	pill("Fit" if zoom>1.02 else "Focus",Rect2(safe.position.x,safe.end.y-112,120,48),"mobile_fit",true,false,"fit")
 	pill("Powerups",Rect2(safe.position.x,safe.end.y-56,152,56),"mobile_powerups",true,false,"power")
 	if not v.read_only:
-		pill("Close" if recruit_open else "Recruit",Rect2(safe.end.x-132,safe.end.y-56,132,56),"android_recruit",true,true,"close" if recruit_open else "recruit")
+		pill("Close" if recruit_open else "Recruit",Rect2(safe.end.x-132,safe.end.y-56,132,56),"android_recruit",not v.game.completed,true,"close" if recruit_open else "recruit")
 	if recruit_open: draw_recruitment()
 	if v.placing>=0 and not v.read_only and not recruit_open: draw_placement()
 	if v.game.auto_start_remaining>0:
@@ -90,13 +90,13 @@ func label(value: String, color: Color, font_size: int = 18) -> void:
 	GamePlatform.apply_font(detail.get_child(-1),font_size)
 
 func wave_button_width() -> float:
-	return maxf(120,v.font.get_string_size("Resume",HORIZONTAL_ALIGNMENT_LEFT,-1,GamePlatform.ui_font_size(15)).x+54)
+	return maxf(120,v.font.get_string_size("Next level" if v.game.completed else "Resume",HORIZONTAL_ALIGNMENT_LEFT,-1,GamePlatform.ui_font_size(15)).x+54)
 
 func draw_status() -> void:
 	var width := minf(300,safe.size.x-wave_button_width()-184)
 	var rect := Rect2(safe.position,Vector2(width,52))
 	v.box(rect,HUD,26); overlay_regions.append(rect)
-	text("Level %d"%v.game.level,rect.position+Vector2(14,3),14,v.CREAM)
+	text_fit("Level %d · Wave %d" % [v.game.garden_level,v.game.level],rect.position+Vector2(14,3),width*0.6-14,14,v.CREAM)
 	var coins: String=v.game.coins.label()+"c"
 	var coin_width: float=v.font.get_string_size(coins,HORIZONTAL_ALIGNMENT_LEFT,-1,GamePlatform.ui_font_size(14)).x
 	text_fit(coins,Vector2(maxf(rect.position.x+width*0.55,rect.end.x-14-coin_width),rect.position.y+3),width*0.45-14,14,v.GOLD)
@@ -106,7 +106,7 @@ func draw_status() -> void:
 		text_fit("Health %d%%"%ceili(v.game.level_health_fraction()*100),rect.position+Vector2(14,28),width*0.6-14,12,v.MUTED)
 		v.bar(Rect2(rect.position.x+width*0.62,rect.position.y+37,width*0.38-14,4),v.game.level_health_fraction(),v.PINK,v.LINE)
 	else:
-		text_fit("Ready to start",rect.position+Vector2(14,28),width-28,12,v.MUTED)
+		text_fit("Level complete" if v.game.completed else ("Endless" if v.game.wave_limit()==0 else "%d waves · Ready to start" % v.game.wave_limit()),rect.position+Vector2(14,28),width-28,12,v.MUTED)
 
 func draw_wave_controls() -> void:
 	var width := wave_button_width()
@@ -115,9 +115,10 @@ func draw_wave_controls() -> void:
 	var running: bool=v.game.active or v.game.auto_start_remaining>0
 	var id := "resume" if v.game.paused and running else ("pause" if running else "start")
 	var caption := "Resume" if id=="resume" else ("Pause" if id=="pause" else "Start")
+	if v.game.completed: caption="Next level"; id="start"
 	pill(caption,Rect2(x,y,width,48),id,not v.read_only,id=="start","pause" if id=="pause" else "play")
-	pill("%d×"%v.game.speed,Rect2(x+width+8,y,48,48),"speed",not v.read_only)
-	pill("",Rect2(x+width+64,y,48,48),"auto_start",not v.read_only,v.game.auto_start,"auto")
+	pill("%d×"%v.game.speed,Rect2(x+width+8,y,48,48),"speed",not v.read_only and not v.game.completed)
+	pill("",Rect2(x+width+64,y,48,48),"auto_start",not v.read_only and not v.game.completed,v.game.auto_start,"auto")
 	pill("",Rect2(x+width+120,y,48,48),"menu",not v.read_only,false,"menu")
 
 func pill(caption: String, rect: Rect2, id: String, enabled: bool = true, lit: bool = false, icon: String = "") -> void:
@@ -329,7 +330,7 @@ func add_portrait(tower: Dictionary, enemy: Dictionary) -> void:
 	detail.add_child(portrait)
 
 func action_button(caption: String, id: String, enabled: bool = true) -> void:
-	panel_button(caption,func(): v.action(id); detail_key=""; update_details(),footer,enabled and not v.read_only,id in ["upgrade","powerup_buy"])
+	panel_button(caption,func(): v.action(id); detail_key=""; update_details(),footer,enabled and not v.read_only and not v.game.completed,id in ["upgrade","powerup_buy"])
 
 func update_details() -> void:
 	if not is_instance_valid(sheet) or not is_instance_valid(footer): return
@@ -366,7 +367,7 @@ func update_details() -> void:
 	elif panel=="patrol":
 		label("%d rebirths · coins +%s%%"%[v.game.rebirths,Amount.of(v.game.bonus_points).label()],v.GOLD,15)
 		panel_button("Draft Collection",func(): v.action("draft_collection"),detail)
-		panel_button("Rebirth · choose a reward" if v.game.can_rebirth() else "Rebirth · clear level 5",func(): close_panel(); v.action("rebirth"),detail,v.game.can_rebirth() and not v.read_only)
+		panel_button("Rebirth · choose a reward" if v.game.can_rebirth() else "Rebirth · clear wave 5",func(): close_panel(); v.action("rebirth"),detail,v.game.can_rebirth() and not v.read_only)
 	elif v.selected_powerup.is_empty(): label("No powerups here yet. Choose Available powers to explore your discoveries.",v.MUTED,15)
 	else:
 		var id: String=v.selected_powerup

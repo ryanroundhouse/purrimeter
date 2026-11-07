@@ -56,7 +56,8 @@ func draw() -> void:
 	v.box(Rect2(0,field.end.y,v.size.x,v.size.y-field.end.y),v.INK)
 	v.box(Rect2(0,field.position.y,field.position.x,field.size.y),v.INK)
 	v.box(Rect2(field.end.x,field.position.y,v.size.x-field.end.x,field.size.y),v.INK)
-	v.text("Level %d"%v.game.level,Vector2(12,8),22,v.MINT)
+	v.text_fit(GardenLevels.level_name(v.game.garden_level),Vector2(12,4),v.size.x*0.55,20,v.MINT)
+	v.text_fit("Level %d · Wave %d%s" % [v.game.garden_level,v.game.level," / %d" % v.game.wave_limit() if v.game.wave_limit()>0 else ""],Vector2(12,29),v.size.x*0.55,14,v.MUTED)
 	v.right_text(v.game.coins.label()+" coins",Vector2(v.size.x-12,10),20,v.GOLD)
 	var landscape := v.size.x>v.size.y
 	var header_y := 56.0 if not landscape else 8.0
@@ -79,9 +80,9 @@ func draw() -> void:
 		v.cat_sprite(kind,1,0,Rect2(r.position+Vector2((w-36)/2,0),Vector2(36,34)))
 		v.text_fit(v.game.recruit_cost(kind).label()+"c",r.position+Vector2(10,36),w-14,16,v.GOLD)
 		if v.placing==kind: v.draw_rect(r,v.MINT,false,2)
-		v.buttons.append({"rect":r,"id":"cat%d"%kind,"enabled":not v.read_only})
+		v.buttons.append({"rect":r,"id":"cat%d"%kind,"enabled":not v.read_only and not v.game.completed})
 	y+=68
-	v.button("Resume level" if v.game.active and v.game.paused else ("Wave in progress" if v.game.active else "Start level %d"%v.game.level),Rect2(x,y,width-52,44),"resume" if v.game.active and v.game.paused else "start",not v.read_only and (not v.game.active or v.game.paused),true)
+	v.button("Level complete" if v.game.completed else ("Resume wave" if v.game.active and v.game.paused else ("Wave in progress" if v.game.active else "Start wave %d"%v.game.level)),Rect2(x,y,width-52,44),"resume" if v.game.active and v.game.paused else "start",not v.read_only and (not v.game.active or v.game.paused),true)
 	icon_button("auto",Rect2(x+width-44,y,44,44),"auto_start",not v.read_only,v.game.auto_start)
 	y+=52
 	if v.placing>=0:
@@ -217,7 +218,7 @@ func label(value: String, color: Color, font_size: int = 18) -> void:
 	var l := Label.new(); l.text=value; l.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; l.add_theme_font_size_override("font_size",font_size); l.add_theme_color_override("font_color",color); detail.add_child(l)
 
 func action_button(value: String, id: String, enabled: bool = true) -> void:
-	var b := Button.new(); b.text=value; b.custom_minimum_size.y=48; b.disabled=not enabled or v.read_only; detail.add_child(b)
+	var b := Button.new(); b.text=value; b.custom_minimum_size.y=48; b.disabled=not enabled or v.read_only or v.game.completed; detail.add_child(b)
 	b.pressed.connect(func(): v.action(id); detail_key=""; update_details())
 
 func update_details() -> void:

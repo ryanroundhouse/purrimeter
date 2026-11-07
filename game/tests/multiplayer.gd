@@ -72,7 +72,7 @@ func snapshot(name: String) -> void:
 	root.get_texture().get_image().save_png(ProjectSettings.globalize_path("res://../build/multiplayer-"+name+".png"))
 
 func fixture(level: int) -> Session:
-	var g := Session.new(); g.coins=Amount.of(10000); g.level=level; g.best=level-1; g.run_best=level-1
+	var g := Session.new(); g.garden_level=5; g.achievements.unlocked_level=5; g.coins=Amount.of(10000); g.level=level; g.best=level-1; g.run_best=level-1
 	g.terrain=GardenTerrain.decode([{"cell":70,"kind":GardenTerrain.ROCK,"style":2},{"cell":71,"kind":GardenTerrain.ROCK,"style":2},{"cell":72,"kind":GardenTerrain.STREAM,"style":1}])
 	g.build(0,119); g.build(1,134); g.build(2,152); g.start()
 	for i in range(90): g.step(1.0/60)
@@ -111,6 +111,7 @@ func check_resume_after_chat() -> void:
 func run() -> void:
 	AudioServer.set_bus_mute(0,true)
 	var g := fixture(10)
+	g.garden_level=2
 	g.achievements.award("first",true); CatSkins.equip(g.achievements,0,"scout_ginger")
 	var state: Dictionary=JSON.parse_string(JSON.stringify(LiveField.capture(g,0,1),"",true,true))
 	var copy := LiveField.decode(state)
@@ -173,6 +174,7 @@ func run() -> void:
 	b.publish(state)
 	check(await until(func(): return app.remote_cards.has(b.id) and app.remote_cards[b.id].view.game.level==10),"remote field shows independent level and deployed cats")
 	var moving: Control=app.remote_cards[b.id].view
+	check(moving.game.garden_level==2 and app.local_view.game.garden_level==1,"players in one room display independent selected levels")
 	check(moving.game.terrain.snapshot()==g.terrain.snapshot(),"relay preserves obstacle geometry and connected styles")
 	check(moving.game.skin_id(0)=="scout_ginger" and not CatSkins.unlocked(moving.game.achievements,"scout_ginger"),"relay shows owner's equipped skin without transferring unlocks")
 	var first_position: Vector2=moving.enemy_position(moving.game.enemies[0])
@@ -235,7 +237,7 @@ func run() -> void:
 	var saved: Dictionary=app.local_view.game.snapshot(); var badfile := FileAccess.open(import_path,FileAccess.WRITE); badfile.store_string("{\"version\":0}"); badfile.close()
 	app.local_view.file_selected(import_path); app.local_view.confirm.accept_button.pressed.emit()
 	check(app.local_view.game.snapshot()==saved,"failed import leaves current progress unchanged")
-	var old_revision: int=app.revision; app.local_view.action("new"); app.local_view.confirm.accept_button.pressed.emit()
+	var old_revision: int=app.revision; app.local_view.action("new"); app.local_view.confirm.level_buttons[1].pressed.emit(); app.local_view.confirm.accept_button.pressed.emit()
 	check(app.local_view.game.level==1 and app.local_view.game.paused and app.revision==old_revision+1 and app.network.room.id==room_id,"New Garden retains multiplayer membership and advances the field revision")
 	var replacement := LiveField.capture(Session.new(),1,2); b.publish(replacement)
 	check(await until(func(): return viewer.game.level==1 and viewer.remote_revision==1),"live remote garden replacement clears the previous field")

@@ -239,7 +239,7 @@ The shared app theme switches to forest controls and gold primary actions on And
 
 Menu action buttons use at least 48-by-48 targets, 10-unit horizontal and 6-unit vertical padding. Primary actions use gold with ink labels and icons, 15-base type, and an 8% lightened hover fill; their pressed fill remains gold. Secondary actions use forest with cream labels/icons and 14-base type; hover inherits the app theme’s 10% lightening and pressed uses pressed forest. Quiet utilities use a transparent resting fill over the opaque panel, then forest on hover/press. All use a two-unit mint focus border at their own radius. Disabled text remains the inherited muted color darkened by 15%. Menu actions use 20-unit icons and an 8-unit icon/text gap; the line icons are generated from 24-unit SVG paths with 1.8-unit round strokes. Play and Close reuse existing control artwork.
 
-Single player is the main menu’s primary action. Its supporting line shows the current garden’s actual level and rebirth count. Multiplayer follows with its short live-fields/chat explanation, then Achievements/Cat Skins, connection settings and updates. The title and three existing pixel cats occupy the left region; nearest-neighbor rendering preserves their edges.
+Single player is the main menu’s primary action. Its supporting line shows the current garden’s selected level and wave progress. Multiplayer follows with its short live-fields/chat explanation, then Achievements/Cat Skins, connection settings and updates. The title and three existing pixel cats occupy the left region; nearest-neighbor rendering preserves their edges.
 
 The pause sidebar prioritizes Resume. Route and Sound show both current-state text and a right-aligned 32-by-20 switch icon: a 30-by-18 rounded track with a six-unit-radius knob. Enabled uses gold track/ink knob; disabled uses garden-line track/muted knob. The grid then exposes Achievements, Cat Skins, Export/Import garden, How to play, Updates, New garden and Main menu. New garden uses pink resting text/icon emphasis on a forest action, rather than a filled danger treatment. Multiplayer adds its other-gardeners note and Continue offline below the grid.
 
@@ -247,7 +247,7 @@ The pause sidebar prioritizes Resume. Route and Sound show both current-state te
 
 ### Status and overview
 
-The status capsule separates level and gold coin balance from ready, read-only or reconnecting text. During combat it adds a pink four-unit health bar and a numeric health percentage. The overview depicts tower colors, pink enemies and a cream camera frame; tapping it recenters the field. It is navigation, not a second independently interactive game board.
+The status capsule separates selected level, wave, and gold coin balance from ready, completed, read-only or reconnecting text. During combat it adds a pink four-unit health bar and a numeric health percentage. The overview depicts tower colors, pink enemies and a cream camera frame; tapping it recenters the field. It is navigation, not a second independently interactive game board.
 
 ## Do's and Don'ts
 

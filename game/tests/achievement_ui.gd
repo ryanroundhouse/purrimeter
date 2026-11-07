@@ -70,7 +70,7 @@ func run() -> void:
 	g=app.local_view.game
 	g.achievements.acknowledge(g.achievements.pending.duplicate()); f.ids.clear(); f.skin_ids.clear()
 	var saved := Session.new(); saved.best=25; saved.kills=150
-	var legacy:=saved.snapshot(); legacy.erase("achievements"); legacy.erase("achievement_run")
+	var legacy:=saved.snapshot(); legacy.version=5; legacy.erase("achievements"); legacy.erase("achievement_run")
 	g.restore(legacy)
 	f.advance(.1,true)
 	check(f.ids.size()>1 and f.heading.contains("added"),"legacy unlocks are grouped into one summary")

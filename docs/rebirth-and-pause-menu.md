@@ -1,5 +1,7 @@
 # Mid-level rebirth and Escape menu
 
+The [five-level progression](five-level-progression.md) supersedes the single endless challenge described here. In this document, historical “level” depth means **wave** depth; rebirth stays within the selected level, and finite victory stops Auto and rebirth.
+
 The [Rebirth Draft](rebirth-draft.md) supersedes the automatic coin-bonus reward and rebirth confirmation described below. Possession retention, healing, level-five qualification, and manual restart remain in force.
 Status: design confirmed through the user interview; implemented in the shared Godot game.
 

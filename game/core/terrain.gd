@@ -64,49 +64,65 @@ static func decode(rows) -> GardenTerrain:
 	if not connected(result.cells): return null
 	return result
 
-static func generate(seed_value: int = 0) -> GardenTerrain:
+static func add_streams(result: GardenTerrain, rng: RandomNumberGenerator, count: int) -> void:
+	if count==0: return
+	var transpose := rng.randi_range(0,1)==1
+	# Disjoint interior bands keep streams separate, narrow, and walkable around both ends.
+	var bands: Array = [[4,10]] if count==1 else ([[3,5],[9,11]] if count==2 else [[2,4],[7,8],[11,13]])
+	for band in bands:
+		var style := rng.randi_range(0,STYLES-1)
+		var x := rng.randi_range(band[0],band[1])
+		for y in range(2,14):
+			if y in [5,8,11]:
+				var end := rng.randi_range(maxi(band[0],x-1),mini(band[1],x+1))
+				while x!=end:
+					result.cells[(x*16+y) if transpose else (y*16+x)]={"kind":STREAM,"style":style}
+					x+=1 if end>x else -1
+			result.cells[(x*16+y) if transpose else (y*16+x)]={"kind":STREAM,"style":style}
+
+static func add_rocks(result: GardenTerrain, rng: RandomNumberGenerator, target: int) -> void:
+	for placement in range(600):
+		if result.cells.size()>=target: break
+		var cluster: Array[int] = [rng.randi_range(0,255)]
+		var count := mini(rng.randi_range(1,4),target-result.cells.size())
+		for growth in range(12):
+			if cluster.size()>=count: break
+			var candidates := adjacent(cluster[rng.randi_range(0,cluster.size()-1)])
+			var n := candidates[rng.randi_range(0,candidates.size()-1)]
+			if n not in cluster: cluster.append(n)
+		var allowed := true
+		for cell in cluster:
+			if gate_approach(cell) or result.cells.has(cell): allowed=false; break
+			for n in adjacent(cell,true):
+				if result.cells.has(n) and result.cells[n].kind==ROCK: allowed=false; break
+		if not allowed: continue
+		var style := rng.randi_range(0,STYLES-1)
+		for cell in cluster: result.cells[cell]={"kind":ROCK,"style":style}
+		if not connected(result.cells):
+			for cell in cluster: result.cells.erase(cell)
+
+static func generate(seed_value: int = 0, selected_level: int = 1) -> GardenTerrain:
 	var rng := RandomNumberGenerator.new()
 	if seed_value==0: rng.randomize()
 	else: rng.seed=seed_value
+	var profile := GardenLevels.terrain_profile(selected_level)
 	for attempt in range(32):
 		var result := GardenTerrain.new()
-		var water_style := rng.randi_range(0,STYLES-1)
-		var x := rng.randi_range(4,10)
-		var transpose := rng.randi_range(0,1)==1
-		for y in range(2,14):
-			if y in [5,8,11]:
-				var end := clampi(x+rng.randi_range(-2,2),3,12)
-				while x!=end:
-					result.cells[(x*16+y) if transpose else (y*16+x)]={"kind":STREAM,"style":water_style}
-					x+=1 if end>x else -1
-			result.cells[(x*16+y) if transpose else (y*16+x)]={"kind":STREAM,"style":water_style}
-		var target := rng.randi_range(39,51)
-		for placement in range(600):
-			if result.cells.size()>=target: break
-			var cluster: Array[int] = [rng.randi_range(0,255)]
-			var count := mini(rng.randi_range(1,4),target-result.cells.size())
-			for growth in range(12):
-				if cluster.size()>=count: break
-				var candidates := adjacent(cluster[rng.randi_range(0,cluster.size()-1)])
-				var n := candidates[rng.randi_range(0,candidates.size()-1)]
-				if n not in cluster: cluster.append(n)
-			var allowed := true
-			for cell in cluster:
-				if gate_approach(cell) or result.cells.has(cell): allowed=false; break
-				for n in adjacent(cell,true):
-					if result.cells.has(n) and result.cells[n].kind==ROCK: allowed=false; break
-			if not allowed: continue
-			var style := rng.randi_range(0,STYLES-1)
-			for cell in cluster: result.cells[cell]={"kind":ROCK,"style":style}
-			if not connected(result.cells):
-				for cell in cluster: result.cells.erase(cell)
+		add_streams(result,rng,profile.streams)
+		var target := rng.randi_range(profile.min_tiles,profile.max_tiles)
+		add_rocks(result,rng,target)
 		if result.cells.size()==target and connected(result.cells): return result
-	# Bounded fallback: a known connected layout with 40 occupied tiles.
-	var fallback := GardenTerrain.new()
-	for y in range(2,14): fallback.cells[y*16+8]={"kind":STREAM,"style":rng.randi_range(0,STYLES-1)}
-	var style := rng.randi_range(0,STYLES-1)
-	for cell in fallback.cells: fallback.cells[cell].style=style
-	for origin in [17,21,26,65,74,177,186]:
-		style=rng.randi_range(0,STYLES-1)
-		for offset in [0,1,16,17]: fallback.cells[origin+offset]={"kind":ROCK,"style":style}
-	return fallback
+	return fallback(selected_level)
+
+static func fallback(selected_level: int) -> GardenTerrain:
+	# Fixed separated formations provide a bounded fallback for every terrain profile.
+	var result := GardenTerrain.new()
+	var profile := GardenLevels.terrain_profile(selected_level)
+	for x in [3,7,11].slice(0,profile.streams):
+		for y in range(4,12): result.cells[y*16+x]={"kind":STREAM,"style":0}
+	# Two open rows around the stream ends prevent the border rocks sealing a pocket.
+	for origin in [0,4,8,12,224,228,232,236]:
+		for offset in [0,1,16,17]:
+			if result.cells.size()>=profile.min_tiles: return result
+			result.cells[origin+offset]={"kind":ROCK,"style":0}
+	return result

@@ -1,6 +1,6 @@
 # Purrimeter — The Garden Guard
 
-An endless cat tower defence game in which the player builds towers to defeat enemies crossing a square playing field.
+A cat tower defence game with four finite levels and an endless fifth level, in which the player builds towers to defeat enemies crossing a square playing field.
 
 ## Language
 
@@ -20,7 +20,7 @@ A winding, one-tile-wide water obstacle with both ends inside the playing field,
 A shared game for up to three players, each controlling their own playing field and progressing independently while watching one another play and chatting. Players do not affect one another's combat, rewards, or progression.
 
 **Garden**:
-A player's persistent playing field and progression, carried between single player and multiplayer games.
+A player's persistent playing field and progression within one selected level, carried between single player and multiplayer games.
 
 **Game release**:
 A published version of Purrimeter available together for macOS, Windows, browser play, Android, and iOS under one release identity. Mobile packages are submitted to Google Play and the App Store as part of the release and become installable after their respective stores approve and publish them.
@@ -30,7 +30,7 @@ The game release designated by a multiplayer server as required for new multipla
 _Avoid_: Latest version (without identifying the multiplayer server)
 
 **New Garden**:
-A fresh garden that replaces the player's current garden, resetting coins, cats, powerups, discoveries, best level, rebirth bonuses, and draft improvements.
+A fresh garden at a selected unlocked level that replaces the player's current garden, resetting coins, cats, powerups, discoveries, best wave, rebirth bonuses, and draft improvements. Level unlocks, achievements, and cat skins belong to the player and survive this replacement.
 
 **Game owner**:
 The player responsible for moderating a multiplayer game, initially its creator. Ownership passes to the longest-connected remaining player when the owner leaves.
@@ -54,26 +54,40 @@ The destination enemies attempt to reach.
 A hostile unit attempting to reach the exit, attacking obstructing towers if no open route exists or if it is in frenzy.
 
 **Wave**:
-An ordered sequence of enemies entering the playing field, with specified types and quantities.
+An ordered sequence of enemies entering the playing field, with specified types and quantities. Waves are numbered within the garden's selected level.
 
 **Level**:
-A numbered enemy challenge consisting of a wave, with progression advancing on success or moving backward on defeat.
+A selectable challenge containing 10, 20, 30, or 40 waves for levels one through four, or unlimited waves for level five. Clearing a finite level's final wave beats that level and unlocks the next.
 _Avoid_: Tower level (use tower tier)
 
-**Level health**:
-The combined remaining health of every enemy in a level's wave, including the full health of enemies that have not yet arrived. It starts at the wave's total maximum health and falls as enemies take damage.
+**Level unlock**:
+A player's permanent permission to start a garden at a particular level, normally earned by beating the preceding level. Level one is available from the beginning, and earned unlocks survive New Garden.
 
-**Auto-start next level**:
-A player-controlled option for starting the next level automatically after successfully clearing the current level.
+**Level terrain profile**:
+The kinds and amount of permanent obstacles that identify a level: Open Meadow has sparse rocks, Stone Garden has many rocks, and Winding Brook, Twin Streams, and Wildwater have one, two, and three streams respectively. A new garden varies its layout within the selected profile; an existing garden keeps its terrain.
+
+**Endless mode**:
+Level five, whose waves continue without a final wave or level victory.
+
+**Level victory**:
+The completion of a finite level by clearing its final wave, permanently unlocking the next level. The completed garden remains available to view or export but has no further combat or rebirths.
+
+**Wave health**:
+The combined remaining health of every enemy in a wave, including the full health of enemies that have not yet arrived. It starts at the wave's total maximum health and falls as enemies take damage.
+_Avoid_: Level health
+
+**Auto-start next wave**:
+A player-controlled option for starting the next wave automatically after successfully clearing the current wave.
+_Avoid_: Auto-start next level
 
 **Tower tier**:
 A tower's upgrade rank, from its purchased base form through five progressively stronger forms.
 
 **Rebirth**:
-A voluntary return to level one that retains coins and surviving towers, fully heals those towers, and awards a Rebirth Draft. It becomes available after clearing level five in the current run.
+A voluntary return to wave one within the selected level that retains coins and surviving towers, fully heals those towers, and awards a Rebirth Draft. It becomes available after clearing wave five in the current run and does not itself beat or unlock a level.
 
 **Run**:
-The progression between rebirths, including retries after defeat.
+The progression through waves within a garden between rebirths, including retries after defeat.
 
 **Rebirth Draft**:
 A choice of one permanent draft improvement from randomly offered eligible improvements, earned through rebirth.
@@ -105,7 +119,7 @@ _Avoid_: Upgrade (reserved for tower tiers)
 
 **Powerup rank**:
 The number of improvements purchased for a powerup. Each next rank has its own prerequisite in addition to its coin price.
-_Avoid_: Powerup level (level identifies an enemy challenge)
+_Avoid_: Powerup level (level identifies a selectable challenge)
 
 **Powerup discovery**:
 The permanent revealing of a powerup after its initial prerequisite is met. Discovery survives rebirth, defeat, and loss of the cat that helped earn it.
@@ -114,13 +128,14 @@ The permanent revealing of a powerup after its initial prerequisite is met. Disc
 A milestone required to purchase a particular powerup rank, separate from its coin price. Lifetime progress can satisfy the prerequisites for several future ranks in advance.
 
 **Boss**:
-A huge, threatening enemy featured in every tenth level.
+A huge, threatening enemy featured in every tenth wave.
 
-**Boss level**:
-Every tenth level, whose wave includes a boss and regular enemies.
+**Boss wave**:
+Every tenth wave, which includes a boss and regular enemies.
+_Avoid_: Boss level
 
 **Boss music**:
-The music accompanying an entire active boss level, including the regular enemies before the boss arrives and any remaining after it dies.
+The music accompanying an entire active boss wave, including the regular enemies before the boss arrives and any remaining after it dies.
 
 **Tower**:
 A player-owned structure that occupies space on the playing field and can be purchased, upgraded, sold, or attacked by enemies.
@@ -141,10 +156,10 @@ An individual enemy's lasting response to accumulated frustration, advancing tow
 An enemy's accumulated repeated travel over previously visited ground. Frustration does not fade and eventually triggers frenzy; time spent slowed, stunned, paused, or attacking does not itself add frustration.
 
 **Defeat**:
-The immediate failure of an attempt when an enemy reaches the exit. Progression moves back one level while coins and surviving damaged towers remain.
+The immediate failure of an attempt when an enemy reaches the exit. Progression moves back one wave within the selected level, stopping at wave one, while coins and surviving damaged towers remain.
 
 **Tactical pause**:
-A pause in combat and any next-level countdown during which the player can still build, upgrade, and sell towers.
+A pause in combat and any next-wave countdown during which the player can still build, upgrade, and sell towers.
 
 **Scout (Bolt)**:
 A cat tower specializing in fast single-target attacks, with a tuxedo coat as its default skin.
