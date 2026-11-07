@@ -11,6 +11,7 @@ Commit the intended changes first; the command rejects tracked modifications and
 ./scripts/deploy_all.sh 4.0.2
 ./scripts/deploy_all.sh 4.0.2 --play-track internal   # first Play upload or a cautious release
 ./scripts/deploy_all.sh 4.0.2 --skip-play             # Play outage; rerun without the flag later
+./scripts/deploy_all.sh 4.0.2 --skip-ios              # omit iOS build and publication until Apple setup is ready
 ./scripts/deploy_all.sh 4.0.2 --skip-listing          # bundle only; scripts/publish_play_listing.py later
 ```
 
@@ -23,6 +24,8 @@ The target is the existing `ryan@146.190.246.30` VM for `purrimeter.graham.pub`.
 ## iOS publication
 
 The same command now exports and signs iOS, uploads the frozen IPA and `store/ios/` listing to Apple, waits for processing, and submits for review with automatic release. This occurs before VM activation, after the Play step. `--skip-app-store` keeps the signed IPA but skips Apple publication; rerun the same commit/version to resume. `--skip-listing` applies to both stores. Apple review can delay availability and permits only one submission in review at once. See [ios.md](ios.md) for first-listing declarations, API access, private review contact, simulator setup and exact retry semantics.
+
+If Apple signing is not configured, use `--skip-ios` to omit both the iOS build and publication. The signed manifest then contains macOS, Windows, browser and Android only. This choice is recorded and must stay the same on retries; adding iOS requires a newer release. The server verifies that the manifest matches the explicitly selected platforms. Unlike `--skip-app-store`, this option does not require Xcode or Apple credentials.
 
 ## Prerequisites
 

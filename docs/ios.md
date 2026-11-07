@@ -16,6 +16,7 @@ Every normal release builds all five platforms under one signed identity. The iO
 Google Play and App Store publication run before the VM transaction. Apple publication uploads the frozen IPA, waits for processing, uploads repository listing text and screenshots, selects that exact build, and submits it for review with automatic release after approval. Apple still reviews each version; submission does not mean the app is public. As agreed for Android, multiplayer requires the server-designated release, so mobile players may have to wait for store approval while single player remains available. Apple permits only one submission in review at a time; another pending submission stops a new release rather than cancelling it.
 
 - `--skip-app-store`: build and record the signed IPA but skip Apple publication. Rerun the same commit/version without this flag to submit it.
+- `--skip-ios`: omit the iOS build and publication when signing is unavailable. Preserve this flag on retries; adding iOS requires a newer release.
 - `--skip-listing`: skip listing changes for both stores, while still uploading and submitting builds. Required first-launch metadata must already be complete.
 - `--skip-play`: unchanged; it does not skip Apple.
 

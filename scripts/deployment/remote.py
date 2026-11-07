@@ -258,8 +258,11 @@ class Host:
                 raise ValueError('Unexpected immutable package URL')
             if digest(file) != package['sha256'] or file.stat().st_size != package['size']:
                 raise ValueError('Signed package checksum mismatch')
-        if set(game['packages']) != {'macos', 'windows', 'web', 'android', 'ios'}:
-            raise ValueError('All five game platforms are required')
+        expected = {'macos', 'windows', 'web', 'android'}
+        if not meta.get('skip_ios'):
+            expected.add('ios')
+        if set(game['packages']) != expected:
+            raise ValueError('Game platforms do not match the declared deployment targets')
         if 'downloads/Purrimeter-Server.tar.gz' not in manifest['files']:
             raise ValueError('Self-hosting server download is required')
         return game

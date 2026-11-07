@@ -19,7 +19,7 @@ try:
  text=re.sub(r'(version/name=)"[^"]+"',rf'\g<1>"{version}"',text);text=re.sub(r'(version/code=)\d+',rf'\g<1>{version_code(version)}',text);presets.write_text(text)
  subprocess.run(['./scripts/build.sh'],cwd=root,check=True)
  if os.environ.get('PURRIMETER_SKIP_ANDROID')!='1': subprocess.run(['./scripts/build_android.sh'],cwd=root,check=True)
- subprocess.run([sys.executable,'scripts/build_ios.py'],cwd=root,check=True)
+ if os.environ.get('PURRIMETER_SKIP_IOS')!='1': subprocess.run([sys.executable,'scripts/build_ios.py'],cwd=root,check=True)
 finally:
  config.write_bytes(old_config);presets.write_text(old_presets)
 manifest={'id':identity,'sequence':sequence,'version':version,'packages':{}}
@@ -33,9 +33,10 @@ if os.environ.get('PURRIMETER_SKIP_ANDROID')!='1' and aab.is_file():
  # Play hosts the Android package; the signed identity still records its exact bytes.
  manifest['packages']['android']={'url':PLAY_URL,'sha256':digest,'size':aab.stat().st_size,'version_code':version_code(version)}
 ipa=root/'dist/ios/Purrimeter.ipa'
-verify_ipa(ipa,version)
-with ipa.open('rb') as stream: digest=hashlib.file_digest(stream,'sha256').hexdigest()
-manifest['packages']['ios']={'url':APP_STORE_URL,'sha256':digest,'size':ipa.stat().st_size}
+if os.environ.get('PURRIMETER_SKIP_IOS')!='1':
+ verify_ipa(ipa,version)
+ with ipa.open('rb') as stream: digest=hashlib.file_digest(stream,'sha256').hexdigest()
+ manifest['packages']['ios']={'url':APP_STORE_URL,'sha256':digest,'size':ipa.stat().st_size}
 unsigned=root/'build/game-release-unsigned.json';unsigned.write_text(json.dumps(manifest))
 key=os.environ.get('PURRIMETER_RELEASE_KEY',str(Path.home()/'.config/purrimeter/release-signing.key'))
 subprocess.run([str(root/'build/purrimeter-release'),'sign',key,str(unsigned),str(root/'dist/game-release.json')],check=True)

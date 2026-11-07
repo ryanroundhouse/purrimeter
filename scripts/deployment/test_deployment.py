@@ -60,7 +60,7 @@ class FixtureHost(Host):
         super().cleanup(protected)
 
 
-def make_site(path, version, commit, sequence):
+def make_site(path, version, commit, sequence, skip_ios=False):
     path.mkdir(parents=True)
     (path / 'downloads').mkdir()
     (path / 'play').mkdir()
@@ -75,7 +75,8 @@ def make_site(path, version, commit, sequence):
                                       'sha256': digest(file), 'size': file.stat().st_size}
     game['packages']['android'] = {'url': 'https://play.google.com/store/apps/details?id=com.roundhouselabsinc.purrimeter',
                                    'sha256': 'ab' * 32, 'size': 5, 'version_code': 2000000}
-    game['packages']['ios'] = {'url': 'https://apps.apple.com/app/id6831635489', 'sha256': 'cd' * 32, 'size': 7}
+    if not skip_ios:
+        game['packages']['ios'] = {'url': 'https://apps.apple.com/app/id6831635489', 'sha256': 'cd' * 32, 'size': 7}
     (path / 'downloads/Purrimeter-Server.tar.gz').write_bytes(b'server archive')
     (path / 'downloads/SHA256SUMS.txt').write_text('checksums')
     write_json(path / 'game-release.json', {'payload': base64.b64encode(json.dumps(game).encode()).decode()})
@@ -109,11 +110,11 @@ class DeploymentTests(unittest.TestCase):
         self.build = self.root / 'build'
         self.build.mkdir()
 
-    def bundle(self, relay=b'new relay', version='2.0.0'):
+    def bundle(self, relay=b'new relay', version='2.0.0', skip_ios=False):
         stage = self.build / 'stage'
         if stage.exists():
             shutil.rmtree(stage)
-        make_site(stage / 'public', version, self.commit, 2)
+        make_site(stage / 'public', version, self.commit, 2, skip_ios=skip_ios)
         (stage / 'relay').write_bytes(relay)
         (stage / 'nginx.conf').write_text('new nginx')
         archive = self.build / 'bundle.tar.gz'
@@ -122,7 +123,8 @@ class DeploymentTests(unittest.TestCase):
                 tar.add(stage / name, arcname=name)
         meta = {'id': f'{version}-{self.commit}', 'version': version, 'commit': self.commit,
                 'site': '20260101T000000Z-222222222222', 'relay_sha256': digest(stage / 'relay'),
-                'bundle_sha256': digest(archive), 'bundle_bytes': archive.stat().st_size, 'required_bytes': 1}
+                'bundle_sha256': digest(archive), 'bundle_bytes': archive.stat().st_size, 'required_bytes': 1,
+                'skip_ios': skip_ios}
         return meta, archive.read_bytes()
 
     def deploy(self, meta, bundle):
@@ -144,6 +146,21 @@ class DeploymentTests(unittest.TestCase):
         meta, bundle = self.bundle(b'old relay')
         self.deploy(meta, bundle)
         self.assertNotIn(('systemctl', 'restart', 'purrimeter'), self.host.calls)
+
+    def test_explicitly_omitting_ios_publishes_and_retries(self):
+        meta, bundle = self.bundle(skip_ios=True)
+        self.deploy(meta, bundle)
+        game = signed_release(self.host.web / 'current/game-release.json')
+        self.assertEqual(set(game['packages']), {'macos', 'windows', 'web', 'android'})
+        self.deploy(meta, b'')
+        self.assertEqual(self.host.calls.count(('systemctl', 'restart', 'purrimeter')), 1)
+
+    def test_missing_ios_without_explicit_omission_is_rejected(self):
+        meta, bundle = self.bundle(skip_ios=True)
+        meta.pop('skip_ios')
+        with self.assertRaisesRegex(ValueError, 'deployment targets'):
+            self.deploy(meta, bundle)
+        self.assertEqual(self.host.current(self.host.web), self.old_site)
 
     def test_service_config_change_requires_restart(self):
         meta, bundle = self.bundle(b'old relay')
