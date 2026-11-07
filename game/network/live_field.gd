@@ -12,6 +12,7 @@ static func capture(g: Session, revision: int, sequence: int, sounds: Array = []
 	var garden := {}
 	for key in COUNTERS+VALUES: garden[key]=g.get(key)
 	garden.coins=g.coins.power
+	garden.terrain=g.terrain.snapshot()
 	garden.skins={}
 	for kind in range(3): garden.skins[str(kind)]=g.skin_id(kind)
 	garden.active=g.active; garden.auto_start=g.auto_start
@@ -44,6 +45,8 @@ static func decode(data: Dictionary) -> Session:
 		last_sound_id=int(sound.id)
 	if not data.get("garden") is Dictionary: return null
 	var d: Dictionary=data.garden
+	var terrain := GardenTerrain.decode(d.get("terrain",[]))
+	if terrain==null: return null
 	if not CatSkins.valid_choices(d.get("skins",{})): return null
 	if not DraftSave.valid_ranks(d.get("draft_ranks",{})) or not d.get("draft_rescue_used",false) is bool: return null
 	for key in COUNTERS:
@@ -62,7 +65,7 @@ static func decode(data: Dictionary) -> Session:
 	for n in d.cat_milestones:
 		if not PowerupSave.number(n,0,6,true): return null
 	if not d.get("towers") is Array or d.towers.size()>254 or not d.get("enemies") is Array or d.enemies.size()>100: return null
-	var cells := {}; var ids := {}
+	var cells := terrain.blockers(); var ids := {}
 	for t in d.towers:
 		if not t is Dictionary: return null
 		for key in TOWER_KEYS:
@@ -77,6 +80,8 @@ static func decode(data: Dictionary) -> Session:
 			var high: float = 1e9 if key=="id" else (3 if key in ["kind","boss"] else 255)
 			if not PowerupSave.number(e[key],-1 if key in ["boss","next"] else 0,high,true): return null
 		if e.hp<0 or e.hp>1 or e.progress<0 or e.progress>1 or ids.has(int(e.id)): return null
+		if terrain.cells.has(int(e.cell)) or terrain.cells.has(int(e.next)): return null
+		if e.next>=0 and int(e.next) not in Routes.neighbors(int(e.cell),cells): return null
 		ids[int(e.id)]=true
 	if not data.get("shots") is Array or data.shots.size()>1024: return null
 	for s in data.shots:
@@ -86,6 +91,7 @@ static func decode(data: Dictionary) -> Session:
 			for n in s[key]:
 				if not PowerupSave.number(n,0,15): return null
 	var g := Session.new()
+	g.terrain=terrain
 	g.viewed_skins=d.get("skins",{}).duplicate()
 	for key in COUNTERS: g.set(key,int(d[key]))
 	for key in VALUES: g.set(key,float(d[key]))

@@ -7,6 +7,15 @@ An endless cat tower defence game in which the player builds towers to defeat en
 **Playing field**:
 The square area through which enemies travel and on which towers occupy space.
 
+**Obstacle**:
+A rock or stream that blocks enemy movement and tower placement on the playing field, but does not block attacks across it. Obstacles cannot be attacked or destroyed and remain fixed for the life of a garden.
+
+**Rock**:
+A solid obstacle occupying a small cluster of one to four tiles.
+
+**Stream**:
+A winding, one-tile-wide water obstacle with both ends inside the playing field, allowing enemies to walk around it.
+
 **Multiplayer game**:
 A shared game for up to three players, each controlling their own playing field and progressing independently while watching one another play and chatting. Players do not affect one another's combat, rewards, or progression.
 
@@ -120,10 +129,10 @@ A player-owned structure that occupies space on the playing field and can be pur
 The currency awarded for killing enemies and spent on buying, upgrading, and repairing towers and purchasing powerup ranks.
 
 **Open route**:
-A path from an enemy to the exit that neither crosses a tower's occupied square nor cuts across a tower's corner. Towers that meet at a corner leave no opening between them.
+A path from an enemy to the exit that neither crosses a tower or obstacle nor cuts across its corner. Towers and obstacles that meet at a corner leave no opening between them.
 
 **Breach route**:
-A path to the exit that requires destroying one or more towers, available to enemies with no open route and to enemies in frenzy.
+A path to the exit that avoids obstacles and requires destroying one or more towers, available to enemies with no open route and to enemies in frenzy.
 
 **Frenzy**:
 An individual enemy's lasting response to accumulated frustration, advancing toward the exit and destroying obstructing towers even when an open route exists. Frenzy lasts until death or escape and does not increase combat strength or remove vulnerability to slowing and stunning.

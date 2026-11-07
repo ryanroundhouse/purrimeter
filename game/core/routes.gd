@@ -32,8 +32,8 @@ static func exit_distance_squared(cell: int) -> int:
 	var dy := EXIT/16-cell/16
 	return dx*dx+dy*dy
 
-static func field(costs: Dictionary, speed: float = 1.0, forward_only: bool = false) -> Dictionary:
-	# Keys are occupied tower cells: negative costs block entry; nonnegative
+static func field(costs: Dictionary, speed: float = 1.0, forward_only: bool = false, progress: PackedFloat64Array = PackedFloat64Array()) -> Dictionary:
+	# Keys are occupied tower or terrain cells: negative costs block entry; nonnegative
 	# costs include destruction time. Occupied side cells always block diagonals,
 	# including attacks. Rebuild the field when a tower is destroyed.
 	var distance := PackedFloat64Array()
@@ -55,7 +55,10 @@ static func field(costs: Dictionary, speed: float = 1.0, forward_only: bool = fa
 		for n in neighbors(at,costs):
 			if costs.get(n,0.0) < 0: continue
 			# Reverse search: a forward-only predecessor must be farther away.
-			if forward_only and exit_distance_squared(n)<=exit_distance_squared(at): continue
+			if forward_only:
+				if not progress.is_empty():
+					if progress[n]<=progress[at]+0.000001: continue
+				elif exit_distance_squared(n)<=exit_distance_squared(at): continue
 			var candidate: float = best+step_length(n,at)/speed+costs.get(at,0.0)
 			if candidate < distance[n]:
 				distance[n]=candidate; next[n]=at

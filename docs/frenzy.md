@@ -11,7 +11,7 @@ Status: confirmed and implemented in the shared Godot simulation.
 - Frenzy triggers at 12 tile-lengths of repeated travel, equally for all enemy types and bosses. This is an initial playtesting value. Several short reversals or one sufficiently long retrace can trigger it; the detector does not attempt to infer player intent.
 - Route recalculations and edits to unrelated towers do not themselves add frustration. Time spent attacking, slowed, stunned, or paused does not itself add frustration. Distance actually retraced while slowed still counts normally.
 - Frenzy lasts until death or escape. Saving and loading preserve both travel history and frenzy state.
-- Every frenzied movement step must bring the enemy physically closer to the exit. Changing openings cannot lure it backward; normal enemies may still follow winding mazes.
+- Every frenzied movement step must reduce the remaining shortest route distance around permanent terrain, measured with towers ignored. It may temporarily move physically farther from the exit to go around rocks or streams. Changing tower openings cannot change this measure or lure it into a loop; normal enemies may still follow winding mazes.
 - Once attacking an obstructing tower, a frenzied enemy remains committed until that tower is destroyed or sold, then advances through the opening. Newly attractive routes do not interrupt the attack.
 - Frenzy preserves existing movement speed, attack damage, and susceptibility to slow and stun.
 - Feedback is visual on the enemy: redness increases as frustration builds, then a strong red tint and animated sweat droplets persist during frenzy. Existing slow effects remain visible. This applies to ordinary enemies and bosses, including those whose artwork is already red.
@@ -22,7 +22,7 @@ Previously, the simulation always preferred an open route and kept no travel his
 
 Frenzy is an intended exception to [open-route priority](adr/0001-open-routes-before-breaching.md), recorded in the [frenzy decision](adr/0005-frenzy-breaks-rerouting-loops.md). Simply allowing the current travel-plus-destruction route calculation during frenzy would still allow changing tower costs and openings to redirect enemies.
 
-Detection distinguishes repeated travel from legitimate maze turns, Frost effects, stuns, and tactical pause. Movement still prevents crossing occupied squares or cutting tower corners. A committed attack reserves its destination and any diagonal clearance squares until the enemy completes its crossing, preventing a sold target from being immediately replaced or a new side tower from interrupting the attack. Save restoration and tower targeting account for frenzy and committed attacks; older saves initialize travel history at the restored enemy position.
+Detection distinguishes repeated travel from legitimate maze turns, Frost effects, stuns, and tactical pause. Movement still prevents crossing occupied squares or cutting tower or terrain corners. The [terrain routing decision](adr/0017-frenzy-progress-around-permanent-terrain.md) replaces straight-line progress with terrain-only route distance. A committed attack reserves its destination and any diagonal clearance squares until the enemy completes its crossing, preventing a sold target from being immediately replaced or a new side tower from interrupting the attack. Save restoration and tower targeting account for frenzy and committed attacks; older saves initialize travel history at the restored enemy position.
 
 Directional progress prevents movement loops; it does not impose a deadline for escape. Repair and regeneration can sustain a tower under attack, and combat effects can delay an enemy, consistent with preserving existing combat strength and vulnerabilities.
 
@@ -33,7 +33,7 @@ The dedicated frenzy regression suite and visual review cover:
 - Alternating distant openings accumulates repeated travel and triggers frenzy for affected enemies only.
 - An unchanged winding maze does not trigger frenzy; first visits, unrelated edits, and stationary delays do not increase frustration.
 - Straight and diagonal revisits contribute their physical lengths, trigger at the threshold, and retain their history after pauses and forward travel.
-- Frenzied movement always reduces physical distance to the exit, preserves occupied-square and corner-clearance restrictions, and cannot be redirected backward by building or selling.
+- Frenzied movement always reduces terrain-only route distance to the exit, preserves occupied-square and corner-clearance restrictions, and cannot be redirected into a loop by building or selling.
 - Obstruction attacks stay committed through unrelated edits and repairs; destruction or sale lets the enemy advance through the opening.
 - Frenzy preserves normal enemy statistics, slow, stun, and boss control rules.
 - Save/load retains history, frustration, frenzy, and any attack commitment; older saves without this history remain loadable using explicit defaults, and malformed new state is rejected.

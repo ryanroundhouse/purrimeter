@@ -62,6 +62,7 @@ Click an enemy or boss to inspect its animated portrait, name, current/max healt
 
 - **Auto-start next level** is off by default. After each clear, a large 3–2–1 shrinks and fades in the center of the garden, then the next level starts. The countdown takes three real seconds at either combat speed. Space pauses it; N starts early. Use the **Auto** checkbox to the right of Start/Wave in progress. Your choice and any pending countdown are saved; loading resumes paused. Defeat, rebirth, and new gardens still wait for Start.
 - Three cat types, each with a purchased form plus **five upgrades**: six animated forms and distinct attack effects.
+- New gardens contain permanent rock clusters and a winding stream across roughly 15–20% of the field. They block recruitment and enemy movement, cannot be destroyed, and allow cats to shoot across them. Terrain and connected visual styles persist through defeat, rebirth, saves, and multiplayer. Existing gardens keep their original empty terrain. See [obstacle rules](docs/obstacles.md).
 - Enemies take the shortest open route; fully blocked enemies attack towers along the quickest estimated breach route.
 - Repeated backtracking builds frustration. After 12 tile-lengths of revisits, that enemy enters permanent **frenzy**, moving toward the exit and destroying obstructing cats even when an open route exists. Increasing redness warns you; red with animated sweat means frenzy. Long unchanged mazes are unaffected. Slow, stun, and normal combat stats still apply; saves preserve the history.
 - All enemies move diagonally at the same physical speed as straight movement. Towers block their whole square and prevent corner cutting, so corner-touching towers form a wall. Squares needed to clear a diagonal crossing temporarily reject construction. Blocked enemies can attack diagonally only when both side squares are clear, destroying the tower before entering its square.
@@ -129,6 +130,7 @@ Native GUI checks should run from a normal desktop session outside an agent sand
 - `game/ui/achievements_panel.gd`, `achievement_fanfare.gd`: collection menu and queued celebrations.
 - `game/core/powerups.gd`, `powerup_combat.gd`, `powerup_save.gd`: the 30-powerup catalog, milestone rules, combat effects, and save migration.
 - `game/core/routes.gd`: shortest open paths and weighted breaches.
+- `game/core/terrain.gd`, `game/ui/terrain_art.gd`: persistent obstacle generation, validation, and connected pixel-art terrain.
 - `game/core/frenzy.gd`: repeated-travel tracking and frenzy save validation.
 - `game/core/amount.gd`: fractional currency and overflow-resistant large amounts.
 - `game/core/balance.gd`: cat/enemy stats, boss rotation and wave compositions.

@@ -20,6 +20,7 @@ var font: Font = ThemeDB.fallback_font
 var cat_textures: Array = []
 var enemy_texture: Texture2D
 var bosses: Texture2D
+var terrain_art := TerrainArt.new()
 var selected_powerup := "training"
 var powerup_tab := "available"
 var powerup_page := 0
@@ -34,6 +35,7 @@ var buttons: Array = []
 var focus_id := ""
 var keyboard_cell := 119
 var status := "Welcome, commander. Recruit a cat and guard the garden."
+var terrain_notice_until := 0.0
 var ui_clock := 0.0
 var save_clock := 0.0
 var accumulator := 0.0
@@ -87,6 +89,7 @@ func _ready() -> void:
 	add_child(audio); audio.setup(testing or preview or "--multiplayer-test" in OS.get_cmdline_user_args() or "--app-preview" in OS.get_cmdline_user_args() or DisplayServer.get_name()=="headless")
 	connect_game()
 	if not testing and not preview and not read_only:
+		game.terrain=GardenTerrain.generate()
 		achievement_save_valid=SaveStore.read_achievements(game.achievements) if not OS.has_feature("web") else true
 		if BrowserPlatform.enabled():
 			startup_save_valid=BrowserPlatform.load_garden(game)
@@ -179,7 +182,7 @@ func new_garden() -> void:
 	draft_panel.finish_choice()
 	browser_blocked=false; startup_save_valid=true
 	var book := game.achievements
-	game=Session.new(); game.achievements=book; game.paused=true; connect_game()
+	game=Session.fresh(); game.achievements=book; game.paused=true; connect_game()
 	selected=-1; selected_enemy=-1; placing=-1; selected_powerup="training"; powerup_tab="available"; powerup_page=0
 	status="A fresh garden. Your achievements are yours to keep."
 	save_game(); garden_replaced.emit()
@@ -330,6 +333,10 @@ func interact_cell(cell: int, point: Vector2 = Vector2.INF) -> void:
 	if not game.tower_at(cell).is_empty(): selected=cell; placing=-1
 	elif placing>=0:
 		if game.build(placing,cell): status=Balance.CATS[placing].name+" reporting for duty."
+	elif game.terrain.cells.has(cell):
+		selected=-1; status=game.terrain.description(cell)
+		terrain_notice_until=ui_clock+4.0
+		if mobile is AndroidGarden: mobile.notify(status)
 	else:
 		selected=-1
 		var enemies := sorted_enemies()
@@ -550,7 +557,7 @@ func _draw() -> void:
 	if placing>=0 and hover>=0:
 		var error := game.placement_error(hover,placing)
 		if not error.is_empty(): message=error
-	if focus_id=="board":
+	if focus_id=="board" and ui_clock>=terrain_notice_until and (placing<0 or hover<0 or game.placement_error(hover,placing).is_empty()):
 		message="Arrows move · Enter %s · Esc cancels" % ("recruits" if placing>=0 else "inspects")
 	text_fit(message,Vector2(28,851),704,16,CREAM)
 
@@ -577,6 +584,8 @@ func draw_board() -> void:
 			box(r,Color("30483c") if (x+y)%2==0 else Color("2d4439"))
 			if (x*13+y*7)%9==0:
 				box(Rect2(r.position+Vector2(9,30),Vector2(2,5)),Color("48634a")); box(Rect2(r.position+Vector2(13,27),Vector2(2,7)),Color("48634a"))
+	var terrain_texture := terrain_art.texture(game.terrain,ui_clock)
+	if terrain_texture!=null: draw_texture_rect(terrain_texture,BOARD,false)
 	for gate in [Routes.ENTRANCE,Routes.EXIT]:
 		var p := center(gate)
 		box(Rect2(p-Vector2.ONE*22,Vector2.ONE*44),Color(GOLD if gate==Routes.ENTRANCE else MINT,0.25))

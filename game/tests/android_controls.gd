@@ -19,7 +19,7 @@ func run() -> void:
 	var app=load("res://app.tscn").instantiate(); root.add_child(app)
 	for viewport in [Vector2i(844,390),Vector2i(640,320),Vector2i(1280,800)]:
 		root.size=viewport; await process_frame; await process_frame
-		app.show_game(false); var view=app.local_view; view.new_garden(); var mobile: AndroidGarden=view.mobile
+		app.show_game(false); var view=app.local_view; view.new_garden(); view.game.terrain=GardenTerrain.new(); view.game.invalidate_routes(); var mobile: AndroidGarden=view.mobile
 		view.game.coins=Amount.of(10000); mobile.focused_camera=true
 		await painted(view)
 		check(mobile.field.size==view.size,"field occupies viewport %s"%viewport)

@@ -2,6 +2,15 @@
 
 Validated locally on Apple Silicon macOS with Godot 4.7.2.
 
+## Garden obstacles — 2026-11-07
+
+- The full shared-game suite passes, including 168 general behavior checks, 67 existing frenzy checks, and the new terrain/UI suites. The dedicated terrain suite passes 5,844 checks across 150 seeded layouts, lifecycle/save compatibility, blocked recruitment, immutable combat terrain, shooting across rocks, and terrain-aware frenzy routing.
+- The local Go race tests and three-client multiplayer integration pass, including actual relay preservation of obstacle cells and styles. Existing Android control tests and the new Android-layout terrain UI checks pass.
+- A local Web export passes `scripts/test_terrain_browser.cjs` in Chromium at 844×390 with touch input: new terrain, rejected obstacle recruitment without spending, successful ground recruitment, and IndexedDB persistence of cats/layout/styles across reload. Run with the installed Playwright module via `PLAYWRIGHT_MODULE` after `scripts/build_web.sh`.
+- The older `scripts/test_browser.cjs` still assumes portrait gameplay and stops at its purchase assertion because the current browser shows the landscape rotation gate. This broad harness did not pass; the focused landscape terrain checks above cover the new feature.
+- Native renderer captures under `build/terrain-review/desktop/` and `build/terrain-review/android/` cover terrain variety, connected edges/corners, mixed shorelines, blocked placement, and the overview. The independent visual review returned **ship** for desktop and Android-layout rendering. Artwork documentation verification passed. Android captures are desktop-rendered layout checks, not emulator/device sign-off; physical Android/iOS performance and input remain unverified.
+- `scripts/build.sh` rebuilt the local macOS, Windows, and Web packages and refreshed `build/Purrimeter.app`. Package signing checks pass. The packaged Mac app and Windows resource pack both pass isolated smoke tests on macOS; the Windows executable was not run on Windows. No release was deployed.
+
 ## Shared game
 
 The complete `./scripts/test.sh` suite passes: 163 behavioral checks, 67 frenzy checks, 78 powerup checks, the earned-resource campaign, 42 music checks, and the headless scene smoke test. The native scene smoke test also passes with rendering enabled. The earlier diagonal frenzy fixture and help-copy-fit failures are resolved.

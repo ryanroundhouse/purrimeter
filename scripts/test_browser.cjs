@@ -121,7 +121,7 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.wasm
   const unsaved=await temporary.newPage();await unsaved.goto(origin+'/play/');await unsaved.locator('#continue').waitFor({state:'visible'});await unsaved.locator('#continue').click();await loaded(unsaved);
   assert.equal(await unsaved.locator('#save-warning').isVisible(),true,'session-only play keeps a visible warning');
   const download=unsaved.waitForEvent('download');await unsaved.locator('#backup').click();
-  const backup=await download;const exported=JSON.parse(await fs.readFile(await backup.path(),'utf8'));assert.equal(exported.version,4,'export works when persistent storage is unavailable');
+  const backup=await download;const exported=JSON.parse(await fs.readFile(await backup.path(),'utf8'));assert.equal(exported.version,5,'export works when persistent storage is unavailable');
   console.log('PASS browser startup, touch purchase and wave start, pinch/pan, rotation, persistence, takeover fencing, import/export, unavailable storage, three-player multiplayer and chat');
   assert.deepEqual(errors,[],'no Godot or JavaScript runtime errors');
  } finally {

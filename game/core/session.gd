@@ -6,6 +6,12 @@ signal notice(message: String)
 var achievements := Achievements.new()
 var achievement_run: Dictionary = {}
 var viewed_skins: Dictionary = {} # Remote presentation only; never grants ownership.
+var terrain := GardenTerrain.new()
+
+static func fresh(seed_value: int = 0) -> Session:
+	var result := Session.new()
+	result.terrain=GardenTerrain.generate(seed_value)
+	return result
 
 func skin_id(kind: int) -> String:
 	return viewed_skins.get(str(kind),CatSkins.selected(achievements,kind))
@@ -121,6 +127,7 @@ func placement_error(cell: int, kind: int) -> String:
 	if not pending_draft.is_empty(): return "Choose your rebirth improvement first."
 	if cell < 0 or cell > 255: return "Choose a tile inside the garden."
 	if cell == Routes.ENTRANCE or cell == Routes.EXIT: return "Keep the entrance and exit clear."
+	if terrain.cells.has(cell): return terrain.description(cell,true)
 	if not tower_at(cell).is_empty(): return "A cat already guards this tile."
 	for e in enemies:
 		if e.cell==cell or e.next==cell: return "An enemy is crossing this tile."
@@ -228,16 +235,16 @@ func foe_dps(e: Dictionary) -> float:
 func field_for(e: Dictionary, cell: int) -> Dictionary:
 	var frenzied: bool = e.get("frenzied",false)
 	if open_field.is_empty():
-		var blockers := {}
+		var blockers := terrain.blockers()
 		for t in towers: blockers[t.cell]=-1.0
 		open_field=Routes.field(blockers)
 	if not frenzied and open_field.distance[cell]<Routes.INF: return open_field
 	var key: String = "%d:%d:%d:%d" % [e.kind,e.boss,int(e.slow>0),int(frenzied)]
 	if not breach_fields.has(key):
-		var costs := {}
+		var costs := terrain.blockers()
 		for t in towers:
 			costs[t.cell]=destruction_time(e,t)
-		breach_fields[key]=Routes.field(costs,foe_speed(e),frenzied)
+		breach_fields[key]=Routes.field(costs,foe_speed(e),frenzied,terrain.distances() if frenzied else PackedFloat64Array())
 	return breach_fields[key]
 
 func destruction_time(e: Dictionary, t: Dictionary) -> float:
@@ -379,12 +386,14 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 
 func snapshot() -> Dictionary:
 	refresh_powerups()
-	return {"version":4,"draft_ranks":draft_ranks.duplicate(),"draft_seed":draft_seed,"pending_draft":pending_draft.duplicate(true),"draft_streak":draft_streak,"draft_rescue_used":draft_rescue_used,"achievements":achievements.snapshot(),"achievement_run":achievement_run.duplicate(true),"powerups":powerup_ranks.duplicate(true),"discovered":discovered.duplicate(true),"cat_milestones":cat_milestones.duplicate(),"combat_seed":combat_seed,"aftershocks":aftershocks.duplicate(true),"coins":coins.power,"towers":towers.duplicate(true),"enemies":enemies.duplicate(true),"level":level,"best":best,"run_best":run_best,"rebirths":rebirths,"bonus_points":bonus_points,"training":training,"kills":kills,"active":active,"spawned":spawned,"spawn_clock":spawn_clock,"next_id":next_id,"elapsed":elapsed,"last_defeat":last_defeat,"auto_start":auto_start,"auto_start_remaining":auto_start_remaining}
+	return {"version":5,"terrain":terrain.snapshot(),"draft_ranks":draft_ranks.duplicate(),"draft_seed":draft_seed,"pending_draft":pending_draft.duplicate(true),"draft_streak":draft_streak,"draft_rescue_used":draft_rescue_used,"achievements":achievements.snapshot(),"achievement_run":achievement_run.duplicate(true),"powerups":powerup_ranks.duplicate(true),"discovered":discovered.duplicate(true),"cat_milestones":cat_milestones.duplicate(),"combat_seed":combat_seed,"aftershocks":aftershocks.duplicate(true),"coins":coins.power,"towers":towers.duplicate(true),"enemies":enemies.duplicate(true),"level":level,"best":best,"run_best":run_best,"rebirths":rebirths,"bonus_points":bonus_points,"training":training,"kills":kills,"active":active,"spawned":spawned,"spawn_clock":spawn_clock,"next_id":next_id,"elapsed":elapsed,"last_defeat":last_defeat,"auto_start":auto_start,"auto_start_remaining":auto_start_remaining}
 
 func restore(data: Dictionary) -> bool:
 	# Validate everything before replacing the live run.
 	var ints := ["level","best","run_best","rebirths","training","kills","spawned","next_id","last_defeat"]
-	if data.get("version",0)!=2 and data.get("version",0)!=3 and data.get("version",0)!=4: return false
+	if not PowerupSave.number(data.get("version"),2,5,true): return false
+	var restored_terrain := GardenTerrain.decode(data.get("terrain") if data.version>=5 else [])
+	if restored_terrain==null: return false
 	if not PowerupSave.valid(data): return false
 	if data.has("achievements") and not Achievements.valid(data.achievements): return false
 	if not Achievements.valid_run(data.get("achievement_run",{})): return false
@@ -402,7 +411,7 @@ func restore(data: Dictionary) -> bool:
 	if remaining_delay>0.0 and (data.active or not data.get("auto_start",false) or data.last_defeat!=0 or data.level<=1 or data.run_best<data.level-1): return false
 	if not data.get("towers") is Array or not data.get("enemies") is Array: return false
 	if data.towers.size()>254 or data.enemies.size()>100: return false
-	var cells := {}
+	var cells := restored_terrain.blockers()
 	for t in data.towers:
 		if not t is Dictionary: return false
 		for key in ["cell","kind","tier","hp","spent","cooldown","flash"]:
@@ -417,11 +426,12 @@ func restore(data: Dictionary) -> bool:
 		if e.kind<0 or e.kind>3 or e.boss < -1 or e.boss>3 or e.cell<0 or e.cell>255 or e.next < -1 or e.next>255 or e.progress<0 or e.progress>=1 or e.hp<=0 or e.hp>1 or ids.has(int(e.id)): return false
 		if e.next>=0 and not int(e.next) in Routes.neighbors(int(e.cell),cells): return false
 		if cells.has(int(e.cell)) or cells.has(int(e.next)): return false
-		if not Frenzy.valid(e,cells): return false
+		if not Frenzy.valid(e,cells,restored_terrain.distances(),restored_terrain.cells): return false
 		ids[int(e.id)]=true
 	var plan := Balance.plan(int(data.level))
 	if data.spawned>plan.size() or (not data.active and not data.enemies.is_empty()): return false
 	if not DraftSave.valid(data): return false
+	terrain=restored_terrain
 	for key in ints: set(key,int(data[key]))
 	auto_start=data.get("auto_start",false); auto_start_remaining=float(remaining_delay)
 	coins=Amount.from_power(float(data.coins)); bonus_points=float(data.bonus_points); spawn_clock=float(data.spawn_clock); elapsed=float(data.elapsed); active=data.active

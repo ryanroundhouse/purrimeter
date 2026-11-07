@@ -89,6 +89,26 @@ func validateState(raw []byte) (*fieldState, error) {
 			return nil, bad
 		}
 	}
+	// Optional for pre-terrain clients. Keep the relay bounded; the game validates connectivity.
+	terrainCells := map[float64]bool{}
+	if rawTerrain, present := g["terrain"]; present {
+		terrain, valid := array(rawTerrain, 64)
+		if !valid {
+			return nil, bad
+		}
+		for _, value := range terrain {
+			row, valid := value.(map[string]any)
+			if !valid || len(row) != 3 || !number(row["cell"], 0, 255, true) || !number(row["kind"], 0, 1, true) || !number(row["style"], 0, 2, true) {
+				return nil, bad
+			}
+			cell := row["cell"].(float64)
+			x, y := int(cell)%16, int(cell)/16
+			if terrainCells[cell] || (y >= 7 && y <= 9 && (x <= 1 || x >= 14)) {
+				return nil, bad
+			}
+			terrainCells[cell] = true
+		}
+	}
 	towers, ok := array(g["towers"], 254)
 	if !ok {
 		return nil, bad
@@ -105,7 +125,7 @@ func validateState(raw []byte) (*fieldState, error) {
 			}
 		}
 		cell := t["cell"].(float64)
-		if cells[cell] {
+		if cells[cell] || terrainCells[cell] {
 			return nil, bad
 		}
 		cells[cell] = true
@@ -132,6 +152,9 @@ func validateState(raw []byte) (*fieldState, error) {
 			if !number(e[k], -1e100, 1e16, false) {
 				return nil, bad
 			}
+		}
+		if terrainCells[e["cell"].(float64)] || terrainCells[e["next"].(float64)] {
+			return nil, bad
 		}
 		id := e["id"].(float64)
 		if ids[id] {

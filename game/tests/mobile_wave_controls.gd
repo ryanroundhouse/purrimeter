@@ -17,7 +17,7 @@ func run() -> void:
 	var app=load("res://app.tscn").instantiate(); root.add_child(app)
 	for viewport in [Vector2i(844,450),Vector2i(390,844),Vector2i(360,640)]:
 		root.size=viewport; await process_frame; await process_frame
-		app.show_game(false); app.local_view.new_garden()
+		app.show_game(false); app.local_view.new_garden(); app.local_view.game.terrain=GardenTerrain.new(); app.local_view.game.invalidate_routes()
 		var view=app.local_view; var mobile=view.mobile
 		await painted(view)
 		check(not control(view,"start").is_empty(),"Start is visible before recruitment at %s"%viewport)

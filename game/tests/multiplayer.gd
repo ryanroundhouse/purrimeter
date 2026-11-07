@@ -73,6 +73,7 @@ func snapshot(name: String) -> void:
 
 func fixture(level: int) -> Session:
 	var g := Session.new(); g.coins=Amount.of(10000); g.level=level; g.best=level-1; g.run_best=level-1
+	g.terrain=GardenTerrain.decode([{"cell":70,"kind":GardenTerrain.ROCK,"style":2},{"cell":71,"kind":GardenTerrain.ROCK,"style":2},{"cell":72,"kind":GardenTerrain.STREAM,"style":1}])
 	g.build(0,119); g.build(1,134); g.build(2,152); g.start()
 	for i in range(90): g.step(1.0/60)
 	g.paused=true; return g
@@ -172,6 +173,7 @@ func run() -> void:
 	b.publish(state)
 	check(await until(func(): return app.remote_cards.has(b.id) and app.remote_cards[b.id].view.game.level==10),"remote field shows independent level and deployed cats")
 	var moving: Control=app.remote_cards[b.id].view
+	check(moving.game.terrain.snapshot()==g.terrain.snapshot(),"relay preserves obstacle geometry and connected styles")
 	check(moving.game.skin_id(0)=="scout_ginger" and not CatSkins.unlocked(moving.game.achievements,"scout_ginger"),"relay shows owner's equipped skin without transferring unlocks")
 	var first_position: Vector2=moving.enemy_position(moving.game.enemies[0])
 	g.paused=false

@@ -171,6 +171,8 @@ func draw_overview() -> void:
 	var inner := overview.grow(-5)
 	v.box(inner,Color("30483c"),3)
 	var tile := inner.size/16
+	for cell in v.game.terrain.cells:
+		v.box(Rect2(inner.position+Vector2(cell%16,cell/16)*tile,tile),TerrainArt.overview_color(v.game.terrain.cells[cell].kind))
 	for tower in v.game.towers:
 		v.box(Rect2(inner.position+Vector2(tower.cell%16,tower.cell/16)*tile+Vector2.ONE,tile-Vector2.ONE*2),Balance.CATS[tower.kind].color)
 	for enemy in v.game.enemies:
