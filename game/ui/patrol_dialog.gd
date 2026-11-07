@@ -105,6 +105,7 @@ func layout_panel() -> void:
 	for control in panel.find_children("*","Control",true,false):
 		if control.has_meta("wide_min"): control.custom_minimum_size.x=0 if size.x<650 else float(control.get_meta("wide_min"))
 		if control.has_meta("phone_grid"): control.columns=2 if size.x<650 else 5
+		if control.has_meta("cat_tabs"): control.columns=2 if size.x<650 else 4
 	panel.size=desired_size.min(size-Vector2(16,16) if size.x<650 or size.y<650 else size-Vector2(64,64))
 	panel.position=(size-panel.size)/2
 
@@ -225,14 +226,14 @@ func show_help() -> void:
 	rules.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	rules.size_flags_stretch_ratio=1.15
 	rules.add_theme_constant_override("separation",22)
-	section(rules,"Defend the garden","Foes follow open routes or attack cats. Backtracking turns them red; sweat marks frenzy and a breakout toward the exit. One escape ends the attempt: lose a wave.")
-	section(rules,"Grow your patrol","Cats have five upgrades. Powerup icons show effects and rank requirements; Owned shows purchases. Clear wave 5 to rebirth. Bosses arrive every tenth wave.")
+	section(rules,"Defend the garden","Ground foes detour or attack; backtracking causes frenzy. Moths fly over everything. Cannon hits ground, Ranger air, Bolt/Frost both. One escape loses a wave.")
+	section(rules,"Grow your patrol","Beat level 1 to unlock Ranger. Cats have five upgrades. Powerups show rank requirements; Owned shows purchases. Clear wave 5 to rebirth. Bosses arrive every tenth wave.")
 	section(rules,"Keep your progress","Autosaves keep progress. Export / Import transfers saves. Defeat keeps coins and surviving cats, including damage.")
 	var controls := VBoxContainer.new(); columns.add_child(controls)
 	controls.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	controls.add_theme_constant_override("separation",10)
 	label(controls,"Your controls",20,CREAM)
-	for pair in [["Click","Choose a cat, then a tile"],["1 / 2 / 3","Select a cat"],["Space","Pause / resume"],["N","Start the next attempt"],["Esc","Cancel / close panel"],["Tab / Shift+Tab","Move between controls"],["Arrow keys","Choose a garden tile"],["Enter","Activate / recruit / inspect"]]:
+	for pair in [["Click","Choose a cat, then a tile"],["1 / 2 / 3 / 4","Select a cat"],["Space","Pause / resume"],["N","Start the next attempt"],["Esc","Cancel / close panel"],["Tab / Shift+Tab","Move between controls"],["Arrow keys","Choose a garden tile"],["Enter","Activate / recruit / inspect"]]:
 		var row := HBoxContainer.new(); controls.add_child(row)
 		row.add_theme_constant_override("separation",12)
 		var key := label(row,pair[0],16,MINT)

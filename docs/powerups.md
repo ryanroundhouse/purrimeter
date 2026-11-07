@@ -54,7 +54,7 @@ These 30 powerups and their effect directions are approved. Numerical tuning and
 | Frost | Deep Chill | Stronger slowing, capped. |
 | Frost | Lingering Cold | Longer slow duration, capped. |
 | Frost | Ice Lock | Repeated hits can briefly freeze a target, capped. |
-| Frost | Brittle Ice | Chilled enemies take extra damage from other cats, capped. |
+| Frost | Brittle Ice | Chilled enemies take extra damage from all non-Frost cats, including Ranger, capped. |
 | Frost | Winter Gift | Defeated chilled enemies spread a slow to nearby enemies, one-time unlock. |
 
 ## Confirmed migration policy

@@ -8,7 +8,7 @@ A cat tower defence game with four finite levels and an endless fifth level, in 
 The square area through which enemies travel and on which towers occupy space.
 
 **Obstacle**:
-A rock or stream that blocks enemy movement and tower placement on the playing field, but does not block attacks across it. Obstacles cannot be attacked or destroyed and remain fixed for the life of a garden.
+A rock or stream that blocks ground enemy movement and tower placement on the playing field, but does not block flying enemies or attacks across it. Obstacles cannot be attacked or destroyed and remain fixed for the life of a garden.
 
 **Rock**:
 A solid obstacle occupying a small cluster of one to four tiles.
@@ -51,7 +51,16 @@ The point where enemies enter the playing field.
 The destination enemies attempt to reach.
 
 **Enemy**:
-A hostile unit attempting to reach the exit, attacking obstructing towers if no open route exists or if it is in frenzy.
+A hostile unit attempting to reach the exit, traveling either on the ground or through the air.
+
+**Ground enemy**:
+An enemy that follows routes around obstacles and towers, attacking obstructing towers if no open route exists or if it is in frenzy.
+
+**Flying enemy**:
+An enemy that flies straight from the entrance to the exit, ignoring obstacles and towers without attacking them or entering frenzy. Flying enemies can be slowed or frozen and do not prevent tower placement beneath them.
+
+**Anti-air tower**:
+A cat tower specializing in long-range single-target attacks against flying enemies. Beating level one permanently unlocks it for every garden, including replays of level one.
 
 **Wave**:
 An ordered sequence of enemies entering the playing field, with specified types and quantities. Waves are numbered within the garden's selected level.
@@ -144,13 +153,13 @@ A player-owned structure that occupies space on the playing field and can be pur
 The currency awarded for killing enemies and spent on buying, upgrading, and repairing towers and purchasing powerup ranks.
 
 **Open route**:
-A path from an enemy to the exit that neither crosses a tower or obstacle nor cuts across its corner. Towers and obstacles that meet at a corner leave no opening between them.
+A path from a ground enemy to the exit that neither crosses a tower or obstacle nor cuts across its corner. Towers and obstacles that meet at a corner leave no opening between them.
 
 **Breach route**:
 A path to the exit that avoids obstacles and requires destroying one or more towers, available to enemies with no open route and to enemies in frenzy.
 
 **Frenzy**:
-An individual enemy's lasting response to accumulated frustration, advancing toward the exit and destroying obstructing towers even when an open route exists. Frenzy lasts until death or escape and does not increase combat strength or remove vulnerability to slowing and stunning.
+An individual ground enemy's lasting response to accumulated frustration, advancing toward the exit and destroying obstructing towers even when an open route exists. Frenzy lasts until death or escape and does not increase combat strength or remove vulnerability to slowing and stunning.
 
 **Frustration**:
 An enemy's accumulated repeated travel over previously visited ground. Frustration does not fade and eventually triggers frenzy; time spent slowed, stunned, paused, or attacking does not itself add frustration.
@@ -162,13 +171,19 @@ The immediate failure of an attempt when an enemy reaches the exit. Progression 
 A pause in combat and any next-wave countdown during which the player can still build, upgrade, and sell towers.
 
 **Scout (Bolt)**:
-A cat tower specializing in fast single-target attacks, with a tuxedo coat as its default skin.
+A cat tower specializing in fast single-target attacks against ground and flying enemies, with a tuxedo coat as its default skin.
 
 **Gunner (Cannon)**:
-A cat tower specializing in slow cannon attacks that damage enemies around the target, with an orange-tabby coat as its default skin.
+A cat tower specializing in slow cannon attacks that damage ground enemies around the target, with an orange-tabby coat as its default skin. It cannot damage flying enemies.
 
 **Sage (Frost)**:
-A cat tower specializing in slowing enemies while dealing low damage, with a solid-black coat as its default skin.
+A cat tower specializing in slowing ground and flying enemies while dealing low damage, with a solid-black coat as its default skin.
+
+**Ranger (Anti-air)**:
+A calico cat tower specializing in long-range single-target bow attacks against flying enemies, permanently unlocked by beating level one.
+
+**Moth**:
+A flying enemy with lavender wings that travels directly from the entrance to the exit without attacking cats.
 
 **Grunt**:
 The baseline enemy type.

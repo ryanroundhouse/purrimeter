@@ -19,6 +19,7 @@ var audio := GameSound.new()
 var font: Font = ThemeDB.fallback_font
 var cat_textures: Array = []
 var enemy_texture: Texture2D
+var moth_texture: Texture2D = preload("res://assets/moth.png")
 var bosses: Texture2D
 var terrain_art := TerrainArt.new()
 var selected_powerup := "training"
@@ -81,7 +82,7 @@ func _ready() -> void:
 	preview="--preview" in OS.get_cmdline_user_args()
 	preview_gallery="--gallery" in OS.get_cmdline_user_args()
 	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
-	for name in ["tuxedo","chunky","siamese"]:
+	for name in ["tuxedo","chunky","siamese","ranger"]:
 		cat_textures.append(load("res://assets/"+name+".png") if ResourceLoader.exists("res://assets/"+name+".png") else load("res://assets/characters.png"))
 	for row in Powerups.ITEMS: powerup_icons[row[0]]=load("res://assets/powerups/"+row[0]+".svg")
 	enemy_texture=load("res://assets/characters.png")
@@ -322,7 +323,7 @@ func _input(event: InputEvent) -> void:
 				elif not read_only: menu_requested.emit()
 				else: return
 				get_viewport().set_input_as_handled()
-			KEY_1, KEY_2, KEY_3:
+			KEY_1, KEY_2, KEY_3, KEY_4:
 				action("cat%d" % (event.keycode-KEY_1)); focus_id="board"; hover=keyboard_cell
 			KEY_N: action("start")
 
@@ -351,10 +352,6 @@ func interact_cell(cell: int, point: Vector2 = Vector2.INF) -> void:
 	if not game.tower_at(cell).is_empty(): selected=cell; placing=-1
 	elif placing>=0:
 		if game.build(placing,cell): status=Balance.CATS[placing].name+" reporting for duty."
-	elif game.terrain.cells.has(cell):
-		selected=-1; status=game.terrain.description(cell)
-		terrain_notice_until=ui_clock+4.0
-		if mobile is AndroidGarden: mobile.notify(status)
 	else:
 		selected=-1
 		var enemies := sorted_enemies()
@@ -363,6 +360,9 @@ func interact_cell(cell: int, point: Vector2 = Vector2.INF) -> void:
 			var hit := cell_at(BOARD.position+(enemy_position(e)+Vector2.ONE*0.5)*TILE)==cell if point==Vector2.INF else enemy_rect(e).has_point(point)
 			if e.hp>0 and hit:
 				selected_enemy=e.id; break
+		if selected_enemy<0 and game.terrain.cells.has(cell):
+			status=game.terrain.description(cell); terrain_notice_until=ui_clock+4.0
+			if mobile is AndroidGarden: mobile.notify(status)
 
 func inspected_enemy() -> Dictionary:
 	if game.active:
@@ -378,6 +378,7 @@ func validate_selection() -> void:
 func sorted_enemies() -> Array:
 	var enemies := game.enemies.duplicate()
 	enemies.sort_custom(func(a,b):
+		if Balance.flying(a)!=Balance.flying(b): return not Balance.flying(a)
 		var ay := enemy_position(a).y
 		var by := enemy_position(b).y
 		return a.id<b.id if ay==by else ay<by)
@@ -386,6 +387,7 @@ func sorted_enemies() -> Array:
 func enemy_rect(e: Dictionary) -> Rect2:
 	var p := BOARD.position+(enemy_position(e)+Vector2.ONE*0.5)*TILE
 	if e.boss>=0: return Rect2(p-Vector2(61,74),Vector2(122,122))
+	if Balance.flying(e): return Rect2(p-Vector2(23,34+sin(game.elapsed*6+e.id)*2),Vector2(46,42))
 	var extent := 42.0 if e.kind==2 else 36.0
 	return Rect2(p-Vector2(extent/2,extent/2+4),Vector2.ONE*extent)
 
@@ -398,6 +400,8 @@ func action(id: String) -> void:
 	if id.begins_with("powerup:"):
 		selected_powerup=id.trim_prefix("powerup:"); queue_redraw(); return
 	if id.begins_with("cat"):
+		if not game.cat_unlocked(int(id.trim_prefix("cat"))):
+			status="Beat level 1 to unlock Ranger anti-air cats."; return
 		placing=int(id.trim_prefix("cat")); selected=-1; selected_enemy=-1; status="Click a tile to recruit "+Balance.CATS[placing].name+". Esc cancels."
 		if not focus_id.is_empty(): focus_id="board"; hover=keyboard_cell
 		return
@@ -520,6 +524,13 @@ func cat_sprite(kind: int, tier: int, frame: int, rect: Rect2, alpha: float = 1.
 	CatSkinArt.draw(self,game.skin_id(kind),tier,frame,rect,Color(1,1,1,alpha))
 
 func enemy_sprite(kind: int, frame: int, rect: Rect2, tint: Color = Color.WHITE, painter: CanvasItem = null) -> void:
+	if kind==Balance.MOTH:
+		var bounds: Array = AirArt.MOTH[frame]
+		var source := Rect2(bounds[0],bounds[1],bounds[2],bounds[3])
+		var fit := minf(rect.size.x/580.0,rect.size.y/460.0)
+		var target := Rect2(rect.get_center()-source.size*fit/2,source.size*fit)
+		(self if painter==null else painter).draw_texture_rect_region(moth_texture,target,source,tint,false,true)
+		return
 	var bands := [Vector2(802,940),Vector2(980,1138),Vector2(1150,1357),Vector2(1360,1607)]
 	var columns := [[0,237,474,718,948],[0,239,478,732,948],[0,240,478,730,948],[0,237,474,726,948]]
 	var bounds: Vector2=bands[kind]
@@ -636,14 +647,18 @@ func draw_board() -> void:
 		if t.hp<0.999: bar(Rect2(p+Vector2(-16,-24),Vector2(32,3)),t.hp,MINT)
 	for e in sorted_enemies():
 		var p := BOARD.position+(enemy_position(e)+Vector2.ONE*0.5)*TILE
-		var frame := 2 if e.attack>0 else int(game.elapsed*5+e.id)%4
+		if Balance.flying(e):
+			var shadow := PackedVector2Array()
+			for i in range(16): shadow.append(p+Vector2(14*cos(TAU*i/16),7+5*sin(TAU*i/16)))
+			draw_colored_polygon(shadow,Color(0,0,0,0.26))
+		var frame := 2 if e.attack>0 else int(game.elapsed*(9 if Balance.flying(e) else 5)+e.id)%4
 		var frustration := clampf(e.get("frustration",0.0)/Frenzy.LIMIT,0.0,1.0)
 		var tint := Color.WHITE.lerp(Color(1.0,0.28,0.22),frustration)
 		if e.boss>=0:
 			boss_sprite(e.boss,frame,enemy_rect(e),tint)
 		else:
 			enemy_sprite(e.kind,frame,enemy_rect(e),tint)
-			bar(Rect2(p-Vector2(13,23),Vector2(26,3)),e.hp,Color.CYAN if e.slow>0 else PINK)
+			bar(Rect2(Vector2(p.x-13,enemy_rect(e).position.y-3),Vector2(26,3)),e.hp,Color.CYAN if e.slow>0 else PINK)
 		if e.slow>0: draw_arc(p,17,0,TAU,20,Color(0.5,0.85,1,0.6),1.5)
 		if e.get("frenzied",false): frenzy_sweat(e,p)
 	var inspected := inspected_enemy()
@@ -690,6 +705,12 @@ func draw_shot(s: Dictionary) -> void:
 			for i in range(tier+2):
 				var end := b+Vector2.from_angle(TAU*i/(tier+2))*radius
 				draw_line(end,end+Vector2.from_angle(TAU*i/(tier+2))*7,Color(GOLD,fade),2)
+	elif s.kind==Balance.ANTI_AIR:
+		var tip := a.lerp(b,clampf((1.0-fade)*2.0,0.0,1.0))
+		var direction := (b-a).normalized()
+		draw_line(a,tip,Color(color,fade*0.35),1+tier*0.2)
+		draw_line(tip-direction*(12+tier),tip,Color(CREAM,fade),2)
+		draw_colored_polygon(PackedVector2Array([tip,tip-direction*7+normal*4,tip-direction*7-normal*4]),Color(color,fade))
 	else:
 		draw_line(a,b,Color(color,fade*0.65),1+tier*0.4)
 		for i in range(tier):
@@ -700,22 +721,24 @@ func draw_shot(s: Dictionary) -> void:
 
 func draw_sidebar() -> void:
 	text("Their patrol" if read_only else "Recruit your patrol",Vector2(772,103),22)
-	right_text("Read-only" if read_only else "Keys 1 / 2 / 3",Vector2(1252,110),14,MUTED)
-	for kind in range(3):
-		var y := 143+kind*73
-		var r := Rect2(772,y,480,65)
+	right_text("Read-only" if read_only else "Keys 1 / 2 / 3 / 4",Vector2(1252,110),14,MUTED)
+	for kind in range(Balance.CATS.size()):
+		var y := 143+kind*56
+		var r := Rect2(772,y,480,52)
 		var chosen := placing==kind
 		var hovered := focus_id.is_empty() and r.has_point(get_local_mouse_position())
 		box(r,Color("304b40") if chosen else (PANEL.lightened(0.07) if hovered else PANEL),6)
 		if chosen or focus_id=="cat%d"%kind: draw_rect(r,MINT,false,2)
-		cat_sprite(kind,1,[0,1,3,1][int(game.elapsed*2)%4],Rect2(780,y-2,69,69))
-		text(Balance.CATS[kind].name,Vector2(861,y+6),20)
-		text(Balance.CATS[kind].role,Vector2(861,y+35),14,MUTED)
+		cat_sprite(kind,1,[0,1,3,1][int(game.elapsed*2)%4],Rect2(786,y-2,54,54))
+		text(Balance.CATS[kind].name,Vector2(851,y+3),18)
+		text(Balance.CATS[kind].role,Vector2(851,y+29),13,MUTED)
+		var unlocked := game.cat_unlocked(kind)
 		var affordable := game.coins.enough(game.recruit_cost(kind))
-		right_text("%sc" % game.recruit_cost(kind).label(),Vector2(1238,y+8),18,GOLD if affordable else PINK)
-		if chosen: right_text("Selected",Vector2(1238,y+37),13,MINT)
-		elif not affordable: right_text("Need coins",Vector2(1238,y+37),13,PINK)
-		buttons.append({"rect":r,"id":"cat%d"%kind,"enabled":true})
+		right_text("%sc" % game.recruit_cost(kind).label() if unlocked else "Locked",Vector2(1238,y+3),16,GOLD if affordable and unlocked else MUTED)
+		if not unlocked: right_text("Beat level 1",Vector2(1238,y+29),13,MUTED)
+		elif chosen: right_text("Selected",Vector2(1238,y+29),13,MINT)
+		elif not affordable: right_text("Need coins",Vector2(1238,y+29),13,PINK)
+		buttons.append({"rect":r,"id":"cat%d"%kind,"enabled":unlocked and not read_only and not game.completed})
 	draw_line(Vector2(772,371),Vector2(1252,371),LINE,1)
 	var t := game.tower_at(selected)
 	if not t.is_empty():
@@ -749,8 +772,9 @@ func draw_sidebar() -> void:
 		bar(Rect2(944,773,308,7),health,PINK,LINE)
 	elif game.auto_start_remaining>0.0:
 		text("Countdown paused · Space resumes" if game.paused else "Next wave in %ds · Space pauses" % ceili(game.auto_start_remaining),Vector2(772,741),15,MUTED)
+		if game.air_incoming(): text("Air incoming · Use Ranger, Bolt or Frost",Vector2(772,765),14,GOLD)
 	else:
-		wrapped("All %d waves cleared. Choose your next garden." % game.wave_limit() if game.completed else Balance.preview(game.level),Vector2(772,741),480,15,MUTED)
+		wrapped("All %d waves cleared. Choose your next garden." % game.wave_limit() if game.completed else game.wave_preview(),Vector2(772,741),480,15,MUTED)
 	var start_rect := Rect2(772,794,364,44)
 	if game.completed:
 		button("Level complete · Next garden",start_rect,"start",true,true)
@@ -780,14 +804,14 @@ func draw_enemy_inspector(e: Dictionary) -> void:
 	if e.boss>=0: boss_sprite(e.boss,frame,portrait)
 	else: enemy_sprite(e.kind,frame,portrait)
 	text_fit(info.name,Vector2(872,384),380,22)
-	text(info.subtitle if e.boss>=0 else "Enemy",Vector2(872,415),15,MUTED)
+	text(info.subtitle if e.boss>=0 else ("Flying · Ignores towers and terrain" if Balance.flying(e) else "Ground enemy"),Vector2(872,415),15,MUTED)
 	var max_health := Amount.from_power(e.hp_power)
 	text_fit("Health %s / %s" % [max_health.times(clampf(e.hp,0,1)).label(),max_health.label()],Vector2(872,443),300,16,CREAM)
 	right_text("%d%%" % ceili(clampf(e.hp,0,1)*100),Vector2(1252,443),16,PINK)
 	bar(Rect2(772,477,480,8),e.hp,PINK,LINE)
 	var move_speed := 0.0 if e.get("stun",0.0)>0 else game.foe_speed(e)
 	text("Speed %.2f tiles/s" % move_speed,Vector2(772,498),16,MUTED)
-	right_text("Tower damage %s HP/s" % Amount.of(game.foe_dps(e)).label(),Vector2(1252,498),16,MUTED)
+	right_text("Flies straight to the exit" if Balance.flying(e) else "Tower damage %s HP/s" % Amount.of(game.foe_dps(e)).label(),Vector2(1252,498),16,MUTED)
 	var effects := enemy_effects(e)
 	for i in range(effects.size()):
 		text(effects[i],Vector2(772+(i%2)*240,534+(i/2)*23),15,GOLD if effects[0]!="No active effects" else MUTED)

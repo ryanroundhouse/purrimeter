@@ -84,6 +84,12 @@ func validateState(raw []byte) (*fieldState, error) {
 	} else if _, present := g["completed"]; present {
 		return nil, bad
 	}
+	if unlocked, present := g["unlocked_level"]; present && !number(unlocked, 1, 5, true) {
+		return nil, bad
+	}
+	if roster, present := g["wave_roster_level"]; present && !number(roster, 1, 5, true) {
+		return nil, bad
+	}
 	for _, key := range []string{"powerups", "discovered"} {
 		m, ok := g[key].(map[string]any)
 		if !ok || len(m) > 30 {
@@ -95,8 +101,8 @@ func validateState(raw []byte) (*fieldState, error) {
 			}
 		}
 	}
-	levels, ok := array(g["cat_milestones"], 3)
-	if !ok || len(levels) != 3 {
+	levels, ok := array(g["cat_milestones"], 4)
+	if !ok || (len(levels) != 3 && len(levels) != 4) {
 		return nil, bad
 	}
 	for _, v := range levels {
@@ -131,7 +137,7 @@ func validateState(raw []byte) (*fieldState, error) {
 	cells := map[float64]bool{}
 	for _, value := range towers {
 		t, ok := value.(map[string]any)
-		if !ok || !number(t["cell"], 0, 255, true) || !number(t["kind"], 0, 2, true) || !number(t["tier"], 1, 6, true) || !number(t["hp"], 0, 1, false) {
+		if !ok || !number(t["cell"], 0, 255, true) || !number(t["kind"], 0, 3, true) || !number(t["tier"], 1, 6, true) || !number(t["hp"], 0, 1, false) {
 			return nil, bad
 		}
 		for _, k := range []string{"spent", "cooldown", "flash"} {
@@ -155,7 +161,7 @@ func validateState(raw []byte) (*fieldState, error) {
 		if !ok {
 			return nil, bad
 		}
-		for k, high := range map[string]float64{"id": 1e9, "kind": 3, "cell": 255} {
+		for k, high := range map[string]float64{"id": 1e9, "kind": 4, "cell": 255} {
 			if !number(e[k], 0, high, true) {
 				return nil, bad
 			}
@@ -168,7 +174,12 @@ func validateState(raw []byte) (*fieldState, error) {
 				return nil, bad
 			}
 		}
-		if terrainCells[e["cell"].(float64)] || terrainCells[e["next"].(float64)] {
+		if e["kind"].(float64) == 4 {
+			cell, next := e["cell"].(float64), e["next"].(float64)
+			if e["boss"].(float64) != -1 || cell < 128 || cell > 143 || (next != -1 && (cell >= 143 || next != cell+1)) || e["frenzied"].(bool) || e["frustration"].(float64) != 0 || e["attack"].(float64) != 0 || e["burn_left"].(float64) != 0 {
+				return nil, bad
+			}
+		} else if terrainCells[e["cell"].(float64)] || terrainCells[e["next"].(float64)] {
 			return nil, bad
 		}
 		id := e["id"].(float64)
@@ -178,7 +189,7 @@ func validateState(raw []byte) (*fieldState, error) {
 		ids[id] = true
 	}
 	for _, shot := range s.Shots {
-		if !number(shot["kind"], 0, 2, true) || !number(shot["tier"], 1, 6, true) || !number(shot["life"], 0, 0.25, false) {
+		if !number(shot["kind"], 0, 3, true) || !number(shot["tier"], 1, 6, true) || !number(shot["life"], 0, 0.25, false) {
 			return nil, bad
 		}
 		for _, key := range []string{"from", "to"} {

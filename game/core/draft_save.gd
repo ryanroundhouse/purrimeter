@@ -35,7 +35,7 @@ static func valid(data: Dictionary) -> bool:
 		if not PowerupSave.number(e.get("spotter_left",0),0,3) or not PowerupSave.number(e.get("triad_until",0),0,data.elapsed+3.00001): return false
 		if not e.get("burn_relayed",false) is bool: return false
 		var marks = e.get("triad_marks",[-1,-1,-1])
-		if not marks is Array or marks.size()!=3: return false
+		if not marks is Array or marks.size() not in [3,4]: return false
 		for at in marks:
 			if not PowerupSave.number(at,-1,data.elapsed) or (at<0 and at!=-1): return false
 	return true

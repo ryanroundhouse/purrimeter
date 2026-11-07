@@ -45,7 +45,7 @@ func run() -> void:
 	var old := legacy.snapshot(); old.version=2
 	for key in ["powerups","discovered","cat_milestones","combat_seed","aftershocks"]: old.erase(key)
 	check(restored.restore(json_copy(old)) and restored.training==26 and restored.kills==12,"v2 migration preserves high training even below new prerequisites")
-	check(restored.cat_milestones==[0,4,0] and restored.discovered.has("blast") and not restored.discovered.has("needle"),"migration credits surviving cats without inventing sold-cat history")
+	check(restored.cat_milestones==[0,4,0,0] and restored.discovered.has("blast") and not restored.discovered.has("needle"),"migration credits surviving cats without inventing sold-cat history")
 	check(not restored.train() and restored.training==26,"migrated training must meet next rank gate")
 	var baseline := restored.snapshot()
 	var mutations := [{"powerups":{"quick":6}},{"powerups":{"unknown":1}},{"powerups":{"training":2}},{"cat_milestones":[7,0,0]},{"cat_milestones":[1.5,0,0]},{"discovered":{"needle":"yes"}},{"combat_seed":0},{"aftershocks":[{"delay":0.1}]}]

@@ -10,6 +10,7 @@ static func speed_factor(g, t: Dictionary) -> float:
 	return 1.0
 
 static func primary(g, t: Dictionary, e: Dictionary, base: float, was_burning: bool) -> void:
+	if not Balance.can_target(t.kind,e): return
 	var point: Vector2 = g.position(e)
 	if t.kind==0 and g.draft_rank("spotter")>0: e["spotter_left"]=3.0
 	if t.kind==1:
@@ -23,11 +24,12 @@ static func primary(g, t: Dictionary, e: Dictionary, base: float, was_burning: b
 		neighbors.sort_custom(func(a,b): return g.position(a).distance_squared_to(point)<g.position(b).distance_squared_to(point))
 		for other in neighbors.slice(0,g.draft_rank("front")): other.slow=maxf(other.slow,1.8+0.4*g.powerup_rank("linger"))
 	if e.hp<=0 or g.draft_rank("triad")==0 or e.get("triad_until",0.0)>g.elapsed: return
-	var marks: Array = e.get("triad_marks",[-1.0,-1.0,-1.0])
+	var marks: Array = e.get("triad_marks",[-1.0,-1.0,-1.0,-1.0])
+	while marks.size()<Balance.CATS.size(): marks.append(-1.0)
 	marks[t.kind]=g.elapsed; e["triad_marks"]=marks
-	if marks.all(func(at): return at>=0.0 and g.elapsed-at<=3.0):
+	if marks.filter(func(at): return at>=0.0 and g.elapsed-at<=3.0).size()>=3:
 		g.damage(e,base+log(0.5*g.draft_rank("triad"))/log(10.0))
-		e.triad_marks=[-1.0,-1.0,-1.0]; e["triad_until"]=g.elapsed+3.0
+		e.triad_marks=[-1.0,-1.0,-1.0,-1.0]; e["triad_until"]=g.elapsed+3.0
 
 static func death(g, e: Dictionary) -> void:
 	if g.draft_rank("steady")>0:
@@ -35,7 +37,7 @@ static func death(g, e: Dictionary) -> void:
 			if t.get("focus_target",0)==e.id:
 				t["focus_credit"]=mini(int(t.get("focus_hits",0)),mini(5,2*g.draft_rank("steady")))
 	if g.draft_rank("cinder")==0 or e.get("burn_left",0.0)<=0 or e.get("burn_relayed",false): return
-	var neighbors: Array = g.enemies.filter(func(other): return other.hp>0 and g.position(other).distance_squared_to(g.position(e))<=4.0)
+	var neighbors: Array = g.enemies.filter(func(other): return other.hp>0 and not Balance.flying(other) and g.position(other).distance_squared_to(g.position(e))<=4.0)
 	neighbors.sort_custom(func(a,b): return g.position(a).distance_squared_to(g.position(e))<g.position(b).distance_squared_to(g.position(e)))
 	if neighbors.is_empty(): return
 	var other: Dictionary = neighbors[0]

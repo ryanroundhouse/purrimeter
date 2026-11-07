@@ -31,7 +31,7 @@ const ITEMS = [
 	["chill", "Deep Chill", "Frost", 5, 300, 2.7, "best", 3, 5, 2, "Frost slows become 4 percentage points stronger per rank, up to 68% slowing."],
 	["linger", "Lingering Cold", "Frost", 5, 350, 2.7, "best", 4, 5, 2, "Frost slows last 0.4 seconds longer per rank."],
 	["lock", "Ice Lock", "Frost", 3, 1000, 3.2, "best", 9, 7, 2, "Every fourth frost hit freezes for 0.3 seconds per rank. Control has a recovery window."],
-	["brittle", "Brittle Ice", "Frost", 5, 850, 2.9, "best", 8, 6, 2, "Chilled enemies take 8% more damage per rank from Bolt and Cannon cats."],
+	["brittle", "Brittle Ice", "Frost", 5, 850, 2.9, "best", 8, 6, 2, "Chilled enemies take 8% more damage per rank from Non-Frost cats cats."],
 	["winter", "Winter Gift", "Frost", 1, 5000, 1.0, "best", 15, 0, 2, "Defeated chilled enemies spread a 1.2-second slow to foes within 1.5 tiles."]
 ]
 

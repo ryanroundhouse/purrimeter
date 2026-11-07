@@ -73,14 +73,14 @@ func draw() -> void:
 	var x := field.end.x+16 if landscape else 12.0
 	var y := 60.0 if landscape else field.end.y+8
 	var width := v.size.x-x-12 if landscape else v.size.x-24
-	w=(width-16)/3
-	for kind in range(3):
+	w=(width-24)/4
+	for kind in range(Balance.CATS.size()):
 		var r := Rect2(x+kind*(w+8),y,w,60)
 		v.box(r,v.PANEL if v.placing!=kind else Color("304b40"),6)
 		v.cat_sprite(kind,1,0,Rect2(r.position+Vector2((w-36)/2,0),Vector2(36,34)))
-		v.text_fit(v.game.recruit_cost(kind).label()+"c",r.position+Vector2(10,36),w-14,16,v.GOLD)
+		v.text_fit(v.game.recruit_cost(kind).label()+"c" if v.game.cat_unlocked(kind) else "Beat L1",r.position+Vector2(4,36),w-8,14,v.GOLD if v.game.cat_unlocked(kind) else v.MUTED)
 		if v.placing==kind: v.draw_rect(r,v.MINT,false,2)
-		v.buttons.append({"rect":r,"id":"cat%d"%kind,"enabled":not v.read_only and not v.game.completed})
+		v.buttons.append({"rect":r,"id":"cat%d"%kind,"enabled":not v.read_only and not v.game.completed and v.game.cat_unlocked(kind)})
 	y+=68
 	v.button("Level complete" if v.game.completed else ("Resume wave" if v.game.active and v.game.paused else ("Wave in progress" if v.game.active else "Start wave %d"%v.game.level)),Rect2(x,y,width-52,44),"resume" if v.game.active and v.game.paused else "start",not v.read_only and (not v.game.active or v.game.paused),true)
 	icon_button("auto",Rect2(x+width-44,y,44,44),"auto_start",not v.read_only,v.game.auto_start)
@@ -96,7 +96,7 @@ func draw() -> void:
 	if v.game.active:
 		v.bar(Rect2(x,y,width,5),v.game.level_health_fraction(),v.PINK,v.LINE)
 		y+=9
-	v.wrapped(("Waiting for garden…" if v.remote_revision<0 else ("Player reconnecting…" if not v.remote_connected else "Read-only garden")) if v.read_only else ("Tap a tile, then Confirm" if v.placing>=0 and pending<0 else v.status),Vector2(x,y),width,16,v.MUTED)
+	v.wrapped(("Waiting for garden…" if v.remote_revision<0 else ("Player reconnecting…" if not v.remote_connected else "Read-only garden")) if v.read_only else ("Tap a tile, then Confirm" if v.placing>=0 and pending<0 else ("Air incoming · Ranger, Bolt or Frost" if not v.game.active and not v.game.completed and v.game.air_incoming() else v.status)),Vector2(x,y),width,16,v.MUTED)
 	if pending>=0 and v.placing>=0:
 		var rect := transform*Rect2(v.center(pending)-Vector2.ONE*22,Vector2.ONE*44)
 		if field.encloses(rect): v.draw_rect(rect,v.GOLD,false,3)
@@ -233,6 +233,7 @@ func update_details() -> void:
 	if panel=="inspect" and not tower.is_empty():
 		add_portrait(tower,{})
 		label(Balance.CATS[tower.kind].name+" · Tier %d"%tower.tier,v.CREAM,24)
+		label(Balance.CATS[tower.kind].role,v.MUTED,16)
 		label("Health %d%% · Damage %s\nRange %.1f tiles"%[roundi(tower.hp*100),Amount.from_power(v.game.cat_stat(tower,"damage_power")).label(),v.game.cat_stat(tower,"range")],v.MINT)
 		action_button("Upgrade · %sc"%v.game.upgrade_cost(tower).label() if tower.tier<6 else "Maximum tier","upgrade",tower.tier<6 and v.game.coins.enough(v.game.upgrade_cost(tower)))
 		action_button("Repair · %sc"%v.game.repair_cost(tower).label(),"repair",tower.hp<0.999999 and v.game.coins.enough(v.game.repair_cost(tower)))
@@ -240,10 +241,10 @@ func update_details() -> void:
 	elif panel=="inspect" and not enemy.is_empty():
 		var info: Dictionary=Balance.BOSSES[enemy.boss] if enemy.boss>=0 else Balance.FOES[enemy.kind]
 		add_portrait({},enemy)
-		label(info.name,v.CREAM,24)
+		label(info.name+(" · Flying" if Balance.flying(enemy) else ""),v.CREAM,24)
 		var health := Amount.from_power(enemy.hp_power)
 		label("Health %s / %s"%[health.times(enemy.hp).label(),health.label()],v.MINT)
-		label("Speed %.2f tiles/s\nTower damage %s HP/s"%[0.0 if enemy.get("stun",0)>0 else v.game.foe_speed(enemy),Amount.of(v.game.foe_dps(enemy)).label()],v.MUTED)
+		label("Speed %.2f tiles/s\nFlies over towers and terrain"%[0.0 if enemy.get("stun",0)>0 else v.game.foe_speed(enemy)] if Balance.flying(enemy) else "Speed %.2f tiles/s\nTower damage %s HP/s"%[0.0 if enemy.get("stun",0)>0 else v.game.foe_speed(enemy),Amount.of(v.game.foe_dps(enemy)).label()],v.MUTED)
 		label("\n".join(v.enemy_effects(enemy)),v.GOLD)
 	elif panel=="inspect":
 		label("This selection is no longer on the field.",v.MUTED)

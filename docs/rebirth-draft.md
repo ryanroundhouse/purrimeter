@@ -68,7 +68,7 @@ Each eligible improvement's next rank receives its strength band's weight. Draw 
 | Advanced | Treasure Trail | Consecutive successful clears build a capped extra clear reward; defeat and rebirth reset the streak. |
 | Keystone | Thermal Shock | A direct Gunner hit causes a bounded bonus burst against a target already burning and chilled, preserving both statuses. |
 | Keystone | Nine Lives | Once per level attempt, prevent one cat's destruction and restore some health; one shared charge for the garden. |
-| Keystone | Triad Strike | Primary hits from all three cat roles within a short window trigger a bonus burst, subject to a cooldown. |
+| Keystone | Triad Strike | Primary hits from any three distinct cat roles within a short window trigger a bonus burst, subject to a cooldown. |
 
 Eligibility may require owned coin-bought powerup ranks as well as owned draft ranks. Cinder Relay and Thermal Shock require Hot Embers; Steady Aim requires Focus Fire. Treasure Trail requires Supply Cache; Triad Strike requires Spotter Bolts and Cold Front. Exact ranks and progress thresholds remain delegated. Do not require qualifying cats to be currently placed: the player may recruit the relevant roles later, and selling or losing a cat must not revoke qualification.
 
@@ -101,7 +101,7 @@ All ordinary improvements have three ranks except Nine Lives, which has one. Req
 | Treasure Trail | 15 / +5 | 3 / +2 | Supply Cache | Extra base-bounty reward of 5% × owned rank × consecutive clears, capped at five clears. |
 | Thermal Shock | 20 / +5 | 4 / +2 | Hot Embers | +35% direct Gunner hit damage per rank if the enemy was burning before the hit and is chilled. |
 | Nine Lives | 20 / none | 4 / none | None | Prevent one destruction per attempt and restore 35% health. One shared charge; refreshes on Start. |
-| Triad Strike | 30 / +5 | 5 / +2 | Spotter Bolts and Cold Front | Bonus damage of 50% × owned rank of the triggering primary hit after all three roles hit within 3 seconds. Enemy then has 3 seconds of combo recovery. |
+| Triad Strike | 30 / +5 | 5 / +2 | Spotter Bolts and Cold Front | Bonus damage of 50% × owned rank of the triggering primary hit after any three distinct roles hit within 3 seconds. Enemy then has 3 seconds of combo recovery. |
 
 Supply Cache and Treasure Trail use base level bounty and add together; neither multiplies legacy income, Bounty Lessons, or Boss Purse. Normal enemy kill rewards retain those existing factors. Lasting Fortune is the uncapped fallback and adds 10 percentage points to the legacy-compatible permanent coin bonus each time it is chosen.
 

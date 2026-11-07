@@ -1,0 +1,3 @@
+# Preserve active wave rosters when adding flying enemies
+
+Level-specific flying waves change enemy composition and the weights used to divide a wave's fixed health and bounty. Existing saves reconstruct unspawned enemies, so rebuilding a saved attempt with the new roster would silently change the battle the player left; save version 7 instead records the active roster profile and migrates older active waves with their original ground-only profile. New attempts adopt the selected level's roster, while legacy endless gardens without the level-two unlock remain ground-only until anti-air access is earned.

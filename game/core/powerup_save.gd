@@ -12,7 +12,7 @@ static func valid(data: Dictionary) -> bool:
 			if d.is_empty() or id=="training" or not number(data.powerups[id],0,d.cap,true): return false
 		for id in data.discovered:
 			if Powerups.definition(str(id)).is_empty() or not data.discovered[id] is bool: return false
-		if not data.get("cat_milestones") is Array or data.cat_milestones.size()!=3: return false
+		if not data.get("cat_milestones") is Array or data.cat_milestones.size() not in [3,4]: return false
 		for tier in data.cat_milestones:
 			if not number(tier,0,6,true): return false
 		if not number(data.get("combat_seed"),1,2147483646,true): return false
@@ -38,13 +38,13 @@ static func valid(data: Dictionary) -> bool:
 	return true
 
 static func apply(g, data: Dictionary) -> void:
-	g.powerup_ranks={}; g.discovered={"training":true}; g.cat_milestones=[0,0,0]
+	g.powerup_ranks={}; g.discovered={"training":true}; g.cat_milestones=[0,0,0,0]
 	g.combat_seed=1234567; g.aftershocks=[]
 	if data.version>=3:
 		for id in data.powerups: g.powerup_ranks[id]=int(data.powerups[id])
 		for id in data.discovered:
 			if data.discovered[id]: g.discovered[id]=true
-		for i in range(3): g.cat_milestones[i]=int(data.cat_milestones[i])
+		for i in range(data.cat_milestones.size()): g.cat_milestones[i]=int(data.cat_milestones[i])
 		g.combat_seed=int(data.combat_seed); g.aftershocks=data.aftershocks.duplicate(true)
 	# Version 2 retains Session's saved training and lifetime counters verbatim.
 	# refresh_powerups seeds only cat achievements supported by surviving towers.

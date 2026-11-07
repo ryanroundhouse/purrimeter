@@ -132,8 +132,8 @@ func observe(g) -> void:
 	highest("best",g.best); highest("bonus",floor(g.bonus_points))
 	var kinds := {}; var mythics := {}; var owned := 0; var capped := 0
 	for t in g.towers:
-		kinds[t.kind]=true
-		if t.tier==6: mythics[t.kind]=true
+		if t.kind<3: kinds[t.kind]=true
+		if t.tier==6 and t.kind<3: mythics[t.kind]=true
 	for row in Powerups.ITEMS:
 		if g.powerup_rank(row[0])>0: owned+=1
 		if g.powerup_complete(row[0]): capped+=1

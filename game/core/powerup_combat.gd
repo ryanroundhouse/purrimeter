@@ -23,6 +23,7 @@ static func control(e: Dictionary, duration: float) -> bool:
 	return true
 
 static func attack(g, t: Dictionary, target: Dictionary) -> void:
+	if not Balance.can_target(t.kind,target): return
 	var was_burning: bool = target.get("burn_left",0.0)>0
 	var center := Vector2(t.cell%16,t.cell/16)
 	var point: Vector2 = g.position(target)
@@ -59,7 +60,7 @@ static func attack(g, t: Dictionary, target: Dictionary) -> void:
 	elif t.kind==1:
 		var radius: float = 1.35+0.15*g.powerup_rank("blast")
 		for e in g.enemies:
-			if e.hp<=0 or g.position(e).distance_to(point)>radius: continue
+			if e.hp<=0 or not Balance.can_target(t.kind,e) or g.position(e).distance_to(point)>radius: continue
 			var power := hit_power(g,t,e,base)
 			if e.id==target.id: primary_power=power
 			g.damage(e,power)
@@ -71,12 +72,15 @@ static func attack(g, t: Dictionary, target: Dictionary) -> void:
 			if roll(g,0.1*g.powerup_rank("concussion")): control(e,0.45)
 		if g.powerup_rank("aftershock")>0:
 			g.aftershocks.append({"x":point.x,"y":point.y,"radius":radius,"power":base+log(0.4)/log(10.0),"delay":0.45,"tier":t.tier})
-	else:
+	elif t.kind==2:
 		primary_power=hit_power(g,t,target,base)
 		g.damage(target,primary_power)
 		target.slow=maxf(target.slow,1.8+0.4*g.powerup_rank("linger"))
 		target["frost_hits"]=int(target.get("frost_hits",0))+1
 		if g.powerup_rank("lock")>0 and target.frost_hits%4==0: control(target,0.3*g.powerup_rank("lock"))
+	else:
+		primary_power=hit_power(g,t,target,base)
+		g.damage(target,primary_power)
 	DraftCombat.primary(g,t,target,primary_power,was_burning)
 
 static func tick(g, dt: float) -> void:
@@ -85,7 +89,7 @@ static func tick(g, dt: float) -> void:
 		e["stun"]=maxf(0,e.get("stun",0.0)-dt)
 		e["control_guard"]=maxf(0,e.get("control_guard",0.0)-dt)
 		var burn_time: float = minf(dt,e.get("burn_left",0.0))
-		if burn_time>0 and e.hp>0:
+		if burn_time>0 and e.hp>0 and not Balance.flying(e):
 			g.damage(e,e.burn_power+log(burn_time)/log(10.0))
 			e.burn_left=maxf(0,e.burn_left-dt)
 	for echo in g.aftershocks:
@@ -93,7 +97,7 @@ static func tick(g, dt: float) -> void:
 		if echo.delay>0: continue
 		var point := Vector2(echo.x,echo.y)
 		for e in g.enemies:
-			if e.hp>0 and g.position(e).distance_to(point)<=echo.radius:
+			if e.hp>0 and not Balance.flying(e) and g.position(e).distance_to(point)<=echo.radius:
 				g.damage(e,hit_power(g,{"kind":1},e,echo.power))
 		g.shots.append({"from":point,"to":point,"kind":1,"tier":int(echo.tier),"life":0.24})
 	g.aftershocks=g.aftershocks.filter(func(echo): return echo.delay>0)

@@ -5,6 +5,8 @@ signal changed
 signal notice(message: String)
 var achievements := Achievements.new()
 var achievement_run: Dictionary = {}
+var viewed_unlock_level := 0
+var viewed_roster_level := 0
 var viewed_skins: Dictionary = {} # Remote presentation only; never grants ownership.
 var terrain := GardenTerrain.new()
 
@@ -38,7 +40,7 @@ var training := 0
 var kills := 0
 var powerup_ranks: Dictionary = {}
 var discovered: Dictionary = {"training":true}
-var cat_milestones: Array = [0,0,0]
+var cat_milestones: Array = [0,0,0,0]
 var combat_seed := 1234567
 var aftershocks: Array = []
 var active := false
@@ -52,10 +54,24 @@ var spawned := 0
 var spawn_clock := 0.0
 var next_id := 1
 var wave_plan: Array = []
+var wave_roster_level := 1 # Preserve the roster of a saved active wave.
 var open_field: Dictionary = {}
 var breach_fields: Dictionary = {}
 var route_age := 0.0
 var last_defeat := 0
+
+func cat_unlocked(kind: int) -> bool:
+	return kind>=0 and kind<Balance.CATS.size() and (kind!=Balance.ANTI_AIR or maxi(achievements.unlocked_level,viewed_unlock_level)>=2)
+
+func flyer_level() -> int:
+	if viewed_roster_level>0: return viewed_roster_level
+	return 1 if legacy_endless and not cat_unlocked(Balance.ANTI_AIR) else garden_level
+
+func wave_preview() -> String:
+	return Balance.preview(level,wave_roster_level if active else flyer_level())
+
+func air_incoming() -> bool:
+	return Balance.plan(level,flyer_level()).any(func(e): return Balance.flying(e))
 
 func wave_limit() -> int:
 	return GardenLevels.wave_limit(garden_level)
@@ -140,6 +156,7 @@ func tower_at(cell: int) -> Dictionary:
 	return {}
 
 func placement_error(cell: int, kind: int) -> String:
+	if not cat_unlocked(kind): return "Beat level 1 to unlock Ranger anti-air cats."
 	if completed: return "Level complete. Choose a new garden to recruit cats."
 	if not pending_draft.is_empty(): return "Choose your rebirth improvement first."
 	if cell < 0 or cell > 255: return "Choose a tile inside the garden."
@@ -147,6 +164,7 @@ func placement_error(cell: int, kind: int) -> String:
 	if terrain.cells.has(cell): return terrain.description(cell,true)
 	if not tower_at(cell).is_empty(): return "A cat already guards this tile."
 	for e in enemies:
+		if Balance.flying(e): continue
 		if e.cell==cell or e.next==cell: return "An enemy is crossing this tile."
 		if cell in Routes.clearance_cells(e.cell,e.next): return "An enemy needs this corner clear while crossing."
 		var committed: int = e.get("frenzy_target",-1)
@@ -237,7 +255,8 @@ func start() -> bool:
 	if completed or active or not pending_draft.is_empty(): return false
 	if wave_limit()>0 and level>wave_limit(): return false
 	DraftCombat.reset_attempt(self)
-	wave_plan=Balance.plan(level); spawned=0; spawn_clock=0; active=true; paused=false; auto_start_remaining=0.0
+	wave_roster_level=flyer_level()
+	wave_plan=Balance.plan(level,wave_roster_level); spawned=0; spawn_clock=0; active=true; paused=false; auto_start_remaining=0.0
 	achievements.record(self,"start")
 	last_defeat=0; sound.emit("wave",1); notice.emit("Wave %d · %s" % [level,Balance.title(level)]); changed.emit(); return true
 
@@ -276,6 +295,7 @@ func position(e: Dictionary) -> Vector2:
 	return start
 
 func remaining(e: Dictionary) -> float:
+	if Balance.flying(e): return (Vector2(Routes.EXIT%16,Routes.EXIT/16)-position(e)).length()/foe_speed(e)
 	var cell: int = e.next if e.next>=0 else e.cell
 	var committed: int = e.get("frenzy_target",-1)
 	if committed>=0:
@@ -356,14 +376,14 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 		var target: Dictionary = {}
 		var best_time := Routes.INF
 		for e in enemies:
-			if e.hp>0 and center.distance_to(position(e))<=cat_stat(t,"range") and priorities[e.id]<best_time:
+			if e.hp>0 and Balance.can_target(t.kind,e) and center.distance_to(position(e))<=cat_stat(t,"range") and priorities[e.id]<best_time:
 				target=e; best_time=priorities[e.id]
 		if target.is_empty(): continue
 		t.cooldown=cat_stat(t,"interval"); t.flash=0.23
 		var target_pos := position(target)
 		shots.append({"from":center,"to":target_pos,"kind":t.kind,"tier":t.tier,"life":0.24})
 		PowerupCombat.attack(self,t,target)
-		sound.emit(["bolt","cannon","frost"][t.kind],t.tier)
+		sound.emit(["bolt","cannon","frost","bolt"][t.kind],t.tier)
 	PowerupCombat.reward_dead(self)
 	for e in enemies:
 		e.slow=maxf(0,e.slow-dt); e.attack=maxf(0,e.attack-dt)
@@ -371,9 +391,9 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 		if e.next<0:
 			if e.cell==Routes.EXIT: defeat(); return
 			var next: int = e.get("frenzy_target",-1)
-			if next<0: next=field_for(e,e.cell).next[e.cell]
+			if next<0: next=e.cell+1 if Balance.flying(e) else field_for(e,e.cell).next[e.cell]
 			if next>=0:
-				var blocker := tower_at(next)
+				var blocker := {} if Balance.flying(e) else tower_at(next)
 				if not blocker.is_empty():
 					if e.get("frenzied",false): e.frenzy_target=next
 					achievements.fail_condition(self,"unhurt","A cat took damage during the attempt.")
@@ -387,7 +407,7 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 		if e.next>=0:
 			e.progress+=foe_speed(e)*dt/Routes.step_length(e.cell,e.next)
 			if e.progress>=1.0:
-				Frenzy.arrive(e,e.next)
+				if not Balance.flying(e): Frenzy.arrive(e,e.next)
 				e.cell=e.next; e.next=-1; e.progress=0.0
 				if e.cell==Routes.EXIT: defeat(); return
 	if spawned>=wave_plan.size() and enemies.is_empty():
@@ -404,18 +424,18 @@ func step(dt: float, real_dt: float = -1.0) -> void:
 		refresh_powerups()
 		auto_start_remaining=AUTO_START_DELAY if auto_start and not completed else 0.0
 		sound.emit("win" if completed else "clear",1)
-		if completed: notice.emit("Level %d complete! %s unlocked." % [garden_level,GardenLevels.title(garden_level+1)])
+		if completed: notice.emit("Level %d complete! %s unlocked." % [garden_level,GardenLevels.title(garden_level+1)+(" · Ranger anti-air unlocked" if garden_level==1 else "")])
 		else: notice.emit("Wave cleared. Next wave in 3 seconds. Space pauses." if auto_start else "Wave cleared. Prepare your patrol, train, or rebirth.")
 		changed.emit()
 
 func snapshot() -> Dictionary:
 	refresh_powerups()
-	return {"version":6,"garden_level":garden_level,"completed":completed,"legacy_endless":legacy_endless,"terrain":terrain.snapshot(),"draft_ranks":draft_ranks.duplicate(),"draft_seed":draft_seed,"pending_draft":pending_draft.duplicate(true),"draft_streak":draft_streak,"draft_rescue_used":draft_rescue_used,"achievements":achievements.snapshot(),"achievement_run":achievement_run.duplicate(true),"powerups":powerup_ranks.duplicate(true),"discovered":discovered.duplicate(true),"cat_milestones":cat_milestones.duplicate(),"combat_seed":combat_seed,"aftershocks":aftershocks.duplicate(true),"coins":coins.power,"towers":towers.duplicate(true),"enemies":enemies.duplicate(true),"level":level,"best":best,"run_best":run_best,"rebirths":rebirths,"bonus_points":bonus_points,"training":training,"kills":kills,"active":active,"spawned":spawned,"spawn_clock":spawn_clock,"next_id":next_id,"elapsed":elapsed,"last_defeat":last_defeat,"auto_start":auto_start,"auto_start_remaining":auto_start_remaining}
+	return {"version":7,"wave_roster_level":wave_roster_level,"garden_level":garden_level,"completed":completed,"legacy_endless":legacy_endless,"terrain":terrain.snapshot(),"draft_ranks":draft_ranks.duplicate(),"draft_seed":draft_seed,"pending_draft":pending_draft.duplicate(true),"draft_streak":draft_streak,"draft_rescue_used":draft_rescue_used,"achievements":achievements.snapshot(),"achievement_run":achievement_run.duplicate(true),"powerups":powerup_ranks.duplicate(true),"discovered":discovered.duplicate(true),"cat_milestones":cat_milestones.duplicate(),"combat_seed":combat_seed,"aftershocks":aftershocks.duplicate(true),"coins":coins.power,"towers":towers.duplicate(true),"enemies":enemies.duplicate(true),"level":level,"best":best,"run_best":run_best,"rebirths":rebirths,"bonus_points":bonus_points,"training":training,"kills":kills,"active":active,"spawned":spawned,"spawn_clock":spawn_clock,"next_id":next_id,"elapsed":elapsed,"last_defeat":last_defeat,"auto_start":auto_start,"auto_start_remaining":auto_start_remaining}
 
 func restore(data: Dictionary) -> bool:
 	# Validate everything before replacing the live run.
 	var ints := ["level","best","run_best","rebirths","training","kills","spawned","next_id","last_defeat"]
-	if not PowerupSave.number(data.get("version"),2,6,true): return false
+	if not PowerupSave.number(data.get("version"),2,7,true): return false
 	var restored_terrain := GardenTerrain.decode(data.get("terrain") if data.version>=5 else [])
 	if restored_terrain==null: return false
 	if not PowerupSave.valid(data): return false
@@ -440,19 +460,29 @@ func restore(data: Dictionary) -> bool:
 		if not t is Dictionary: return false
 		for key in ["cell","kind","tier","hp","spent","cooldown","flash"]:
 			if not t.has(key) or not (t[key] is float or t[key] is int) or not is_finite(float(t[key])): return false
-		if t.cell<0 or t.cell>255 or t.cell in [Routes.ENTRANCE,Routes.EXIT] or cells.has(int(t.cell)) or t.kind<0 or t.kind>2 or t.tier<1 or t.tier>6 or t.hp<=0 or t.hp>1: return false
+		if t.cell<0 or t.cell>255 or t.cell in [Routes.ENTRANCE,Routes.EXIT] or cells.has(int(t.cell)) or t.kind<0 or t.kind>=Balance.CATS.size() or t.tier<1 or t.tier>6 or t.hp<=0 or t.hp>1: return false
+		for key in ["cell","kind","tier"]:
+			if float(t[key])!=floor(float(t[key])): return false
 		cells[int(t.cell)]=true
 	var ids := {}
 	for e in data.enemies:
 		if not e is Dictionary: return false
 		for key in ["id","kind","boss","cell","next","progress","hp","hp_power","bounty_power","slow","attack"]:
 			if not e.has(key) or not (e[key] is float or e[key] is int) or not is_finite(float(e[key])): return false
-		if e.kind<0 or e.kind>3 or e.boss < -1 or e.boss>3 or e.cell<0 or e.cell>255 or e.next < -1 or e.next>255 or e.progress<0 or e.progress>=1 or e.hp<=0 or e.hp>1 or ids.has(int(e.id)): return false
-		if e.next>=0 and not int(e.next) in Routes.neighbors(int(e.cell),cells): return false
-		if cells.has(int(e.cell)) or cells.has(int(e.next)): return false
-		if not Frenzy.valid(e,cells,restored_terrain.distances(),restored_terrain.cells): return false
+		if e.kind<0 or e.kind>=Balance.FOES.size() or e.boss < -1 or e.boss>3 or e.cell<0 or e.cell>255 or e.next < -1 or e.next>255 or e.progress<0 or e.progress>=1 or e.hp<=0 or e.hp>1 or ids.has(int(e.id)): return false
+		if int(e.kind)==Balance.MOTH:
+			if not Balance.valid_flight(e): return false
+		else:
+			if e.next>=0 and not int(e.next) in Routes.neighbors(int(e.cell),cells): return false
+			if cells.has(int(e.cell)) or cells.has(int(e.next)): return false
+			if not Frenzy.valid(e,cells,restored_terrain.distances(),restored_terrain.cells): return false
 		ids[int(e.id)]=true
-	var plan := Balance.plan(int(data.level))
+	var roster := 1
+	if data.version>=7:
+		if not PowerupSave.number(data.get("wave_roster_level"),1,5,true): return false
+		roster=int(data.wave_roster_level)
+		if roster!=1 and roster!=data.get("garden_level"): return false
+	var plan := Balance.plan(int(data.level),roster)
 	if data.spawned>plan.size() or (not data.active and not data.enemies.is_empty()): return false
 	if not DraftSave.valid(data): return false
 	var unlocked := achievements.unlocked_level
@@ -460,6 +490,12 @@ func restore(data: Dictionary) -> bool:
 	if data.version>=6:
 		if not data.has("achievements") or data.achievements.version!=2 or not GardenLevels.valid(data,unlocked): return false
 		if data.completed and unlocked<int(data.garden_level)+1: return false
+	if data.towers.any(func(t): return t.kind==Balance.ANTI_AIR) and unlocked<2: return false
+	for e in data.enemies:
+		for key in ["id","kind","boss","cell","next"]:
+			if float(e[key])!=floor(float(e[key])): return false
+		if e.kind==Balance.MOTH and not plan.any(func(entry): return Balance.flying(entry)): return false
+	wave_roster_level=roster
 	terrain=restored_terrain
 	for key in ints: set(key,int(data[key]))
 	auto_start=data.get("auto_start",false); auto_start_remaining=float(remaining_delay)
@@ -469,7 +505,8 @@ func restore(data: Dictionary) -> bool:
 		for key in ["cell","kind","tier"]: t[key]=int(t[key])
 	for e in enemies:
 		for key in ["id","kind","boss","cell","next"]: e[key]=int(e[key])
-		Frenzy.restore(e)
+		if Balance.flying(e): Frenzy.initialize(e)
+		else: Frenzy.restore(e)
 	PowerupSave.apply(self,data)
 	DraftSave.apply(self,data)
 	refresh_powerups()

@@ -15,7 +15,7 @@ const ITEMS := [
 	["treasure","Treasure Trail",1,3,15,5,3,2,"Consecutive clears build extra base-bounty rewards, capped at five clears. Defeat or rebirth resets the streak."],
 	["thermal","Thermal Shock",2,3,20,5,4,2,"A direct Gunner hit deals bonus damage to an enemy already burning and chilled. Both statuses remain."],
 	["lives","Nine Lives",2,1,20,0,4,0,"Once per wave attempt, save one cat from destruction and restore 35% health. One charge shared by your patrol."],
-	["triad","Triad Strike",2,3,30,5,5,2,"Primary hits from all three roles within 3 seconds trigger bonus damage. Each enemy has a 3-second recovery."],
+	["triad","Triad Strike",2,3,30,5,5,2,"Primary hits from any three distinct roles within 3 seconds trigger bonus damage. Each enemy has a 3-second recovery."],
 ]
 const BANDS := ["Basic","Advanced","Keystone"]
 const DRAFT_REQUIRES := {"treasure":["supply"],"triad":["spotter","front"]}

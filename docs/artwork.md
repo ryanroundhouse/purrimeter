@@ -2,6 +2,10 @@
 
 All new raster art was generated with the built-in imagegen tool. Final runtime assets live in `game/assets/`: `tuxedo.png`, `chunky.png`, `siamese.png`, `bosses.png`, and `icon.png`. Each cat sheet contains six tiers with four animation poses; the boss sheet contains four bosses with four poses. Original PNG alpha is retained. Measured source rectangles in `sprite_bounds.gd` correct uneven generated spacing without modifying the artwork.
 
+## Anti-air
+
+Ranger’s six-tier calico archer sheet and Moth’s four-frame flight sheet are original built-in imagegen assets. See [their exact prompts and runtime integration](anti-air-artwork.md).
+
 ## Terrain
 
 Connected rock and stream materials use built-in imagegen artwork with runtime edge/corner joining and subtle water highlights. See [terrain artwork and exact prompt](terrain-artwork.md).

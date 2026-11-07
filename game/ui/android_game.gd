@@ -44,8 +44,8 @@ func layout() -> void:
 	transform=Transform2D(0,Vector2.ONE*(edge/704.0),0,field.get_center()+pan-v.BOARD.get_center()*(edge/704.0))
 	var side := 80.0 if safe.size.y>=330 else 56.0
 	overview=Rect2(safe.end.x-side,safe.position.y+64,side,side)
-	palette_horizontal=safe.size.y<324
-	palette=Rect2(safe.position.x,safe.end.y-136,safe.size.x,72) if palette_horizontal else Rect2(safe.end.x-212,safe.end.y-260,212,196)
+	palette_horizontal=safe.size.y<384
+	palette=Rect2(safe.position.x,safe.end.y-136,safe.size.x,72) if palette_horizontal else Rect2(safe.end.x-212,safe.end.y-320,212,256)
 	if is_instance_valid(sheet):
 		var width := minf(332,safe.size.x*0.49)
 		sheet.position=Vector2(safe.end.x-width,safe.position.y+64)
@@ -106,7 +106,7 @@ func draw_status() -> void:
 		text_fit("Health %d%%"%ceili(v.game.level_health_fraction()*100),rect.position+Vector2(14,28),width*0.6-14,12,v.MUTED)
 		v.bar(Rect2(rect.position.x+width*0.62,rect.position.y+37,width*0.38-14,4),v.game.level_health_fraction(),v.PINK,v.LINE)
 	else:
-		text_fit("Level complete" if v.game.completed else ("Endless" if v.game.wave_limit()==0 else "%d waves · Ready to start" % v.game.wave_limit()),rect.position+Vector2(14,28),width-28,12,v.MUTED)
+		text_fit("Level complete" if v.game.completed else ("Air incoming · Ranger / Bolt / Frost" if v.game.air_incoming() else ("Endless" if v.game.wave_limit()==0 else "%d waves · Ready to start" % v.game.wave_limit())),rect.position+Vector2(14,28),width-28,12,v.MUTED)
 
 func draw_wave_controls() -> void:
 	var width := wave_button_width()
@@ -142,8 +142,8 @@ func pill(caption: String, rect: Rect2, id: String, enabled: bool = true, lit: b
 
 func draw_recruitment() -> void:
 	v.box(palette,PANEL,16); overlay_regions.append(palette)
-	for kind in range(3):
-		var width := (palette.size.x-32)/3 if palette_horizontal else palette.size.x-16
+	for kind in range(Balance.CATS.size()):
+		var width := (palette.size.x-40)/4 if palette_horizontal else palette.size.x-16
 		var offset := Vector2(8+kind*(width+8),8) if palette_horizontal else Vector2(8,8+kind*60)
 		var rect := Rect2(palette.position+offset,Vector2(width,56))
 		var chosen: bool=v.placing==kind
@@ -151,8 +151,8 @@ func draw_recruitment() -> void:
 		v.cat_sprite(kind,1,0,Rect2(rect.position+Vector2(4,0),Vector2(52,52)))
 		text_fit(Balance.CATS[kind].name,rect.position+Vector2(64,3),rect.size.x-72,16,v.CREAM)
 		var cost: Amount=v.game.recruit_cost(kind)
-		text(cost.label()+"c",rect.position+Vector2(64,30),14,v.GOLD if v.game.coins.enough(cost) else v.PINK)
-		v.buttons.append({"rect":rect,"id":"cat%d"%kind,"enabled":not v.read_only})
+		text_fit(cost.label()+"c" if v.game.cat_unlocked(kind) else "Beat level 1",rect.position+Vector2(64,30),rect.size.x-72,13,v.GOLD if v.game.cat_unlocked(kind) else v.MUTED)
+		v.buttons.append({"rect":rect,"id":"cat%d"%kind,"enabled":not v.read_only and v.game.cat_unlocked(kind)})
 
 func draw_placement() -> void:
 	var left := safe.position.x+164
@@ -355,11 +355,11 @@ func update_details() -> void:
 		action_button("Repair\n%sc"%v.game.repair_cost(tower).label() if tower.hp<0.999999 else "Fully healed","repair",tower.hp<0.999999 and v.game.coins.enough(v.game.repair_cost(tower)))
 	elif panel=="inspect" and not enemy.is_empty():
 		var info: Dictionary=Balance.BOSSES[enemy.boss] if enemy.boss>=0 else Balance.FOES[enemy.kind]
-		panel_title.text=info.name.capitalize()
+		panel_title.text=info.name.capitalize()+(" · Flying" if Balance.flying(enemy) else "")
 		add_portrait({},enemy)
 		var health := Amount.from_power(enemy.hp_power)
 		label("Health %s / %s"%[health.times(enemy.hp).label(),health.label()],v.MINT,15)
-		label("Speed %.2f tiles/s\nTower damage %s HP/s"%[0.0 if enemy.get("stun",0)>0 else v.game.foe_speed(enemy),Amount.of(v.game.foe_dps(enemy)).label()],v.CREAM,15)
+		label("Speed %.2f tiles/s\nFlies over towers and terrain"%[0.0 if enemy.get("stun",0)>0 else v.game.foe_speed(enemy)] if Balance.flying(enemy) else "Speed %.2f tiles/s\nTower damage %s HP/s"%[0.0 if enemy.get("stun",0)>0 else v.game.foe_speed(enemy),Amount.of(v.game.foe_dps(enemy)).label()],v.CREAM,15)
 		label("\n".join(v.enemy_effects(enemy)),v.GOLD,14)
 	elif panel=="inspect":
 		panel_title.text="Selection ended"; label("This selection is no longer on the field.",v.MUTED,15)

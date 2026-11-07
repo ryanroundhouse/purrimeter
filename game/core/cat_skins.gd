@@ -2,6 +2,7 @@ class_name CatSkins
 extends RefCounted
 ## Stable cosmetic identities. Achievement ownership is the only unlock authority.
 const ITEMS := [
+	["ranger_default","Calico Ranger",3,"","ranger"],
 	["scout_default","Tuxedo Scout",0,"","tuxedo"],
 	["scout_ginger","Ginger Scout",0,"first","skins/scout_ginger"],
 	["scout_silver","Silver Scout",0,"bolt","skins/scout_silver"],
@@ -18,7 +19,7 @@ const ITEMS := [
 	["sage_lilac","Lilac Sage",2,"ranks","skins/sage_lilac"],
 	["sage_aurora","Aurora Sage",2,"toys","skins/sage_aurora"],
 ]
-const DEFAULTS := ["scout_default","gunner_default","sage_default"]
+const DEFAULTS := ["scout_default","gunner_default","sage_default","ranger_default"]
 
 static func item(id: String) -> Array:
 	for row in ITEMS:
@@ -36,21 +37,21 @@ static func reward(achievement: String) -> String:
 
 static func unlocked(book, id: String) -> bool:
 	var row := item(id)
-	return not row.is_empty() and (row[3].is_empty() or book.earned.has(row[3]))
+	return not row.is_empty() and (book.unlocked_level>=2 if row[2]==Balance.ANTI_AIR else (row[3].is_empty() or book.earned.has(row[3])))
 
 static func selected(book, kind: int) -> String:
 	var id: String = book.skin_choices.get(str(kind),DEFAULTS[kind])
 	return id if unlocked(book,id) and item(id)[2]==kind else DEFAULTS[kind]
 
 static func equip(book, kind: int, id: String) -> bool:
-	if kind<0 or kind>2 or not unlocked(book,id) or item(id)[2]!=kind: return false
+	if kind<0 or kind>=Balance.CATS.size() or not unlocked(book,id) or item(id)[2]!=kind: return false
 	book.skin_choices[str(kind)]=id
 	return true
 
 static func valid_choices(data) -> bool:
-	if not data is Dictionary or data.size()>3: return false
+	if not data is Dictionary or data.size()>Balance.CATS.size(): return false
 	for key in data:
-		if key not in ["0","1","2"] or not data[key] is String: return false
+		if key not in ["0","1","2","3"] or not data[key] is String: return false
 		var row := item(data[key])
 		if row.is_empty() or row[2]!=int(key): return false
 	return true

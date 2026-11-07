@@ -32,7 +32,8 @@ static func texture(id: String) -> Texture2D:
 static func source(id: String, tier: int, frame: int) -> Rect2:
 	var row := CatSkins.item(id)
 	var bounds: Array
-	if row[3].is_empty(): bounds=SpriteBounds.CATS[row[2]][tier-1][frame]
+	if row[2]==Balance.ANTI_AIR: bounds=AirArt.RANGER[tier-1][frame]
+	elif row[3].is_empty(): bounds=SpriteBounds.CATS[row[2]][tier-1][frame]
 	elif SkinBounds.DATA.has(id): bounds=SkinBounds.DATA[id][tier-1][frame]
 	else: bounds=[frame*256,(tier-1)*256,256,256]
 	return Rect2(bounds[0],bounds[1],bounds[2],bounds[3])

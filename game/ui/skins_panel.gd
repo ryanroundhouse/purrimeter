@@ -19,10 +19,10 @@ func open(session: Session) -> void:
 	game=session; selection=CatSkins.selected(game.achievements,kind)
 	begin_dialog("Cat Skins","Choose a look for your patrol · Skins never change combat",Vector2(1120,800))
 	body.add_theme_constant_override("separation",20)
-	var tab_row := HBoxContainer.new(); body.add_child(tab_row)
+	var tab_row := GridContainer.new(); tab_row.columns=2 if size.x<650 else 4; tab_row.set_meta("cat_tabs",true); body.add_child(tab_row)
 	tab_row.add_theme_constant_override("separation",12); tabs.clear()
-	for i in range(3):
-		var tab := Button.new(); tab.text=["Scout","Gunner","Sage"][i] if size.x<650 else Balance.CATS[i].name
+	for i in range(Balance.CATS.size()):
+		var tab := Button.new(); tab.text=["Scout","Gunner","Sage","Ranger"][i] if size.x<650 else Balance.CATS[i].name
 		tab.custom_minimum_size=Vector2(0 if size.x<650 else 160,44); tab.size_flags_horizontal=Control.SIZE_EXPAND_FILL; tab.toggle_mode=true
 		tab.pressed.connect(func(): kind=i; selection=CatSkins.selected(game.achievements,kind); refresh_cards())
 		tab.set_meta("wide_min",160); tab_row.add_child(tab); tabs.append(tab)
@@ -47,7 +47,7 @@ func refresh_cards() -> void:
 	cards.clear(); previews.clear()
 	for row in CatSkins.for_kind(kind):
 		var owned := CatSkins.unlocked(game.achievements,row[0])
-		var active: bool = CatSkins.selected(game.achievements,kind)==row[0]
+		var active: bool = owned and CatSkins.selected(game.achievements,kind)==row[0]
 		var card := Button.new(); card_row.add_child(card)
 		card.custom_minimum_size=Vector2(0,158); card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		card.toggle_mode=true; card.tooltip_text=row[1]+(" · Equipped" if active else (" · Unlocked" if owned else " · Locked"))
@@ -69,10 +69,12 @@ func refresh_details() -> void:
 	for id in cards: cards[id].button_pressed=id==selection
 	var row := CatSkins.item(selection)
 	var owned := CatSkins.unlocked(game.achievements,selection)
-	var active: bool = CatSkins.selected(game.achievements,kind)==selection
+	var active: bool = owned and CatSkins.selected(game.achievements,kind)==selection
 	portrait.skin_id=selection; portrait.tier=tier; portrait.locked=not owned; portrait.queue_redraw()
 	label(details,row[1],28,CREAM)
-	if row[3].is_empty():
+	if row[2]==Balance.ANTI_AIR:
+		label(details,"Unlocked by beating level 1" if owned else "Beat level 1 to unlock Ranger",18,MINT if owned else GOLD)
+	elif row[3].is_empty():
 		label(details,"Your original look · Always available",18,MINT)
 	else:
 		var achievement := Achievements.item(row[3])

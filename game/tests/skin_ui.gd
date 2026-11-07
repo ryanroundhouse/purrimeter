@@ -19,7 +19,7 @@ func run() -> void:
 	await capture("main-menu")
 	app.open_skins(); await process_frame; await process_frame
 	var p=app.skins_panel
-	check(p.visible and p.cards.size()==5 and p.tabs.size()==3,"main menu opens five skins and three cat tabs")
+	check(p.visible and p.cards.size()==5 and p.tabs.size()==4,"main menu opens five Scout skins and four cat tabs")
 	check(p.panel.get_rect().end.x<=root.get_visible_rect().size.x and p.panel.get_rect().end.y<=root.get_visible_rect().size.y,"skin panel fits logical viewport")
 	await capture("skins-default")
 	p.cards["scout_golden"].pressed.emit(); await process_frame
