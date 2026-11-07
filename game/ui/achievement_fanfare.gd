@@ -17,6 +17,11 @@ func _ready() -> void:
 	z_index=10
 	hide()
 
+func reset(next_book: Achievements) -> void:
+	book=next_book
+	ids.clear(); skin_ids.clear(); clock=0.0; heading=""; caption=""; thumbnail=""; allowed=false
+	hide()
+
 func advance(delta: float, can_show: bool) -> void:
 	if get_parent().has_method("compact") and get_parent().compact():
 		position=Vector2(8,104); size=Vector2(get_parent().size.x-16,110)

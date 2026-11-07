@@ -32,6 +32,9 @@ _Avoid_: Latest version (without identifying the multiplayer server)
 **New Garden**:
 A fresh garden at a selected unlocked level that replaces the player's current garden, resetting coins, cats, powerups, discoveries, best wave, rebirth bonuses, and draft improvements. Level unlocks, achievements, and cat skins belong to the player and survive this replacement.
 
+**Reset all progress**:
+A fresh start at level one that clears the current garden, earned level unlocks, achievements and their progress, and earned cat skins while retaining the player's preferences.
+
 **Game owner**:
 The player responsible for moderating a multiplayer game, initially its creator. Ownership passes to the longest-connected remaining player when the owner leaves.
 

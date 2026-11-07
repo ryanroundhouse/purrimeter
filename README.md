@@ -90,6 +90,8 @@ Open **Cat Skins** from the main or Escape menu to choose among **five skins per
 
 Autosave runs every four seconds, after changes, when losing focus and on exit. Loads resume paused. **Export / Import** transfers a JSON save between computers. New Garden resets garden progression after level selection and confirmation, while keeping permanent level unlocks, achievements, and cat skins.
 
+**Reset all progress** is available only on the main menu. After confirmation, it clears your garden, level unlocks, achievements and earned skins, then leaves a fresh level-one garden ready with 200 coins. Preferences and multiplayer identity stay; Auto keeps its setting, but the first wave waits for Start. There is no undo or automatic backup. Export first if you want to keep a copy; importing an old export can restore its progress.
+
 - Mac: `~/Library/Application Support/Purrimeter/save.json`
 - Windows: `%APPDATA%/Purrimeter/save.json`
 

@@ -6,6 +6,7 @@ godot_bin="${GODOT:-$PWD/.tools/Godot.app/Contents/MacOS/Godot}"
 "$godot_bin" --headless --path game --script res://tests/run.gd
 "$godot_bin" --headless --path game --script res://tests/levels.gd
 "$godot_bin" --headless --path game --script res://tests/levels_ui.gd -- --multiplayer-test --mobile-test
+"$godot_bin" --headless --path game --script res://tests/reset_progress.gd -- --multiplayer-test --mobile-test
 "$godot_bin" --headless --path game --script res://tests/level_health.gd
 "$godot_bin" --headless --path game --script res://tests/frenzy.gd
 "$godot_bin" --headless --path game --script res://tests/terrain.gd

@@ -119,6 +119,7 @@ func updates() -> void:
 
 func build_main() -> void:
 	var content := scroller()
+	if not app.notice.is_empty(): note(content,app.notice,14,app.GOLD)
 	action(content,"single","Single player",func(): app.show_game(false),true,"play")
 	note(content,"Your garden · %s" % app.local_view.game.progress_label())
 	action(content,"multiplayer","Multiplayer",func(): app.notice=""; app.show_browser(); app.network.connect_server(),false,"people")
@@ -130,7 +131,9 @@ func build_main() -> void:
 	action(content,"settings","Connection settings",func(): app.show_settings("menu"),false,"settings",true)
 	action(content,"updates","Check for updates",updates,false,"download",true)
 	app.update_note=note(content,app.updater.message if app.updater!=null else "",12)
-	if not app.notice.is_empty(): note(content,app.notice,14,app.GOLD)
+	content.add_child(HSeparator.new())
+	var reset := action(content,"reset","Reset all progress",app.confirm_reset_progress,false,"trash",true)
+	reset.add_theme_color_override("font_color",app.PINK); reset.add_theme_color_override("icon_normal_color",app.PINK)
 
 func build_pause() -> void:
 	var header := HBoxContainer.new(); header.add_theme_constant_override("separation",8); body.add_child(header)

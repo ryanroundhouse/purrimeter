@@ -92,7 +92,7 @@ func begin_dialog(heading: String, subtitle: String, dimensions: Vector2) -> voi
 	body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation",20)
 	separator(column)
-	footer=VBoxContainer.new() if size.x<650 else HBoxContainer.new(); column.add_child(footer)
+	footer=BoxContainer.new(); footer.vertical=size.x<650; column.add_child(footer)
 	footer.add_theme_constant_override("separation",12)
 	var spacer := Control.new(); spacer.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	footer.add_child(spacer)
@@ -102,6 +102,7 @@ func layout_panel() -> void:
 	if not is_instance_valid(panel): return
 	for row in panel.find_children("*","BoxContainer",true,false):
 		if row.has_meta("phone_stack"): row.vertical=size.x<650
+		if row.has_meta("stack_below"): row.vertical=size.x<float(row.get_meta("stack_below"))
 	for control in panel.find_children("*","Control",true,false):
 		if control.has_meta("wide_min"): control.custom_minimum_size.x=0 if size.x<650 else float(control.get_meta("wide_min"))
 		if control.has_meta("phone_grid"): control.columns=2 if size.x<650 else 5

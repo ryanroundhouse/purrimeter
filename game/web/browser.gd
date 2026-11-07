@@ -38,6 +38,15 @@ static func commit_garden(session: Session) -> bool:
 		if event[0]=="draft_saved": return event[1]=="ok"
 	return false
 
+static func reset_progress(session: Session) -> bool:
+	if not enabled(): return false
+	# resetSave always reports asynchronously, including session-only play.
+	current.bridge.resetSave(JSON.stringify(session.snapshot(),"",true,true))
+	while true:
+		var event: Array = await current.event_received
+		if event[0]=="reset_saved": return event[1] in ["ok","session"]
+	return false
+
 static func session_only() -> bool:
 	return enabled() and bool(current.bridge.sessionOnly())
 

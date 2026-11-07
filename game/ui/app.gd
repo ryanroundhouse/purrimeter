@@ -43,6 +43,8 @@ var unread := 0
 var chat_toggle: Button
 var browser_platform: BrowserPlatform
 var departed_room := {}
+var reset_dialog: Control
+var reset_in_progress := false
 
 func compact() -> bool:
 	return GamePlatform.native_mobile_controls() or GamePlatform.responsive() and (size.x<1100 or size.y<720 or GamePlatform.touch())
@@ -175,7 +177,7 @@ func title_page(title: String, subtitle: String) -> VBoxContainer:
 	var holder: Node=margin
 	if GamePlatform.responsive() or compact():
 		for side in ["left","right","top","bottom"]: margin.add_theme_constant_override("margin_"+side,20)
-		var scroller := ScrollContainer.new(); margin.add_child(scroller); scroller.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+		var scroller := ScrollContainer.new(); margin.add_child(scroller); scroller.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroller.follow_focus=true
 		holder=scroller
 	var box := column(holder,20); box.size_flags_horizontal=Control.SIZE_EXPAND_FILL; box.add_child(label(title,32 if compact() else 38))
 	var sub := label(subtitle,18,MUTED); sub.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; box.add_child(sub)
@@ -192,6 +194,8 @@ func show_menu() -> void:
 	else:
 		box=column(page,14); box.position=Vector2(100,130); box.size=Vector2(450,650)
 		box.add_child(label("PURRIMETER",48)); box.add_child(label("The Garden Guard",24,MINT))
+	if not notice.is_empty():
+		var note := label(notice,16,GOLD); note.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; box.add_child(note)
 	var description := label("Build your patrol. Grow your garden.\nKeep good company.",21,MUTED); box.add_child(description)
 	var space := Control.new(); space.custom_minimum_size.y=22; box.add_child(space)
 	box.add_child(button("Single player",func(): show_game(false),true))
@@ -207,8 +211,40 @@ func show_menu() -> void:
 	updates.add_child(label("Game version · "+str(GameUpdater.build().version),16,MUTED))
 	update_note=label(updater.message if updater!=null else "Check for game updates.",17,GOLD); update_note.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; updates.add_child(update_note)
 	updates.add_child(button("Check for updates",func(): show_updates(); if updater.state in ["idle","error","current","newer"]: updater.check(network.address)))
-	if not notice.is_empty():
-		var note := label(notice,16,GOLD); note.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; box.add_child(note)
+	updates.add_child(HSeparator.new())
+	var reset := button("Reset all progress",confirm_reset_progress)
+	reset.name="ResetAllProgress"; reset.add_theme_color_override("font_color",PINK)
+	updates.add_child(reset)
+
+func confirm_reset_progress() -> void:
+	if screen!="menu" or reset_in_progress: return
+	if not is_instance_valid(reset_dialog):
+		reset_dialog=preload("res://ui/patrol_dialog.gd").new(); add_child(reset_dialog)
+	move_child(reset_dialog,get_child_count()-1)
+	reset_dialog.set_process_input(true)
+	reset_dialog.begin_dialog("Reset all progress?","Start from scratch at level one." if size.y>=500 else "",Vector2(640,660 if size.x<650 else 540))
+	reset_dialog.label(reset_dialog.body,"Erase your garden, coins, cats, powerups, rebirth rewards, level unlocks, achievements and their progress, and earned cat skins. There is no undo.",19,CREAM)
+	reset_dialog.label(reset_dialog.body,"Preferences and multiplayer identity stay. For a backup, cancel and export from the pause menu. Importing an old export can restore its progress.",17,MUTED)
+	reset_dialog.finish_dialog("Reset all progress",perform_reset_progress,true)
+	# Keep both actions on one row when they fit, leaving short landscapes room for the warning.
+	reset_dialog.footer.set_meta("stack_below",520)
+	reset_dialog.layout_panel()
+
+func perform_reset_progress() -> void:
+	if screen!="menu" or reset_in_progress: return
+	reset_in_progress=true
+	reset_dialog.begin_dialog("Resetting progress…","",Vector2(640,240))
+	reset_dialog.label(reset_dialog.body,"Preparing your fresh garden.",19,CREAM)
+	reset_dialog.set_process_input(false)
+	var saved: bool=await local_view.reset_all_progress()
+	reset_in_progress=false
+	reset_dialog.set_process_input(true); reset_dialog.close()
+	if saved:
+		notice="Progress reset. Level one is ready."
+		if BrowserPlatform.session_only(): notice="Progress reset for this session only. Autosave is unavailable; export your garden to keep it."
+	else:
+		notice="Could not save the reset. Your progress is unchanged. Free storage and try again."
+	show_menu()
 
 func show_settings(back: String) -> void:
 	return_screen=back; configure_window(false); clear_page("settings")
@@ -392,6 +428,8 @@ func leave_updates() -> void:
 
 ## Android back button: step out of the innermost layer, never quit from the menu.
 func go_back() -> void:
+	if reset_in_progress: return
+	if is_instance_valid(reset_dialog) and reset_dialog.visible: reset_dialog.close(); return
 	if not is_instance_valid(local_view) or local_view.draft_saving or (is_instance_valid(local_view.draft_panel) and local_view.draft_panel.visible): return
 	if local_view.confirm.visible: local_view.confirm.close(); return
 	if is_instance_valid(achievement_panel) and achievement_panel.visible: achievement_panel.close(); return
@@ -571,6 +609,7 @@ func close_pause() -> void:
 	if is_instance_valid(local_view): local_view.gameplay_enabled=screen in ["single","multiplayer"] and expanded.is_empty()
 
 func _input(event: InputEvent) -> void:
+	if reset_in_progress or (is_instance_valid(reset_dialog) and reset_dialog.visible): return
 	if passthrough or not event is InputEventKey or not event.pressed or event.echo: return
 	if local_view.draft_saving or (is_instance_valid(local_view.draft_panel) and local_view.draft_panel.visible): return
 	if is_instance_valid(achievement_panel) and achievement_panel.visible: return
