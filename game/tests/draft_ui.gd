@@ -10,7 +10,7 @@ func settle() -> void:
 func capture_image(name: String) -> void:
 	if not capture_enabled: return
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("/tmp/td-draft-"+name+".png")
+	root.get_texture().get_image().save_png("/tmp/purrimeter-draft-"+name+".png")
 func run() -> void:
 	capture_enabled="--draft-captures" in OS.get_cmdline_user_args()
 	root.size=Vector2i(1280,900)

@@ -133,6 +133,9 @@ func label(value: String, font_size: int = 18, color: Color = CREAM) -> Label:
 
 func button(value: String, callback: Callable, primary: bool = false) -> Button:
 	var b := Button.new(); b.text=value; b.clip_text=GamePlatform.native_mobile_controls(); b.custom_minimum_size.y=48; b.pressed.connect(callback)
+	# Clipped text contributes nothing to the minimum width, so a button inside a
+	# horizontal row (chat Send, Mute, Report, Kick) would collapse to zero width.
+	if b.clip_text: b.custom_minimum_size.x=clampf(value.length()*10+36,64,260)
 	if primary:
 		var accent := GOLD if GamePlatform.native_mobile_controls() else MINT
 		for state in ["normal","hover","pressed"]:
@@ -561,6 +564,14 @@ func open_skins() -> void:
 		local_view.gameplay_enabled=was_enabled and not pause_open
 		local_view.save_game(),CONNECT_ONE_SHOT)
 
+func confirm_main_menu() -> void:
+	# The pause overlay frees itself before this dialog is answered. A lambda owned
+	# by that overlay would be invalid by then, so the callback must live here.
+	local_view.ask("Return to the main menu?","Your garden will be saved. You will leave this multiplayer game." if screen=="multiplayer" else "Your garden will be saved and paused.","Main menu",return_to_main_menu)
+
+func return_to_main_menu() -> void:
+	local_view.save_game(); show_menu()
+
 func open_pause() -> void:
 	if local_view.draft_saving or (is_instance_valid(local_view.draft_panel) and local_view.draft_panel.visible): return
 	if screen not in ["single","multiplayer"] or pause_open: return
@@ -600,7 +611,7 @@ func open_pause() -> void:
 	if screen=="multiplayer":
 		box.add_child(button("Continue offline",func(): close_pause(); network.leave_game(); show_game(false)))
 	box.add_child(button("Main menu",func():
-		close_pause(); local_view.ask("Return to the main menu?","Your garden will be saved. You will leave this multiplayer game." if screen=="multiplayer" else "Your garden will be saved and paused.","Main menu",func(): local_view.save_game(); show_menu())))
+		close_pause(); confirm_main_menu()))
 	box.add_child(button("Close menu · stay paused",close_pause)); resume.grab_focus()
 
 func close_pause() -> void:

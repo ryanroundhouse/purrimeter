@@ -160,7 +160,7 @@ func build_pause() -> void:
 	var fresh := action(actions,"new","New garden",func(): app.close_pause(); app.local_view.action("new"),false,"trash")
 	fresh.add_theme_color_override("font_color",app.PINK); fresh.add_theme_color_override("icon_normal_color",app.PINK)
 	action(actions,"main","Main menu",func():
-		app.close_pause(); app.local_view.ask("Return to the main menu?","Your garden will be saved. You will leave this multiplayer game." if app.screen=="multiplayer" else "Your garden will be saved and paused.","Main menu",func(): app.local_view.save_game(); app.show_menu()),false,"home")
+		app.close_pause(); app.confirm_main_menu(),false,"home")
 	if app.screen=="multiplayer":
 		note(content,"Other gardeners can keep playing.",12)
 		action(content,"offline","Continue offline",func(): app.close_pause(); app.network.leave_game(); app.show_game(false))

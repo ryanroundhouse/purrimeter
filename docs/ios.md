@@ -85,3 +85,5 @@ node --test website/tests/download.test.cjs
 Store API tests use a fake service and real immutable files. They cover changed bytes, foreign builds, in-flight reviews, interrupted uploads, failed processing, and lost submission responses. A successful simulator test does not establish physical-device performance. The first live API upload and Apple review are separate verification steps.
 
 References: [Godot iOS export](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_ios.html), [Godot simulator template issue](https://github.com/godotengine/godot/issues/122379), [fastlane deliver](https://docs.fastlane.tools/actions/deliver/), [fastlane API authentication](https://docs.fastlane.tools/app-store-connect-api/), [Apple user-generated-content guideline](https://developer.apple.com/app-store/review/guidelines/#user-generated-content).
+
+See [App Review screen recording](ios-review-recording.md) for the physical-device recording Apple requests under Guideline 2.1.
