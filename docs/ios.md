@@ -68,7 +68,7 @@ xcrun simctl list devices available
 python3 scripts/make_ios_screenshots.py --iphone IPHONE_UDID --ipad IPAD_UDID
 ```
 
-Use a 6.5/6.7/6.9-inch iPhone and a 13-inch iPad Pro. Captures come from the native iOS app's rendered viewport, using the isolated preview garden; no player save is used. The simulator library is local tooling only. Distribution IPAs always use the official device template. Simulator projects live in `build/ios-simulator-project`, separately from the signed distribution artifacts in `dist/ios`.
+Use a 6.7-inch iPhone (iPhone 14 Pro Max or 16 Plus, 2796×1290) and a 12.9-inch iPad Pro 6th generation (2732×2048). The pinned fastlane 2.228 rejects the iPhone 17 Pro (2868×1320) and 13-inch iPad (2752×2064) sizes, which stopped the 4.4.1 listing upload. Captures come from the native iOS app's rendered viewport, using the isolated preview garden; no player save is used. The simulator library is local tooling only. Distribution IPAs always use the official device template. Simulator projects live in `build/ios-simulator-project`, separately from the signed distribution artifacts in `dist/ios`.
 
 ## Website availability
 
