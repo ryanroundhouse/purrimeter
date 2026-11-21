@@ -48,7 +48,7 @@ Name the JSON file `app-store.json`, and set permissions to `600` on both files.
 6. Privacy: ordinary multiplayer state is ephemeral. Reports retain chat messages, chosen names and installation identities for 90 days, for safety/app functionality. Disclose the stored messages/content and identifiers; do not declare “no data collected.” No tracking or third-party advertising. Privacy URL: `https://purrimeter.graham.pub/privacy/index.html`. Check Apple's current questionnaire against `website/privacy/index.html`.
 7. Confirm moderation meets Apple's user-generated-content requirements before the first submission. Current shared functionality is session mute, reporting and host kick; a filtering method and durable user blocking need review against Apple's guideline 1.2. Do not claim these safeguards exist in the questionnaire or review notes if they have not been implemented.
 
-App Store metadata is in `store/ios/listing.json`, release notes in `store/ios/release-notes.txt`, and real simulator captures in `store/ios/screenshots/en-US/`. The first version omits What's New, which Apple does not request for a first release.
+App Store metadata is in `store/ios/listing.json`, release notes in `store/ios/release-notes.txt`, and real simulator captures in `store/ios/screenshots/en-US/`. The first version omits What's New, which Apple does not request for a first release. Listing text must not name other platforms: Apple rejected 4.4.1 under Guideline 2.3.10 for a description line saying the game was also available for Android, browsers, macOS and Windows.
 
 ## Build and capture locally
 
